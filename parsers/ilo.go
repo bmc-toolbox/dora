@@ -37,7 +37,7 @@ type BAYS struct {
 }
 
 type BLADE struct {
-	BAY             []*BAY           `xml:" BAY,omitempty" json:"BAY,omitempty"`
+	BAY             *BAY             `xml:" BAY,omitempty" json:"BAY,omitempty"`
 	BLADEROMVER     *BLADEROMVER     `xml:" BLADEROMVER,omitempty" json:"BLADEROMVER,omitempty"`
 	BSN             *BSN             `xml:" BSN,omitempty" json:"BSN,omitempty"`
 	CONJOINABLE     *CONJOINABLE     `xml:" CONJOINABLE,omitempty" json:"CONJOINABLE,omitempty"`
@@ -187,7 +187,7 @@ type FABRICTYPE struct {
 }
 
 type FAN struct {
-	BAY         []*BAY       `xml:" BAY,omitempty" json:"BAY,omitempty"`
+	BAY         *BAY         `xml:" BAY,omitempty" json:"BAY,omitempty"`
 	PN          *PN          `xml:" PN,omitempty" json:"PN,omitempty"`
 	PRODUCTNAME *PRODUCTNAME `xml:" PRODUCTNAME,omitempty" json:"PRODUCTNAME,omitempty"`
 	PWR_USED    *PWR_USED    `xml:" PWR_USED,omitempty" json:"PWR_USED,omitempty"`
@@ -490,7 +490,7 @@ type POWERSUPPLY struct {
 }
 
 type POWER_CONSUMED struct {
-	Text string `xml:",chardata" json:",omitempty"`
+	Text float64 `xml:",chardata" json:",omitempty"`
 }
 
 type POWER_OFF_WATTAGE struct {
