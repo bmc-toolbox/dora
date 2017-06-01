@@ -45,6 +45,26 @@ type Chassi struct {
 	Location    string                  `json:"location"`
 	Interfaces  map[string]NetInterface `json:"interfaces"`
 	Position    int                     `json:"position"`
+	Model       string                  `json:"model"`
+}
+
+type Rack struct {
+	Sitezone               string `json:"sitezone"`
+	Sitepod                string `json:"sitepod"`
+	SlotsAvailableCombined string `json:"slots_available_combined"`
+	Slots1UAvailable       int    `json:"slots_1u_available"`
+	Environment            string `json:"environment"`
+	SlotsAvailable         string `json:"slots_available"`
+	Size                   int    `json:"size"`
+	Slots10UAvailable      int    `json:"slots_10u_available"`
+	Siterow                string `json:"siterow"`
+	Name                   string `json:"name"`
+	Manufacturer           string `json:"manufacturer"`
+	Site                   string `json:"site"`
+}
+
+type SImpleApiRacks struct {
+	Racks []Rack `json:"racks"`
 }
 
 type SimpleApiChassis struct {
@@ -84,6 +104,32 @@ func (s *SimpleApiChassis) GetChassi(fqdn string) (chassi Chassi, err error) {
 		}
 	}
 	return chassi, ErrNoChassi
+}
+
+func (s *SimpleAPI) GetRack(name string) (rack Rack, err error) {
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/sdb/api/v1/racks/name/%s", s.simpleapiurl, name), nil)
+	req.SetBasicAuth(s.username, s.password)
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("error simpleapi:", err)
+		return rack, err
+	}
+	defer resp.Body.Close()
+
+	payload, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("error reading the response:", err)
+		return rack, err
+	}
+	r := &SImpleApiRacks{}
+
+	err = json.Unmarshal(payload, &r)
+	if err != nil {
+		fmt.Println("error unmarshalling:", err)
+		return rack, err
+	}
+	return r.Racks[0], err
 }
 
 func (c *Chassi) GetBlade(fqdn string) (blade Blade, err error) {
