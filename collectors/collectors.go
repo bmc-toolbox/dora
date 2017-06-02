@@ -8,11 +8,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
 	"../parsers"
 	"../simpleapi"
+
+	"encoding/json"
 
 	"golang.org/x/crypto/ssh"
 )
@@ -31,14 +34,15 @@ var (
 	ErrChassiCollectionNotSupported = errors.New("It's not possible to collect metric via chassi on this model")
 	redfish                         = map[string]map[string]string{
 		Dell: map[string]string{
-			Power:   "/redfish/v1/System.Embedded.1/Power",
-			Thermal: "/redfish/v1/System.Embedded.1/Thermal",
+			Power:   "redfish/v1/Chassis/System.Embedded.1/Power",
+			Thermal: "redfish/v1/Chassis/System.Embedded.1/Thermal",
 		},
 		HP: map[string]string{
-			Power:   "/rest/v1/Chassis/1/Power",
-			Thermal: "/rest/v1/Chassis/1/Thermal",
+			Power:   "rest/v1/Chassis/1/Power",
+			Thermal: "rest/v1/Chassis/1/Thermal",
 		},
 	}
+	bmcAddressBuild = regexp.MustCompile(".(prod|corp|dqs).")
 )
 
 type Collector struct {
@@ -50,6 +54,12 @@ type RawCollectedData struct {
 	PowerUsage  string
 	Temperature string
 	Vendor      string
+}
+
+type DellRedFishPower struct {
+	PowerControl []struct {
+		PowerConsumedWatts int `json:"PowerConsumedWatts"`
+	} `json:"PowerControl"`
 }
 
 func (c *Collector) runCommand(client *ssh.Client, command string) (result string, err error) {
@@ -69,7 +79,7 @@ func (c *Collector) runCommand(client *ssh.Client, command string) (result strin
 
 func (c *Collector) CollectViaChassi(chassi *simpleapi.Chassi, rack *simpleapi.Rack, ip *string, iname *string) (err error) {
 	if strings.HasPrefix(chassi.Model, "BladeSystem") {
-		return
+		// return
 		fmt.Println(fmt.Sprintf("Collecting data from %s[%s] via web %s", chassi.Fqdn, *ip, *iname))
 		result, err := c.viaILOXML(ip)
 		if err != nil {
@@ -81,28 +91,35 @@ func (c *Collector) CollectViaChassi(chassi *simpleapi.Chassi, rack *simpleapi.R
 			return err
 		}
 		for _, blade := range iloXML.INFRA2.BLADES.BLADE {
-			if blade.NAME != nil {
+			if blade.NAME != "" {
 				now := int32(time.Now().Unix())
-				fmt.Printf("power_kw,site=%s,zone=%s,pod=%s,row=%s,rack=%s,bay=%s,device=chassis,chassi=%s,subdevice=%s value=%.2f %d\n", rack.Site, rack.Sitezone, rack.Sitepod, rack.Siterow, chassi.Rack, blade.BAY.CONNECTION.Text, chassi.Fqdn, blade.NAME.Text, blade.POWER.POWER_CONSUMED.Text/1000.00, now)
-				fmt.Printf("temp_c,site=%s,zone=%s,pod=%s,row=%s,rack=%s,bay=%s,device=chassis,chassi=%s,subdevice=%s value=%s %d\n", rack.Site, rack.Sitezone, rack.Sitepod, rack.Siterow, chassi.Rack, blade.BAY.CONNECTION.Text, chassi.Fqdn, blade.NAME.Text, blade.TEMPS.TEMP.C.Text, now)
+				fmt.Printf("power_kw,site=%s,zone=%s,pod=%s,row=%s,rack=%s,bay=%s,device=chassis,chassi=%s,subdevice=%s value=%.2f %d\n", rack.Site, rack.Sitezone, rack.Sitepod, rack.Siterow, chassi.Rack, blade.BAY.CONNECTION, chassi.Fqdn, blade.NAME, blade.POWER.POWER_CONSUMED/1000.00, now)
+				fmt.Printf("temp_c,site=%s,zone=%s,pod=%s,row=%s,rack=%s,bay=%s,device=chassis,chassi=%s,subdevice=%s value=%s %d\n", rack.Site, rack.Sitezone, rack.Sitepod, rack.Siterow, chassi.Rack, blade.BAY.CONNECTION, chassi.Fqdn, blade.NAME, blade.TEMPS.TEMP.C, now)
 			}
 		}
 	} else if strings.HasPrefix(chassi.Model, "P") {
 		fmt.Println(fmt.Sprintf("Collecting data from %s[%s] via RedFish %s", chassi.Fqdn, *ip, *iname))
 		for _, blade := range chassi.Blades {
-			for hostname, properties := range blade {
+			for hostname := range blade {
 				// fmt.Println(hostname, properties)
-				if !strings.HasSuffix(hostname, ".com") {
-					hostname = fmt.Sprintf("%s.%s.lom.booking.com", hostname, chassi.Location)
-					fmt.Println(hostname, properties.BladePosition)
+				if strings.HasSuffix(hostname, ".com") {
+					// Fix tomorrow the spare-
+					//fmt.Println(bmcAddressBuild.ReplaceAllString(hostname, ".lom."), properties.BladePosition)
+					bmcAddress := bmcAddressBuild.ReplaceAllString(hostname, ".lom.")
+					result, err := c.viaRedFish(&bmcAddress, Dell, Power)
+					if err != nil {
+						fmt.Println(err)
+						break
+					}
+					r := &DellRedFishPower{}
+					err = json.Unmarshal(result, r)
+					if err != nil {
+						fmt.Println(err)
+						break
+					}
+					fmt.Println(r)
 				}
 			}
-
-			// hostname := chassi.Blades[pos]
-			// fmt.Println(hostname, properties)
-			// if !strings.HasSuffix(".com") {
-			// 	hostname = fmt.Sprintf("%s.%s.lom.booking.com", hostname, chassi.Location)
-			// }
 
 			// if blade.NAME != nil {
 			// 	now := int32(time.Now().Unix())
@@ -147,7 +164,7 @@ func (c *Collector) viaILOXML(ip *string) (payload []byte, err error) {
 }
 
 func (c *Collector) viaRedFish(ip *string, collectType string, vendor string) (payload []byte, err error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("https://%s/%sr", *ip, redfish[collectType][vendor]), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("https://%s/%s", *ip, redfish[collectType][vendor]), nil)
 	if err != nil {
 		fmt.Println("error building request:", err)
 		return payload, err
