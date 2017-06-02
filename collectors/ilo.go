@@ -1,4 +1,4 @@
-package parsers
+package collectors
 
 type Blade struct {
 	Bay         *Bay   `xml:" BAY,omitempty" json:"BAY,omitempty"`
@@ -36,7 +36,7 @@ type Power struct {
 	RedundantCapacity string  `xml:" REDUNDANT_CAPACITY,omitempty" json:"REDUNDANT_CAPACITY,omitempty"`
 	Status            string  `xml:" STATUS,omitempty" json:"STATUS,omitempty"`
 	Type              string  `xml:" TYPE,omitempty" json:"TYPE,omitempty"`
-	Wanted_ps         string  `xml:" WANTED_PS,omitempty" json:"WANTED_PS,omitempty"`
+	WantedPS          string  `xml:" WANTED_PS,omitempty" json:"WANTED_PS,omitempty"`
 }
 
 type Rimp struct {

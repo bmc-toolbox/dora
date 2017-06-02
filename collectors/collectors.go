@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"../parsers"
 	"../simpleapi"
 
 	"encoding/json"
@@ -21,11 +20,11 @@ import (
 )
 
 const (
-	HP      = "HP"
-	Dell    = "Dell"
-	Unknown = "Unknown"
-	Power   = "power"
-	Thermal = "thermal"
+	HP        = "HP"
+	Dell      = "Dell"
+	Unknown   = "Unknown"
+	RFPower   = "power"
+	RFThermal = "thermal"
 )
 
 var (
@@ -34,12 +33,12 @@ var (
 	ErrChassiCollectionNotSupported = errors.New("It's not possible to collect metric via chassi on this model")
 	redfish                         = map[string]map[string]string{
 		Dell: map[string]string{
-			Power:   "redfish/v1/Chassis/System.Embedded.1/Power",
-			Thermal: "redfish/v1/Chassis/System.Embedded.1/Thermal",
+			RFPower:   "redfish/v1/Chassis/System.Embedded.1/Power",
+			RFThermal: "redfish/v1/Chassis/System.Embedded.1/Thermal",
 		},
 		HP: map[string]string{
-			Power:   "rest/v1/Chassis/1/Power",
-			Thermal: "rest/v1/Chassis/1/Thermal",
+			RFPower:   "rest/v1/Chassis/1/Power",
+			RFThermal: "rest/v1/Chassis/1/Thermal",
 		},
 	}
 	bmcAddressBuild = regexp.MustCompile(".(prod|corp|dqs).")
@@ -54,12 +53,6 @@ type RawCollectedData struct {
 	PowerUsage  string
 	Temperature string
 	Vendor      string
-}
-
-type DellRedFishPower struct {
-	PowerControl []struct {
-		PowerConsumedWatts int `json:"PowerConsumedWatts"`
-	} `json:"PowerControl"`
 }
 
 func (c *Collector) runCommand(client *ssh.Client, command string) (result string, err error) {
@@ -85,7 +78,7 @@ func (c *Collector) CollectViaChassi(chassi *simpleapi.Chassi, rack *simpleapi.R
 		if err != nil {
 			return err
 		}
-		iloXML := &parsers.Rimp{}
+		iloXML := &Rimp{}
 		err = xml.Unmarshal(result, iloXML)
 		if err != nil {
 			return err
@@ -106,7 +99,7 @@ func (c *Collector) CollectViaChassi(chassi *simpleapi.Chassi, rack *simpleapi.R
 					// Fix tomorrow the spare-
 					//fmt.Println(bmcAddressBuild.ReplaceAllString(hostname, ".lom."), properties.BladePosition)
 					bmcAddress := bmcAddressBuild.ReplaceAllString(hostname, ".lom.")
-					result, err := c.viaRedFish(&bmcAddress, Dell, Power)
+					result, err := c.viaRedFish(&bmcAddress, Dell, RFPower)
 					if err != nil {
 						fmt.Println(err)
 						break

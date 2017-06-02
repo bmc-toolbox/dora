@@ -49,18 +49,12 @@ type Chassi struct {
 }
 
 type Rack struct {
-	Sitezone               string `json:"sitezone"`
-	Sitepod                string `json:"sitepod"`
-	SlotsAvailableCombined string `json:"slots_available_combined"`
-	Slots1UAvailable       int    `json:"slots_1u_available"`
-	Environment            string `json:"environment"`
-	SlotsAvailable         string `json:"slots_available"`
-	Size                   int    `json:"size"`
-	Slots10UAvailable      int    `json:"slots_10u_available"`
-	Siterow                string `json:"siterow"`
-	Name                   string `json:"name"`
-	Manufacturer           string `json:"manufacturer"`
-	Site                   string `json:"site"`
+	Sitezone    string `json:"sitezone"`
+	Sitepod     string `json:"sitepod"`
+	Environment string `json:"environment"`
+	Siterow     string `json:"siterow"`
+	Name        string `json:"name"`
+	Site        string `json:"site"`
 }
 
 type SImpleApiRacks struct {
