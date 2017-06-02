@@ -70,10 +70,10 @@ func (c *Collector) runCommand(client *ssh.Client, command string) (result strin
 	return r.String(), err
 }
 
-func (c *Collector) CollectViaChassi(chassi *simpleapi.Chassi, rack *simpleapi.Rack, ip *string, iname *string) (err error) {
-	if strings.HasPrefix(chassi.Model, "BladeSystem") {
-		// return
-		fmt.Println(fmt.Sprintf("Collecting data from %s[%s] via web %s", chassi.Fqdn, *ip, *iname))
+func (c *Collector) CollectViaChassi(chassis *simpleapi.Chassis, rack *simpleapi.Rack, ip *string, iname *string) (err error) {
+	if strings.HasPrefix(chassis.Model, "BladeSystem") {
+		return
+		fmt.Println(fmt.Sprintf("Collecting data from %s[%s] via web %s", chassis.Fqdn, *ip, *iname))
 		result, err := c.viaILOXML(ip)
 		if err != nil {
 			return err
@@ -86,42 +86,58 @@ func (c *Collector) CollectViaChassi(chassi *simpleapi.Chassi, rack *simpleapi.R
 		for _, blade := range iloXML.Infra2.Blades.Blade {
 			if blade.Name != "" {
 				now := int32(time.Now().Unix())
-				fmt.Printf("power_kw,site=%s,zone=%s,pod=%s,row=%s,rack=%s,bay=%s,device=chassis,chassi=%s,subdevice=%s value=%.2f %d\n", rack.Site, rack.Sitezone, rack.Sitepod, rack.Siterow, chassi.Rack, blade.Bay.Connection, chassi.Fqdn, blade.Name, blade.Power.PowerConsumed/1000.00, now)
-				fmt.Printf("temp_c,site=%s,zone=%s,pod=%s,row=%s,rack=%s,bay=%s,device=chassis,chassi=%s,subdevice=%s value=%s %d\n", rack.Site, rack.Sitezone, rack.Sitepod, rack.Siterow, chassi.Rack, blade.Bay.Connection, chassi.Fqdn, blade.Name, blade.Temps.Temp.C, now)
+				fmt.Printf("power_kw,site=%s,zone=%s,pod=%s,row=%s,rack=%s,bay=%s,device=chassis,chassis=%s,subdevice=%s value=%.2f %d\n", rack.Site, rack.Sitezone, rack.Sitepod, rack.Siterow, chassis.Rack, blade.Bay.Connection, chassis.Fqdn, blade.Name, blade.Power.PowerConsumed/1000.00, now)
+				fmt.Printf("temp_c,site=%s,zone=%s,pod=%s,row=%s,rack=%s,bay=%s,device=chassis,chassis=%s,subdevice=%s value=%s %d\n", rack.Site, rack.Sitezone, rack.Sitepod, rack.Siterow, chassis.Rack, blade.Bay.Connection, chassis.Fqdn, blade.Name, blade.Temps.Temp.C, now)
 			}
 		}
-	} else if strings.HasPrefix(chassi.Model, "P") {
-		fmt.Println(fmt.Sprintf("Collecting data from %s[%s] via RedFish %s", chassi.Fqdn, *ip, *iname))
-		for _, blade := range chassi.Blades {
-			for hostname := range blade {
-				// fmt.Println(hostname, properties)
+	} else if strings.HasPrefix(chassis.Model, "P") {
+		fmt.Println(fmt.Sprintf("Collecting data from %s[%s] via RedFish %s", chassis.Fqdn, *ip, *iname))
+		for _, blade := range chassis.Blades {
+			for hostname, properties := range blade {
 				if strings.HasSuffix(hostname, ".com") {
 					// Fix tomorrow the spare-
-					//fmt.Println(bmcAddressBuild.ReplaceAllString(hostname, ".lom."), properties.BladePosition)
 					bmcAddress := bmcAddressBuild.ReplaceAllString(hostname, ".lom.")
 					result, err := c.viaRedFish(&bmcAddress, Dell, RFPower)
 					if err != nil {
 						fmt.Println(err)
 						break
 					}
-					r := &DellRedFishPower{}
-					err = json.Unmarshal(result, r)
+					rp := &DellRedFishPower{}
+					err = json.Unmarshal(result, rp)
 					if err != nil {
 						fmt.Println(err)
 						break
 					}
-					fmt.Println(r)
+
+					for _, item := range rp.PowerControl {
+						if strings.Compare(item.Name, "System Power Control") == 0 {
+							fmt.Printf("power_kw,site=%s,zone=%s,pod=%s,row=%s,rack=%s,bay=%d,device=chassis,chassis=%s,subdevice=%s value=%.2f %d\n", rack.Site, rack.Sitezone, rack.Sitepod, rack.Siterow, chassis.Rack, properties.BladePosition, chassis.Fqdn, hostname, item.PowerConsumedWatts/1000.00, int32(time.Now().Unix()))
+						}
+					}
+
+					result, err = c.viaRedFish(&bmcAddress, Dell, RFThermal)
+					if err != nil {
+						fmt.Println(err)
+						break
+					}
+
+					rt := &DellRedFishThermal{}
+					err = json.Unmarshal(result, rt)
+					if err != nil {
+						fmt.Println(err)
+						break
+					}
+
+					for _, item := range rt.Temperatures {
+						if strings.Compare(item.Name, "System Board Inlet Temp") == 0 {
+							fmt.Printf("temp_c,site=%s,zone=%s,pod=%s,row=%s,rack=%s,bay=%d,device=chassis,chassis=%s,subdevice=%s value=%d %d\n", rack.Site, rack.Sitezone, rack.Sitepod, rack.Siterow, chassis.Rack, properties.BladePosition, chassis.Fqdn, hostname, item.ReadingCelsius, int32(time.Now().Unix()))
+						}
+					}
 				}
 			}
-
-			// if blade.NAME != nil {
-			// 	now := int32(time.Now().Unix())
-			// 	fmt.Printf("power_kw,site=%s,zone=%s,pod=%s,row=%s,rack=%s,bay=%s,device=chassis,chassi=%s,subdevice=%s value=%.2f %d\n", rack.Site, rack.Sitezone, rack.Sitepod, rack.Siterow, chassi.Rack, blade.Bay.Connection, chassi.Fqdn, blade.NAME.Text, blade.POWER.POWER_CONSUMED.Text/1000.00, now)
-			// 	fmt.Printf("temp_c,site=%s,zone=%s,pod=%s,row=%s,rack=%s,bay=%s,device=chassis,chassi=%s,subdevice=%s value=%s %d\n", rack.Site, rack.Sitezone, rack.Sitepod, rack.Siterow, chassi.Rack, blade.Bay.Connection, chassi.Fqdn, blade.NAME.Text, blade.TEMPS.TEMP.C.Text, now)
-			// }
 		}
 	} // else {
-	// 	fmt.Println(fmt.Sprintf("Trying to collect data from %s[%s] via console %s", chassi.Fqdn, *ip, *iname))
+	// 	fmt.Println(fmt.Sprintf("Trying to collect data from %s[%s] via console %s", chassis.Fqdn, *ip, *iname))
 	// 	// result, err := collector.ViaConsole(ip)
 	// 	// if err == nil {
 	// 	// 	parseHPPower(result.PowerUsage)

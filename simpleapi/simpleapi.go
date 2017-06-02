@@ -36,7 +36,7 @@ type Blade struct {
 	State         string `json:"state"`
 }
 
-type Chassi struct {
+type Chassis struct {
 	Environment string                  `json:"environment"`
 	Rack        string                  `json:"rack"`
 	Blades      []map[string]Blade      `json:"servers"`
@@ -62,7 +62,7 @@ type SImpleApiRacks struct {
 }
 
 type SimpleApiChassis struct {
-	Chassis []Chassi `json:"chassis"`
+	Chassis []Chassis `json:"chassis"`
 }
 
 // Chassis retrieves information from all chassis on SimpleAPI
@@ -91,13 +91,13 @@ func (s *SimpleAPI) Chassis() (chassis SimpleApiChassis, err error) {
 	return chassis, err
 }
 
-func (s *SimpleApiChassis) GetChassi(fqdn string) (chassi Chassi, err error) {
+func (s *SimpleApiChassis) GetChassi(fqdn string) (chassis Chassis, err error) {
 	for _, c := range s.Chassis {
 		if c.Fqdn == fqdn {
 			return c, err
 		}
 	}
-	return chassi, ErrNoChassi
+	return chassis, ErrNoChassi
 }
 
 func (s *SimpleAPI) GetRack(name string) (rack Rack, err error) {
@@ -126,7 +126,7 @@ func (s *SimpleAPI) GetRack(name string) (rack Rack, err error) {
 	return r.Racks[0], err
 }
 
-func (c *Chassi) GetBlade(fqdn string) (blade Blade, err error) {
+func (c *Chassis) GetBlade(fqdn string) (blade Blade, err error) {
 	for _, b := range c.Blades {
 		if _, ok := b[fqdn]; ok {
 			return b[fqdn], err

@@ -9,10 +9,12 @@ import (
 	"./collectors"
 	"./simpleapi"
 
+	"time"
+
 	"github.com/spf13/viper"
 )
 
-const concurrency = 1
+const concurrency = 2
 
 var (
 	simpleAPI *simpleapi.SimpleAPI
@@ -45,19 +47,20 @@ func parseHPPower(input string) {
 	}
 }
 
-func collect(c <-chan *simpleapi.Chassi) {
-	for chassi := range c {
-		rack, err := simpleAPI.GetRack(chassi.Rack)
+func collect(c <-chan *simpleapi.Chassis) {
+	for chassis := range c {
+		rack, err := simpleAPI.GetRack(chassis.Rack)
 		if err != nil {
 			fmt.Printf("Received error: %s\n", err)
 		}
 
-		for ifname, ifdata := range chassi.Interfaces {
+		fmt.Println(chassis.Fqdn)
+		for ifname, ifdata := range chassis.Interfaces {
 			if ifdata.IPAddress == "" {
 				continue
 			}
 
-			err := collector.CollectViaChassi(chassi, &rack, &ifdata.IPAddress, &ifname)
+			err := collector.CollectViaChassi(chassis, &rack, &ifdata.IPAddress, &ifname)
 			if err == nil {
 				break
 			}
@@ -91,18 +94,21 @@ func main() {
 		fmt.Println("error simpleapi:", err)
 	}
 
-	cc := make(chan *simpleapi.Chassi, concurrency)
+	cc := make(chan *simpleapi.Chassis, concurrency)
 	wg := sync.WaitGroup{}
 	wg.Add(concurrency)
 	for i := 0; i < concurrency; i++ {
-		go func() {
+		go func(cc <-chan *simpleapi.Chassis) {
 			defer wg.Done()
 			collect(cc)
-		}()
+		}(cc)
 	}
 
 	for _, c := range chassis.Chassis {
+		fmt.Println(c.Fqdn)
 		cc <- &c
+		time.Sleep(90 * time.Minute)
+
 	}
 	close(cc)
 	wg.Wait()
