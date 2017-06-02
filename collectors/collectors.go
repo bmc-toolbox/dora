@@ -85,16 +85,16 @@ func (c *Collector) CollectViaChassi(chassi *simpleapi.Chassi, rack *simpleapi.R
 		if err != nil {
 			return err
 		}
-		iloXML := &parsers.RIMP{}
+		iloXML := &parsers.Rimp{}
 		err = xml.Unmarshal(result, iloXML)
 		if err != nil {
 			return err
 		}
-		for _, blade := range iloXML.INFRA2.BLADES.BLADE {
-			if blade.NAME != "" {
+		for _, blade := range iloXML.Infra2.Blades.Blade {
+			if blade.Name != "" {
 				now := int32(time.Now().Unix())
-				fmt.Printf("power_kw,site=%s,zone=%s,pod=%s,row=%s,rack=%s,bay=%s,device=chassis,chassi=%s,subdevice=%s value=%.2f %d\n", rack.Site, rack.Sitezone, rack.Sitepod, rack.Siterow, chassi.Rack, blade.BAY.CONNECTION, chassi.Fqdn, blade.NAME, blade.POWER.POWER_CONSUMED/1000.00, now)
-				fmt.Printf("temp_c,site=%s,zone=%s,pod=%s,row=%s,rack=%s,bay=%s,device=chassis,chassi=%s,subdevice=%s value=%s %d\n", rack.Site, rack.Sitezone, rack.Sitepod, rack.Siterow, chassi.Rack, blade.BAY.CONNECTION, chassi.Fqdn, blade.NAME, blade.TEMPS.TEMP.C, now)
+				fmt.Printf("power_kw,site=%s,zone=%s,pod=%s,row=%s,rack=%s,bay=%s,device=chassis,chassi=%s,subdevice=%s value=%.2f %d\n", rack.Site, rack.Sitezone, rack.Sitepod, rack.Siterow, chassi.Rack, blade.Bay.Connection, chassi.Fqdn, blade.Name, blade.Power.PowerConsumed/1000.00, now)
+				fmt.Printf("temp_c,site=%s,zone=%s,pod=%s,row=%s,rack=%s,bay=%s,device=chassis,chassi=%s,subdevice=%s value=%s %d\n", rack.Site, rack.Sitezone, rack.Sitepod, rack.Siterow, chassi.Rack, blade.Bay.Connection, chassi.Fqdn, blade.Name, blade.Temps.Temp.C, now)
 			}
 		}
 	} else if strings.HasPrefix(chassi.Model, "P") {
@@ -123,8 +123,8 @@ func (c *Collector) CollectViaChassi(chassi *simpleapi.Chassi, rack *simpleapi.R
 
 			// if blade.NAME != nil {
 			// 	now := int32(time.Now().Unix())
-			// 	fmt.Printf("power_kw,site=%s,zone=%s,pod=%s,row=%s,rack=%s,bay=%s,device=chassis,chassi=%s,subdevice=%s value=%.2f %d\n", rack.Site, rack.Sitezone, rack.Sitepod, rack.Siterow, chassi.Rack, blade.BAY.CONNECTION.Text, chassi.Fqdn, blade.NAME.Text, blade.POWER.POWER_CONSUMED.Text/1000.00, now)
-			// 	fmt.Printf("temp_c,site=%s,zone=%s,pod=%s,row=%s,rack=%s,bay=%s,device=chassis,chassi=%s,subdevice=%s value=%s %d\n", rack.Site, rack.Sitezone, rack.Sitepod, rack.Siterow, chassi.Rack, blade.BAY.CONNECTION.Text, chassi.Fqdn, blade.NAME.Text, blade.TEMPS.TEMP.C.Text, now)
+			// 	fmt.Printf("power_kw,site=%s,zone=%s,pod=%s,row=%s,rack=%s,bay=%s,device=chassis,chassi=%s,subdevice=%s value=%.2f %d\n", rack.Site, rack.Sitezone, rack.Sitepod, rack.Siterow, chassi.Rack, blade.Bay.Connection, chassi.Fqdn, blade.NAME.Text, blade.POWER.POWER_CONSUMED.Text/1000.00, now)
+			// 	fmt.Printf("temp_c,site=%s,zone=%s,pod=%s,row=%s,rack=%s,bay=%s,device=chassis,chassi=%s,subdevice=%s value=%s %d\n", rack.Site, rack.Sitezone, rack.Sitepod, rack.Siterow, chassi.Rack, blade.Bay.Connection, chassi.Fqdn, blade.NAME.Text, blade.TEMPS.TEMP.C.Text, now)
 			// }
 		}
 	} // else {
