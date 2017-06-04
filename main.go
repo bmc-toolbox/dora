@@ -9,8 +9,6 @@ import (
 	"./collectors"
 	"./simpleapi"
 
-	"time"
-
 	"github.com/spf13/viper"
 )
 
@@ -47,20 +45,19 @@ func parseHPPower(input string) {
 	}
 }
 
-func collect(c <-chan *simpleapi.Chassis) {
+func collect(c <-chan simpleapi.Chassis) {
 	for chassis := range c {
 		rack, err := simpleAPI.GetRack(chassis.Rack)
 		if err != nil {
 			fmt.Printf("Received error: %s\n", err)
 		}
 
-		fmt.Println(chassis.Fqdn)
 		for ifname, ifdata := range chassis.Interfaces {
 			if ifdata.IPAddress == "" {
 				continue
 			}
 
-			err := collector.CollectViaChassi(chassis, &rack, &ifdata.IPAddress, &ifname)
+			err := collector.CollectViaChassi(&chassis, &rack, &ifdata.IPAddress, &ifname)
 			if err == nil {
 				break
 			}
@@ -94,21 +91,18 @@ func main() {
 		fmt.Println("error simpleapi:", err)
 	}
 
-	cc := make(chan *simpleapi.Chassis, concurrency)
+	cc := make(chan simpleapi.Chassis, concurrency)
 	wg := sync.WaitGroup{}
 	wg.Add(concurrency)
 	for i := 0; i < concurrency; i++ {
-		go func(cc <-chan *simpleapi.Chassis) {
+		go func(input <-chan simpleapi.Chassis) {
 			defer wg.Done()
-			collect(cc)
+			collect(input)
 		}(cc)
 	}
 
 	for _, c := range chassis.Chassis {
-		fmt.Println(c.Fqdn)
-		cc <- &c
-		time.Sleep(90 * time.Minute)
-
+		cc <- c
 	}
 	close(cc)
 	wg.Wait()
