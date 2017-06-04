@@ -45,8 +45,9 @@ var (
 )
 
 type Collector struct {
-	username string
-	password string
+	username    string
+	password    string
+	telegrafURL string
 }
 
 type RawCollectedData struct {
@@ -196,6 +197,7 @@ func (c *Collector) viaRedFish(ip *string, collectType string, vendor string) (p
 		fmt.Println("error reading the response:", err)
 		return payload, err
 	}
+
 	return payload, err
 }
 
@@ -255,6 +257,14 @@ func (c *Collector) ViaConsole(ip string) (result RawCollectedData, err error) {
 	}
 
 	return result, err
+}
+
+func (c *Collector) pushToTelegraph(metric string) (err error) {
+	_, err = http.NewRequest("POST", c.telegrafURL, strings.NewReader(metric))
+	if err != nil {
+		fmt.Println(err)
+	}
+	return err
 }
 
 func New(username string, password string) *Collector {
