@@ -69,6 +69,7 @@ func main() {
 	viper.SetConfigName("thermalnator")
 	viper.AddConfigPath("/etc/bmc-toolbox")
 	viper.AddConfigPath("$HOME/.bmc-toolbox")
+	viper.SetDefault("site", "all")
 
 	err := viper.ReadInConfig()
 	if err != nil {
@@ -86,6 +87,8 @@ func main() {
 		viper.GetString("bmc_pass"),
 	)
 
+	site := viper.GetString("site")
+
 	chassis, err := simpleAPI.Chassis()
 	if err != nil {
 		fmt.Println("error simpleapi:", err)
@@ -101,8 +104,12 @@ func main() {
 		}(cc)
 	}
 
+	fmt.Printf("Starting data collection for %s site(s)\n", site)
+
 	for _, c := range chassis.Chassis {
-		cc <- c
+		if strings.Compare(c.Location, site) == 0 || strings.Compare(site, "all") == 0 {
+			cc <- c
+		}
 	}
 	close(cc)
 	wg.Wait()
