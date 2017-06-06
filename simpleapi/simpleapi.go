@@ -10,10 +10,10 @@ import (
 
 var (
 	// ErrNoChassi is returned when no chassis is found during the search
-	ErrNoChassi = errors.New("no chassi found")
+	ErrNoChassiFound = errors.New("no chassi found")
 
 	// ErrNoBlade is returned when no blade is found during the search
-	ErrNoBlade = errors.New("no blade found")
+	ErrNoBladeFound = errors.New("no blade found")
 )
 
 type SimpleAPI struct {
@@ -91,13 +91,24 @@ func (s *SimpleAPI) Chassis() (chassis SimpleApiChassis, err error) {
 	return chassis, err
 }
 
+func (c *Chassis) GetBladeNameByBay(bladePosition int) (fqdn string, err error) {
+	for _, blade := range c.Blades {
+		for hostname, properties := range blade {
+			if properties.BladePosition == bladePosition {
+				return hostname, err
+			}
+		}
+	}
+	return fqdn, ErrNoBladeFound
+}
+
 func (s *SimpleApiChassis) GetChassi(fqdn string) (chassis Chassis, err error) {
 	for _, c := range s.Chassis {
 		if c.Fqdn == fqdn {
 			return *c, err
 		}
 	}
-	return chassis, ErrNoChassi
+	return chassis, ErrNoChassiFound
 }
 
 func (s *SimpleAPI) GetRack(name string) (rack Rack, err error) {
@@ -132,7 +143,7 @@ func (c *Chassis) GetBlade(fqdn string) (blade Blade, err error) {
 			return *b[fqdn], err
 		}
 	}
-	return blade, ErrNoBlade
+	return blade, ErrNoBladeFound
 }
 
 func New(username string, password string, simpleapiurl string) *SimpleAPI {
