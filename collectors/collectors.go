@@ -1,12 +1,12 @@
 package collectors
 
 import (
-	"bytes"
 	"crypto/tls"
 	"encoding/xml"
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"regexp"
 	"strings"
@@ -15,8 +15,6 @@ import (
 	"../simpleapi"
 
 	"encoding/json"
-
-	"golang.org/x/crypto/ssh"
 )
 
 const (
@@ -56,24 +54,9 @@ type RawCollectedData struct {
 	Vendor      string
 }
 
-func (c *Collector) runCommand(client *ssh.Client, command string) (result string, err error) {
-	session, err := client.NewSession()
-	if err != nil {
-		return result, err
-	}
-	defer session.Close()
-
-	var r bytes.Buffer
-	session.Stdout = &r
-	if err := session.Run(command); err != nil {
-		return result, err
-	}
-	return r.String(), err
-}
-
 func (c *Collector) CollectViaChassi(chassis *simpleapi.Chassis, rack *simpleapi.Rack, ip *string, iname *string) (err error) {
 	if strings.HasPrefix(chassis.Model, "BladeSystem") {
-		fmt.Println(fmt.Sprintf("Collecting data from %s[%s] via web %s", chassis.Fqdn, *ip, *iname))
+		fmt.Println(fmt.Sprintf("Collecting data from %s[%s] via ILOXML %s", chassis.Fqdn, *ip, *iname))
 		result, err := c.viaILOXML(ip)
 		if err != nil {
 			return err
@@ -83,11 +66,13 @@ func (c *Collector) CollectViaChassi(chassis *simpleapi.Chassis, rack *simpleapi
 		if err != nil {
 			return err
 		}
-		for _, blade := range iloXML.Infra2.Blades.Blade {
-			if blade.Name != "" {
-				now := int32(time.Now().Unix())
-				fmt.Printf("power_kw,site=%s,zone=%s,pod=%s,row=%s,rack=%s,bay=%s,device=chassis,chassis=%s,subdevice=%s value=%.2f %d\n", rack.Site, rack.Sitezone, rack.Sitepod, rack.Siterow, chassis.Rack, blade.Bay.Connection, chassis.Fqdn, blade.Name, blade.Power.PowerConsumed/1000.00, now)
-				fmt.Printf("temp_c,site=%s,zone=%s,pod=%s,row=%s,rack=%s,bay=%s,device=chassis,chassis=%s,subdevice=%s value=%s %d\n", rack.Site, rack.Sitezone, rack.Sitepod, rack.Siterow, chassis.Rack, blade.Bay.Connection, chassis.Fqdn, blade.Name, blade.Temps.Temp.C, now)
+		if iloXML.Infra2 != nil && iloXML.Infra2.Blades != nil {
+			for _, blade := range iloXML.Infra2.Blades.Blade {
+				if blade.Name != "" {
+					now := int32(time.Now().Unix())
+					fmt.Printf("power_kw,site=%s,zone=%s,pod=%s,row=%s,rack=%s,bay=%s,device=chassis,chassis=%s,subdevice=%s value=%.2f %d\n", rack.Site, rack.Sitezone, rack.Sitepod, rack.Siterow, chassis.Rack, blade.Bay.Connection, chassis.Fqdn, blade.Name, blade.Power.PowerConsumed/1000.00, now)
+					fmt.Printf("temp_c,site=%s,zone=%s,pod=%s,row=%s,rack=%s,bay=%s,device=chassis,chassis=%s,subdevice=%s value=%s %d\n", rack.Site, rack.Sitezone, rack.Sitepod, rack.Siterow, chassis.Rack, blade.Bay.Connection, chassis.Fqdn, blade.Name, blade.Temps.Temp.C, now)
+				}
 			}
 		}
 	} else if strings.HasPrefix(chassis.Model, "P") {
@@ -143,7 +128,14 @@ func (c *Collector) CollectViaChassi(chassis *simpleapi.Chassis, rack *simpleapi
 func (c *Collector) viaILOXML(ip *string) (payload []byte, err error) {
 	req, err := http.NewRequest("GET", fmt.Sprintf("https://%s/xmldata?item=infra2", *ip), nil)
 	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
+		DisableKeepAlives: true,
+		Dial: (&net.Dialer{
+			Timeout:   10 * time.Second,
+			KeepAlive: 10 * time.Second,
+		}).Dial,
+		//	IdleConnTimeout:     3 * time.Second,
+		//	MaxIdleConnsPerHost: 0,
 	}
 	client := &http.Client{Transport: tr}
 	resp, err := client.Do(req)
@@ -158,6 +150,7 @@ func (c *Collector) viaILOXML(ip *string) (payload []byte, err error) {
 		fmt.Println("error reading the response:", err)
 		return payload, err
 	}
+	tr.CloseIdleConnections()
 	return payload, err
 }
 
@@ -170,7 +163,14 @@ func (c *Collector) viaRedFish(ip *string, collectType string, vendor string) (p
 
 	req.SetBasicAuth(c.username, c.password)
 	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
+		DisableKeepAlives: true,
+		Dial: (&net.Dialer{
+			Timeout:   10 * time.Second,
+			KeepAlive: 10 * time.Second,
+		}).Dial,
+		//	MaxIdleConnsPerHost: 0,
+		//	IdleConnTimeout:     3 * time.Second,
 	}
 	client := &http.Client{Transport: tr}
 	resp, err := client.Do(req)
@@ -186,6 +186,7 @@ func (c *Collector) viaRedFish(ip *string, collectType string, vendor string) (p
 		return payload, err
 	}
 
+	tr.CloseIdleConnections()
 	return payload, err
 }
 

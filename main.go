@@ -12,7 +12,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-const concurrency = 2
+const concurrency = 100
 
 var (
 	simpleAPI *simpleapi.SimpleAPI
@@ -20,30 +20,6 @@ var (
 )
 
 // TODO: Better error handling for the config
-// power_kw,site=AMS4,zone=Z04,pod=JJ,row=JJEven,rack=JJ12,pdu=ams4-bk-pdujj12-01 value=3.100000 1496220541
-func parseHPPower(input string) {
-	splitInput := strings.Split(input, "\n")
-	eboa := 0
-	dbps := 0
-
-	for line := range splitInput {
-		// We will only try to parse the power block if we are inside of the block
-		if eboa != 2 {
-			if eboa == 0 && strings.Compare(splitInput[line], "Enclosure Bay Output Allocation:") == 0 {
-				eboa = 1
-			} else if strings.HasPrefix(strings.TrimSpace(splitInput[line]), "=") {
-				fmt.Println(strings.Split(splitInput[line], "                       =  ")[1])
-				eboa = 2
-			}
-		} else if dbps != 2 {
-			if dbps == 0 && strings.Compare(splitInput[line], "Device Bay Power Summary:") == 0 {
-				dbps = 1
-			} else if strings.HasPrefix(strings.TrimSpace(splitInput[line]), "=") {
-				dbps = 2
-			}
-		}
-	}
-}
 
 func collect(c <-chan simpleapi.Chassis) {
 	for chassis := range c {
@@ -111,6 +87,9 @@ func main() {
 			cc <- c
 		}
 	}
+	fmt.Println("Done 1")
 	close(cc)
+	fmt.Println("Done 2")
 	wg.Wait()
+	fmt.Println("Done 3")
 }
