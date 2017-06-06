@@ -39,7 +39,7 @@ type Blade struct {
 type Chassis struct {
 	Environment string                  `json:"environment"`
 	Rack        string                  `json:"rack"`
-	Blades      []map[string]Blade      `json:"servers"`
+	Blades      []map[string]*Blade     `json:"servers"`
 	Fqdn        string                  `json:"fqdn"`
 	State       string                  `json:"state"`
 	Location    string                  `json:"location"`
@@ -58,11 +58,11 @@ type Rack struct {
 }
 
 type SImpleApiRacks struct {
-	Racks []Rack `json:"racks"`
+	Racks []*Rack `json:"racks"`
 }
 
 type SimpleApiChassis struct {
-	Chassis []Chassis `json:"chassis"`
+	Chassis []*Chassis `json:"chassis"`
 }
 
 // Chassis retrieves information from all chassis on SimpleAPI
@@ -94,7 +94,7 @@ func (s *SimpleAPI) Chassis() (chassis SimpleApiChassis, err error) {
 func (s *SimpleApiChassis) GetChassi(fqdn string) (chassis Chassis, err error) {
 	for _, c := range s.Chassis {
 		if c.Fqdn == fqdn {
-			return c, err
+			return *c, err
 		}
 	}
 	return chassis, ErrNoChassi
@@ -123,13 +123,13 @@ func (s *SimpleAPI) GetRack(name string) (rack Rack, err error) {
 		fmt.Println("error unmarshalling:", err)
 		return rack, err
 	}
-	return r.Racks[0], err
+	return *r.Racks[0], err
 }
 
 func (c *Chassis) GetBlade(fqdn string) (blade Blade, err error) {
 	for _, b := range c.Blades {
 		if _, ok := b[fqdn]; ok {
-			return b[fqdn], err
+			return *b[fqdn], err
 		}
 	}
 	return blade, ErrNoBlade
