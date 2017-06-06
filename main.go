@@ -9,10 +9,9 @@ import (
 	"./collectors"
 	"./simpleapi"
 
+	"github.com/google/gops/agent"
 	"github.com/spf13/viper"
 )
-
-const concurrency = 100
 
 var (
 	simpleAPI *simpleapi.SimpleAPI
@@ -42,10 +41,14 @@ func collect(c <-chan simpleapi.Chassis) {
 }
 
 func main() {
+	if err := agent.Listen(nil); err != nil {
+		log.Fatal(err)
+	}
 	viper.SetConfigName("thermalnator")
 	viper.AddConfigPath("/etc/bmc-toolbox")
 	viper.AddConfigPath("$HOME/.bmc-toolbox")
 	viper.SetDefault("site", "all")
+	viper.SetDefault("concurrency", 20)
 
 	err := viper.ReadInConfig()
 	if err != nil {
@@ -64,6 +67,7 @@ func main() {
 	)
 
 	site := viper.GetString("site")
+	concurrency := viper.GetInt("concurrency")
 
 	chassis, err := simpleAPI.Chassis()
 	if err != nil {
@@ -74,22 +78,19 @@ func main() {
 	wg := sync.WaitGroup{}
 	wg.Add(concurrency)
 	for i := 0; i < concurrency; i++ {
-		go func(input <-chan simpleapi.Chassis) {
-			defer wg.Done()
+		go func(input <-chan simpleapi.Chassis, wg *sync.WaitGroup, i int) {
 			collect(input)
-		}(cc)
+			wg.Done()
+		}(cc, &wg, i)
 	}
 
 	fmt.Printf("Starting data collection for %s site(s)\n", site)
 
 	for _, c := range chassis.Chassis {
 		if strings.Compare(c.Location, site) == 0 || strings.Compare(site, "all") == 0 {
-			cc <- c
+			cc <- *c
 		}
 	}
-	fmt.Println("Done 1")
 	close(cc)
-	fmt.Println("Done 2")
 	wg.Wait()
-	fmt.Println("Done 3")
 }
