@@ -73,7 +73,6 @@ func (c *Collector) runCommand(client *ssh.Client, command string) (result strin
 
 func (c *Collector) CollectViaChassi(chassis *simpleapi.Chassis, rack *simpleapi.Rack, ip *string, iname *string) (err error) {
 	if strings.HasPrefix(chassis.Model, "BladeSystem") {
-		return
 		fmt.Println(fmt.Sprintf("Collecting data from %s[%s] via web %s", chassis.Fqdn, *ip, *iname))
 		result, err := c.viaILOXML(ip)
 		if err != nil {
@@ -137,18 +136,7 @@ func (c *Collector) CollectViaChassi(chassis *simpleapi.Chassis, rack *simpleapi
 				}
 			}
 		}
-	} // else {
-	// 	fmt.Println(fmt.Sprintf("Trying to collect data from %s[%s] via console %s", chassis.Fqdn, *ip, *iname))
-	// 	// result, err := collector.ViaConsole(ip)
-	// 	// if err == nil {
-	// 	// 	parseHPPower(result.PowerUsage)
-	// 	// 	continue
-	// 	// } else if err == collectors.ErrIsNotActive {
-	// 	// 	continue
-	// 	// } else {
-	// 	// 	fmt.Println(err)
-	// 	// }
-	// }
+	}
 	return err
 }
 
@@ -199,64 +187,6 @@ func (c *Collector) viaRedFish(ip *string, collectType string, vendor string) (p
 	}
 
 	return payload, err
-}
-
-func (c *Collector) ViaConsole(ip string) (result RawCollectedData, err error) {
-	// var hostKey ssh.PublicKey
-	// An SSH client is represented with a ClientConn.
-	//
-	// To authenticate with the remote server you must pass at least one
-	// implementation of AuthMethod via the Auth field in ClientConfig
-	config := &ssh.ClientConfig{
-		User: c.username,
-		Auth: []ssh.AuthMethod{
-			ssh.Password(c.password),
-		},
-	}
-	client, err := ssh.Dial("tcp", fmt.Sprintf("%s:22", ip), config)
-	if err != nil {
-		return result, err
-	}
-
-	// Each ClientConn can support multiple interactive sessions,
-	// represented by a Session.
-	r, err := c.runCommand(client, "help")
-	if err != nil {
-		return result, err
-	}
-
-	if strings.Count(r, "getpbinfo") != 0 {
-		result.Vendor = Dell
-	} else if strings.Count(r, "SAVE SEND SET SHOW SLEEP TEST UNASSIGN") != 0 {
-		result.Vendor = HP
-	} else {
-		result.Vendor = Unknown
-	}
-
-	if result.Vendor == HP {
-		r, err = c.runCommand(client, "show enclosure power_summary")
-		if err != nil {
-			return result, err
-		}
-		if strings.Count(r, "standby mode.") != 0 {
-			return result, ErrIsNotActive
-		}
-		result.PowerUsage = r
-
-		r, err = c.runCommand(client, "show enclosure temp")
-		if err != nil {
-			return result, err
-		}
-		result.Temperature = r
-	} else if result.Vendor == Dell {
-		r, err = c.runCommand(client, "show enclosure power_summary")
-		if err != nil {
-			return result, err
-		}
-		result.PowerUsage = r
-	}
-
-	return result, err
 }
 
 func (c *Collector) pushToTelegraph(metric string) (err error) {
