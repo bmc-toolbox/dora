@@ -9,7 +9,7 @@ type Blade struct {
 }
 
 type Bay struct {
-	Connection string `xml:" CONNECTION,omitempty" json:"CONNECTION,omitempty"`
+	Connection int `xml:" CONNECTION,omitempty" json:"CONNECTION,omitempty"`
 }
 
 type Infra2 struct {
