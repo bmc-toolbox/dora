@@ -26,6 +26,8 @@ const (
 )
 
 var (
+	powerMetric                     = "power_kw"
+	thermalMetric                   = "temp_c"
 	ErrChassiCollectionNotSupported = errors.New("It's not possible to collect metric via chassi on this model")
 	redfish                         = map[string]map[string]string{
 		Dell: map[string]string{
@@ -88,6 +90,14 @@ func (c *Collector) httpGet(url string) (payload []byte, err error) {
 	return payload, err
 }
 
+func (c *Collector) createChassisMessage(metric *string, site *string, zone *string, pod *string, row *string, rack *string, chassis *string, value string, now int32) string {
+	return fmt.Sprintf("%s,site=%s,zone=%s,pod=%s,row=%s,rack=%s,device=chassis,name=%s value=%s %d\n", *metric, *site, *zone, *pod, *row, *rack, *chassis, value, now)
+}
+
+func (c *Collector) createBladeMessage(metric *string, site *string, zone *string, pod *string, row *string, rack *string, chassis *string, blade *string, value string, now int32) string {
+	return fmt.Sprintf("%s,site=%s,zone=%s,pod=%s,row=%s,rack=%s,device=blade,chassis=%s,name=%s value=%s %d\n", *metric, *site, *zone, *pod, *row, *rack, *chassis, *blade, value, now)
+}
+
 func (c *Collector) CollectViaChassi(chassis *simpleapi.Chassis, rack *simpleapi.Rack, ip *string, iname *string) (err error) {
 	if strings.HasPrefix(chassis.Model, "BladeSystem") {
 		fmt.Println(fmt.Sprintf("Collecting data from %s[%s] via ILOXML %s", chassis.Fqdn, *ip, *iname))
@@ -100,19 +110,82 @@ func (c *Collector) CollectViaChassi(chassis *simpleapi.Chassis, rack *simpleapi
 		if err != nil {
 			return err
 		}
-		if iloXML.Infra2 != nil && iloXML.Infra2.Blades != nil {
-			for _, blade := range iloXML.Infra2.Blades.Blade {
-				if blade.Name != "" {
-					now := int32(time.Now().Unix())
-					fmt.Printf("power_kw,site=%s,zone=%s,pod=%s,row=%s,rack=%s,bay=%s,device=chassis,chassis=%s,subdevice=%s value=%.2f %d\n", rack.Site, rack.Sitezone, rack.Sitepod, rack.Siterow, chassis.Rack, blade.Bay.Connection, chassis.Fqdn, blade.Name, blade.Power.PowerConsumed/1000.00, now)
-					fmt.Printf("temp_c,site=%s,zone=%s,pod=%s,row=%s,rack=%s,bay=%s,device=chassis,chassis=%s,subdevice=%s value=%s %d\n", rack.Site, rack.Sitezone, rack.Sitepod, rack.Siterow, chassis.Rack, blade.Bay.Connection, chassis.Fqdn, blade.Name, blade.Temps.Temp.C, now)
+
+		if iloXML.Infra2 != nil {
+			now := int32(time.Now().Unix())
+
+			// Power Usage
+			fmt.Printf(c.createChassisMessage(
+				&powerMetric,
+				&rack.Site,
+				&rack.Sitezone,
+				&rack.Sitepod,
+				&rack.Siterow,
+				&chassis.Rack,
+				&chassis.Fqdn,
+				fmt.Sprintf("%.2f", iloXML.Infra2.Power.PowerConsumed/1000.00),
+				now,
+			))
+
+			// Thermal
+			fmt.Printf(c.createChassisMessage(
+				&powerMetric,
+				&rack.Site,
+				&rack.Sitezone,
+				&rack.Sitepod,
+				&rack.Siterow,
+				&chassis.Rack,
+				&chassis.Fqdn,
+				iloXML.Infra2.Temps.C,
+				now,
+			))
+
+			if iloXML.Infra2.Blades != nil {
+				for _, blade := range iloXML.Infra2.Blades.Blade {
+					if blade.Name == "" || blade.Name == "[Unknown]" {
+						blade.Name, err = chassis.GetBladeNameByBay(blade.Bay.Connection)
+						if err == simpleapi.ErrNoBladeFound {
+							fmt.Printf("Blade %d hasn't been found in ServerDB %s, skipping...\n", blade.Bay.Connection, chassis.Fqdn)
+							continue
+						}
+					}
+
+					// Power Usage
+					fmt.Printf(c.createBladeMessage(
+						&powerMetric,
+						&rack.Site,
+						&rack.Sitezone,
+						&rack.Sitepod,
+						&rack.Siterow,
+						&chassis.Rack,
+						&chassis.Fqdn,
+						&blade.Name,
+						fmt.Sprintf("%.2f", blade.Power.PowerConsumed/1000.00),
+						now,
+					))
+
+					// Thermal
+					fmt.Printf(c.createBladeMessage(
+						&thermalMetric,
+						&rack.Site,
+						&rack.Sitezone,
+						&rack.Sitepod,
+						&rack.Siterow,
+						&chassis.Rack,
+						&chassis.Fqdn,
+						&blade.Name,
+						blade.Temps.Temp.C,
+						now,
+					))
 				}
 			}
 		}
+
 	} else if strings.HasPrefix(chassis.Model, "P") {
+		// return err
 		fmt.Println(fmt.Sprintf("Collecting data from %s[%s] via RedFish %s", chassis.Fqdn, *ip, *iname))
 		for _, blade := range chassis.Blades {
-			for hostname, properties := range blade {
+			for hostname := range blade {
 				if strings.HasSuffix(hostname, ".com") && !strings.HasPrefix(hostname, "spare") {
 					// Fix tomorrow the spare-
 
@@ -131,7 +204,19 @@ func (c *Collector) CollectViaChassi(chassis *simpleapi.Chassis, rack *simpleapi
 
 					for _, item := range rp.PowerControl {
 						if strings.Compare(item.Name, "System Power Control") == 0 {
-							fmt.Printf("power_kw,site=%s,zone=%s,pod=%s,row=%s,rack=%s,bay=%d,device=chassis,chassis=%s,subdevice=%s value=%.2f %d\n", rack.Site, rack.Sitezone, rack.Sitepod, rack.Siterow, chassis.Rack, properties.BladePosition, chassis.Fqdn, hostname, item.PowerConsumedWatts/1000.00, int32(time.Now().Unix()))
+							// Power Consumption
+							fmt.Printf(c.createBladeMessage(
+								&powerMetric,
+								&rack.Site,
+								&rack.Sitezone,
+								&rack.Sitepod,
+								&rack.Siterow,
+								&chassis.Rack,
+								&chassis.Fqdn,
+								&hostname,
+								fmt.Sprintf("%.2f", item.PowerConsumedWatts/1000.00),
+								int32(time.Now().Unix()),
+							))
 						}
 					}
 
@@ -150,7 +235,19 @@ func (c *Collector) CollectViaChassi(chassis *simpleapi.Chassis, rack *simpleapi
 
 					for _, item := range rt.Temperatures {
 						if strings.Compare(item.Name, "System Board Inlet Temp") == 0 {
-							fmt.Printf("temp_c,site=%s,zone=%s,pod=%s,row=%s,rack=%s,bay=%d,device=chassis,chassis=%s,subdevice=%s value=%d %d\n", rack.Site, rack.Sitezone, rack.Sitepod, rack.Siterow, chassis.Rack, properties.BladePosition, chassis.Fqdn, hostname, item.ReadingCelsius, int32(time.Now().Unix()))
+							// Thermal
+							fmt.Printf(c.createBladeMessage(
+								&thermalMetric,
+								&rack.Site,
+								&rack.Sitezone,
+								&rack.Sitepod,
+								&rack.Siterow,
+								&chassis.Rack,
+								&chassis.Fqdn,
+								&hostname,
+								fmt.Sprintf("%d", item.ReadingCelsius),
+								int32(time.Now().Unix()),
+							))
 						}
 					}
 				}
