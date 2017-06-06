@@ -26,8 +26,6 @@ const (
 )
 
 var (
-	// ErrIsNotActive is returned when a chassi is in standby mode
-	ErrIsNotActive                  = errors.New("This is a standby chassi")
 	ErrChassiCollectionNotSupported = errors.New("It's not possible to collect metric via chassi on this model")
 	redfish                         = map[string]map[string]string{
 		Dell: map[string]string{
@@ -52,6 +50,42 @@ type RawCollectedData struct {
 	PowerUsage  string
 	Temperature string
 	Vendor      string
+}
+
+func (c *Collector) httpGet(url string) (payload []byte, err error) {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		fmt.Println("error building request:", err)
+		return payload, err
+	}
+	req.SetBasicAuth(c.username, c.password)
+	tr := &http.Transport{
+		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
+		DisableKeepAlives: true,
+		Dial: (&net.Dialer{
+			Timeout:   10 * time.Second,
+			KeepAlive: 10 * time.Second,
+		}).Dial,
+		TLSHandshakeTimeout: 10 * time.Second,
+	}
+	client := &http.Client{
+		Timeout:   time.Second * 20,
+		Transport: tr,
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("error making the request:", err)
+		return payload, err
+	}
+	defer resp.Body.Close()
+
+	payload, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("error reading the response:", err)
+		return payload, err
+	}
+
+	return payload, err
 }
 
 func (c *Collector) CollectViaChassi(chassis *simpleapi.Chassis, rack *simpleapi.Rack, ip *string, iname *string) (err error) {
@@ -79,8 +113,9 @@ func (c *Collector) CollectViaChassi(chassis *simpleapi.Chassis, rack *simpleapi
 		fmt.Println(fmt.Sprintf("Collecting data from %s[%s] via RedFish %s", chassis.Fqdn, *ip, *iname))
 		for _, blade := range chassis.Blades {
 			for hostname, properties := range blade {
-				if strings.HasSuffix(hostname, ".com") {
+				if strings.HasSuffix(hostname, ".com") && !strings.HasPrefix(hostname, "spare") {
 					// Fix tomorrow the spare-
+
 					bmcAddress := bmcAddressBuild.ReplaceAllString(hostname, ".lom.")
 					result, err := c.viaRedFish(&bmcAddress, Dell, RFPower)
 					if err != nil {
@@ -121,73 +156,18 @@ func (c *Collector) CollectViaChassi(chassis *simpleapi.Chassis, rack *simpleapi
 				}
 			}
 		}
+	} else {
+		fmt.Printf("I dunno what to do with this device %s, skipping...\n", chassis.Fqdn)
 	}
 	return err
 }
 
 func (c *Collector) viaILOXML(ip *string) (payload []byte, err error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("https://%s/xmldata?item=infra2", *ip), nil)
-	tr := &http.Transport{
-		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
-		DisableKeepAlives: true,
-		Dial: (&net.Dialer{
-			Timeout:   10 * time.Second,
-			KeepAlive: 10 * time.Second,
-		}).Dial,
-		//	IdleConnTimeout:     3 * time.Second,
-		//	MaxIdleConnsPerHost: 0,
-	}
-	client := &http.Client{Transport: tr}
-	resp, err := client.Do(req)
-	if err != nil {
-		fmt.Println("error ilo:", err)
-		return payload, err
-	}
-	defer resp.Body.Close()
-
-	payload, err = ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println("error reading the response:", err)
-		return payload, err
-	}
-	tr.CloseIdleConnections()
-	return payload, err
+	return c.httpGet(fmt.Sprintf("https://%s/xmldata?item=infra2", *ip))
 }
 
 func (c *Collector) viaRedFish(ip *string, collectType string, vendor string) (payload []byte, err error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("https://%s/%s", *ip, redfish[collectType][vendor]), nil)
-	if err != nil {
-		fmt.Println("error building request:", err)
-		return payload, err
-	}
-
-	req.SetBasicAuth(c.username, c.password)
-	tr := &http.Transport{
-		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
-		DisableKeepAlives: true,
-		Dial: (&net.Dialer{
-			Timeout:   10 * time.Second,
-			KeepAlive: 10 * time.Second,
-		}).Dial,
-		//	MaxIdleConnsPerHost: 0,
-		//	IdleConnTimeout:     3 * time.Second,
-	}
-	client := &http.Client{Transport: tr}
-	resp, err := client.Do(req)
-	if err != nil {
-		fmt.Println("error readfish:", err)
-		return payload, err
-	}
-	defer resp.Body.Close()
-
-	payload, err = ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println("error reading the response:", err)
-		return payload, err
-	}
-
-	tr.CloseIdleConnections()
-	return payload, err
+	return c.httpGet(fmt.Sprintf("https://%s/%s", *ip, redfish[collectType][vendor]))
 }
 
 func (c *Collector) pushToTelegraph(metric string) (err error) {
