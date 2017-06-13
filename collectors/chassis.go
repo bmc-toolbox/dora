@@ -51,7 +51,7 @@ func (c *Collector) createAndSendChassisMessage(metric *string, site *string, zo
 	if *site == "" || *zone == "" || *pod == "" || *row == "" || *rack == "" {
 		fmt.Printf("%s position in the datacenter is missing, please verify\n", *chassis)
 	} else {
-		c.pushToTelegraph(fmt.Sprintf("%s,site=%s,zone=%s,pod=%s,row=%s,rack=%s,role=chassis,device_type=chassis,device_name=%s value=%s %d\n", *metric, *site, *zone, *pod, *row, *rack, *chassis, value, now))
+		c.pushToTelegraph(fmt.Sprintf("%s,site=%s,zone=%s,pod=%s,row=%s,rack=%s,chassis=-,role=chassis,device_type=chassis,device_name=%s value=%s %d\n", *metric, *site, *zone, *pod, *row, *rack, *chassis, value, now))
 	}
 }
 
@@ -101,14 +101,15 @@ func (c *Collector) collectHPChassis(chassis *simpleapi.Chassis, rack *simpleapi
 				var role string
 				var device string
 				if strings.Contains(blade.Spn, "Storage") {
-					blade.Name = fmt.Sprintf("%s", blade.Bsn)
+					blade.Name = blade.Bsn
 					role = "storageblade"
 					device = "storageblade"
 				} else if blade.Name == "" || blade.Name == "[Unknown]" || blade.Name == "host is unnamed" {
 					blade.Name, err = chassis.GetBladeNameByBay(blade.Bay.Connection)
 					if err == simpleapi.ErrNoBladeFound {
-						fmt.Printf("Blade %d with serial %s hasn't been found in ServerDB %s, skipping...\n", blade.Bay.Connection, blade.Bsn, chassis.Fqdn)
+						fmt.Printf("Blade %d with serial %s hasn't been found in ServerDB %s, please verify...\n", blade.Bay.Connection, blade.Bsn, chassis.Fqdn)
 					}
+					blade.Name = blade.Bsn
 					role = "UnknownBlade"
 					device = "blade"
 				} else {

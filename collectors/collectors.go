@@ -116,8 +116,8 @@ func (c *Collector) viaRedFish(ip *string, collectType string, vendor string) (p
 }
 
 func (c *Collector) pushToTelegraph(metric string) (err error) {
-	fmt.Println(metric)
-	return err
+	//fmt.Println(metric)
+	//return err
 	req, err := http.NewRequest("POST", c.telegrafURL, strings.NewReader(metric))
 	if err != nil {
 		return err
