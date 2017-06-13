@@ -2,9 +2,11 @@ package collectors
 
 type Blade struct {
 	Bay    *Bay   `xml:" BAY,omitempty" json:"BAY,omitempty"`
+	Bsn    string `xml:" BSN,omitempty" json:"BSN,omitempty"`
 	Name   string `xml:" NAME,omitempty" json:"NAME,omitempty"`
 	Power  *Power `xml:" POWER,omitempty" json:"POWER,omitempty"`
 	Status string `xml:" STATUS,omitempty" json:"STATUS,omitempty"`
+	Spn    string `xml:" SPN,omitempty" json:"SPN,omitempty"`
 	Temps  *Temps `xml:" TEMPS,omitempty" json:"TEMPS,omitempty"`
 }
 
@@ -17,7 +19,7 @@ type Infra2 struct {
 	Blades *Blades `xml:" BLADES,omitempty" json:"BLADES,omitempty"`
 	Power  *Power  `xml:" POWER,omitempty" json:"POWER,omitempty"`
 	Status string  `xml:" STATUS,omitempty" json:"STATUS,omitempty"`
-	Temps  *Temp   `xml:" TEMPS,omitempty" json:"TEMPS,omitempty"`
+	Temps  *Temps  `xml:" TEMPS,omitempty" json:"TEMPS,omitempty"`
 }
 
 type Blades struct {

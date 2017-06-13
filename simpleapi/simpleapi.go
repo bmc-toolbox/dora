@@ -1,11 +1,14 @@
 package simpleapi
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
+	"time"
 )
 
 var (
@@ -26,6 +29,7 @@ type NetInterface struct {
 	IPAddress  string `json:"ip_address"`
 	MacAddress string `json:"mac_address"`
 	Vlan       int    `json:"vlan"`
+	SwitchFqdn string `json:"switch_fqdn"`
 	SwitchID   int    `json:"switch_id"`
 }
 
@@ -61,8 +65,69 @@ type SImpleApiRacks struct {
 	Racks []*Rack `json:"racks"`
 }
 
+type SimpleApiServer struct {
+	Server *Server `json:"server"`
+}
+
 type SimpleApiChassis struct {
 	Chassis []*Chassis `json:"chassis"`
+}
+
+type Server struct {
+	Chassis      string                  `json:"chassis"`
+	Environment  string                  `json:"environment"`
+	Fqdn         string                  `json:"fqdn"`
+	Ilo          string                  `json:"ilo"`
+	Interfaces   map[string]NetInterface `json:"interfaces"`
+	IPAddress    string                  `json:"ip_address"`
+	IsVMHost     bool                    `json:"is_vm_host"`
+	KvmUser      string                  `json:"kvm_user"`
+	LastEdit     string                  `json:"last_edit"`
+	Location     string                  `json:"location"`
+	Model        string                  `json:"model"`
+	Pci          bool                    `json:"pci"`
+	Rack         string                  `json:"rack"`
+	RackID       int                     `json:"rack_id"`
+	RackPosition int                     `json:"rack_position"`
+	Roles        []string                `json:"roles"`
+	SerialNumber string                  `json:"serial_number"`
+	State        string                  `json:"state"`
+}
+
+func (s *SimpleAPI) httpGet(url string) (payload []byte, err error) {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		fmt.Println("error building request:", err)
+		return payload, err
+	}
+	req.SetBasicAuth(s.username, s.password)
+	tr := &http.Transport{
+		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
+		DisableKeepAlives: true,
+		Dial: (&net.Dialer{
+			Timeout:   10 * time.Second,
+			KeepAlive: 10 * time.Second,
+		}).Dial,
+		TLSHandshakeTimeout: 10 * time.Second,
+	}
+	client := &http.Client{
+		Timeout:   time.Second * 20,
+		Transport: tr,
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("error making the request:", err)
+		return payload, err
+	}
+	defer resp.Body.Close()
+
+	payload, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("error reading the response:", err)
+		return payload, err
+	}
+
+	return payload, err
 }
 
 // Chassis retrieves information from all chassis on SimpleAPI
@@ -91,6 +156,22 @@ func (s *SimpleAPI) Chassis() (chassis SimpleApiChassis, err error) {
 	return chassis, err
 }
 
+// GetServer retrieves information for a give server
+func (s *SimpleAPI) GetServer(hostname *string) (server *Server, err error) {
+	payload, err := s.httpGet(fmt.Sprintf("%s/sdb/api/v1/servers/%s", s.simpleapiurl, *hostname))
+	if err != nil {
+		fmt.Println("error simpleapi:", err)
+		return server, err
+	}
+	sas := SimpleApiServer{}
+	err = json.Unmarshal(payload, &sas)
+	if err != nil {
+		fmt.Println("error unmarshalling:", err)
+		return server, err
+	}
+	return sas.Server, err
+}
+
 func (c *Chassis) GetBladeNameByBay(bladePosition int) (fqdn string, err error) {
 	for _, blade := range c.Blades {
 		for hostname, properties := range blade {
@@ -102,7 +183,7 @@ func (c *Chassis) GetBladeNameByBay(bladePosition int) (fqdn string, err error) 
 	return fqdn, ErrNoBladeFound
 }
 
-func (s *SimpleApiChassis) GetChassi(fqdn string) (chassis Chassis, err error) {
+func (s *SimpleApiChassis) GetChassis(fqdn string) (chassis Chassis, err error) {
 	for _, c := range s.Chassis {
 		if c.Fqdn == fqdn {
 			return *c, err

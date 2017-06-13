@@ -1,13 +1,13 @@
 package collectors
 
-type DellRedFishPower struct {
+type RedFishPower struct {
 	PowerControl []struct {
 		Name               string  `json:"Name"`
 		PowerConsumedWatts float64 `json:"PowerConsumedWatts"`
 	} `json:"PowerControl"`
 }
 
-type DellRedFishThermal struct {
+type RedFishThermal struct {
 	Temperatures []struct {
 		Name           string `json:"Name"`
 		ReadingCelsius int    `json:"ReadingCelsius"`

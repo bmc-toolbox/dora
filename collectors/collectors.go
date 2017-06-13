@@ -2,7 +2,6 @@ package collectors
 
 import (
 	"crypto/tls"
-	"encoding/xml"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -13,23 +12,22 @@ import (
 	"time"
 
 	"../simpleapi"
-
-	"encoding/json"
 )
 
 const (
-	HP        = "HP"
-	Dell      = "Dell"
-	Unknown   = "Unknown"
-	RFPower   = "power"
-	RFThermal = "thermal"
+	HP         = "HP"
+	Dell       = "Dell"
+	Supermicro = "Supermicro"
+	Unknown    = "Unknown"
+	RFPower    = "power"
+	RFThermal  = "thermal"
 )
 
 var (
 	powerMetric                     = "power_kw"
 	thermalMetric                   = "temp_c"
 	ErrChassiCollectionNotSupported = errors.New("It's not possible to collect metric via chassi on this model")
-	redfish                         = map[string]map[string]string{
+	redfishVendorEndPoints          = map[string]map[string]string{
 		Dell: map[string]string{
 			RFPower:   "redfish/v1/Chassis/System.Embedded.1/Power",
 			RFThermal: "redfish/v1/Chassis/System.Embedded.1/Thermal",
@@ -37,6 +35,24 @@ var (
 		HP: map[string]string{
 			RFPower:   "rest/v1/Chassis/1/Power",
 			RFThermal: "rest/v1/Chassis/1/Thermal",
+		},
+		Supermicro: map[string]string{
+			RFPower:   "rest/v1/Chassis/1/Power",
+			RFThermal: "rest/v1/Chassis/1/Thermal",
+		},
+	}
+	redfishVendorLabels = map[string]map[string]string{
+		Dell: map[string]string{
+			RFPower:   "System Power Control",
+			RFThermal: "System Board Inlet Temp",
+		},
+		HP: map[string]string{
+			//			RFPower:   "PowerMetrics",
+			RFThermal: "30-System Board",
+		},
+		Supermicro: map[string]string{
+			RFPower:   "System Power Control",
+			RFThermal: "System Temp",
 		},
 	}
 	bmcAddressBuild = regexp.MustCompile(".(prod|corp|dqs).")
@@ -46,6 +62,7 @@ type Collector struct {
 	username    string
 	password    string
 	telegrafURL string
+	simpleAPI   *simpleapi.SimpleAPI
 }
 
 type RawCollectedData struct {
@@ -90,191 +107,42 @@ func (c *Collector) httpGet(url string) (payload []byte, err error) {
 	return payload, err
 }
 
-func (c *Collector) createChassisMessage(metric *string, site *string, zone *string, pod *string, row *string, rack *string, chassis *string, value string, now int32) string {
-	return fmt.Sprintf("%s,site=%s,zone=%s,pod=%s,row=%s,rack=%s,device=chassis,name=%s value=%s %d\n", *metric, *site, *zone, *pod, *row, *rack, *chassis, value, now)
-}
-
-func (c *Collector) createBladeMessage(metric *string, site *string, zone *string, pod *string, row *string, rack *string, chassis *string, blade *string, value string, now int32) string {
-	return fmt.Sprintf("%s,site=%s,zone=%s,pod=%s,row=%s,rack=%s,device=blade,chassis=%s,name=%s value=%s %d\n", *metric, *site, *zone, *pod, *row, *rack, *chassis, *blade, value, now)
-}
-
-func (c *Collector) CollectViaChassi(chassis *simpleapi.Chassis, rack *simpleapi.Rack, ip *string, iname *string) (err error) {
-	if strings.HasPrefix(chassis.Model, "BladeSystem") {
-		fmt.Println(fmt.Sprintf("Collecting data from %s[%s] via ILOXML %s", chassis.Fqdn, *ip, *iname))
-		result, err := c.viaILOXML(ip)
-		if err != nil {
-			return err
-		}
-		iloXML := &Rimp{}
-		err = xml.Unmarshal(result, iloXML)
-		if err != nil {
-			return err
-		}
-
-		if iloXML.Infra2 != nil {
-			now := int32(time.Now().Unix())
-
-			// Power Usage
-			fmt.Printf(c.createChassisMessage(
-				&powerMetric,
-				&rack.Site,
-				&rack.Sitezone,
-				&rack.Sitepod,
-				&rack.Siterow,
-				&chassis.Rack,
-				&chassis.Fqdn,
-				fmt.Sprintf("%.2f", iloXML.Infra2.Power.PowerConsumed/1000.00),
-				now,
-			))
-
-			// Thermal
-			fmt.Printf(c.createChassisMessage(
-				&powerMetric,
-				&rack.Site,
-				&rack.Sitezone,
-				&rack.Sitepod,
-				&rack.Siterow,
-				&chassis.Rack,
-				&chassis.Fqdn,
-				iloXML.Infra2.Temps.C,
-				now,
-			))
-
-			if iloXML.Infra2.Blades != nil {
-				for _, blade := range iloXML.Infra2.Blades.Blade {
-					if blade.Name == "" || blade.Name == "[Unknown]" {
-						blade.Name, err = chassis.GetBladeNameByBay(blade.Bay.Connection)
-						if err == simpleapi.ErrNoBladeFound {
-							fmt.Printf("Blade %d hasn't been found in ServerDB %s, skipping...\n", blade.Bay.Connection, chassis.Fqdn)
-							continue
-						}
-					}
-
-					// Power Usage
-					fmt.Printf(c.createBladeMessage(
-						&powerMetric,
-						&rack.Site,
-						&rack.Sitezone,
-						&rack.Sitepod,
-						&rack.Siterow,
-						&chassis.Rack,
-						&chassis.Fqdn,
-						&blade.Name,
-						fmt.Sprintf("%.2f", blade.Power.PowerConsumed/1000.00),
-						now,
-					))
-
-					// Thermal
-					fmt.Printf(c.createBladeMessage(
-						&thermalMetric,
-						&rack.Site,
-						&rack.Sitezone,
-						&rack.Sitepod,
-						&rack.Siterow,
-						&chassis.Rack,
-						&chassis.Fqdn,
-						&blade.Name,
-						blade.Temps.Temp.C,
-						now,
-					))
-				}
-			}
-		}
-
-	} else if strings.HasPrefix(chassis.Model, "P") {
-		// return err
-		fmt.Println(fmt.Sprintf("Collecting data from %s[%s] via RedFish %s", chassis.Fqdn, *ip, *iname))
-		for _, blade := range chassis.Blades {
-			for hostname := range blade {
-				if strings.HasSuffix(hostname, ".com") && !strings.HasPrefix(hostname, "spare") {
-					// Fix tomorrow the spare-
-
-					bmcAddress := bmcAddressBuild.ReplaceAllString(hostname, ".lom.")
-					result, err := c.viaRedFish(&bmcAddress, Dell, RFPower)
-					if err != nil {
-						fmt.Println(err)
-						break
-					}
-					rp := &DellRedFishPower{}
-					err = json.Unmarshal(result, rp)
-					if err != nil {
-						fmt.Println(err)
-						break
-					}
-
-					for _, item := range rp.PowerControl {
-						if strings.Compare(item.Name, "System Power Control") == 0 {
-							// Power Consumption
-							fmt.Printf(c.createBladeMessage(
-								&powerMetric,
-								&rack.Site,
-								&rack.Sitezone,
-								&rack.Sitepod,
-								&rack.Siterow,
-								&chassis.Rack,
-								&chassis.Fqdn,
-								&hostname,
-								fmt.Sprintf("%.2f", item.PowerConsumedWatts/1000.00),
-								int32(time.Now().Unix()),
-							))
-						}
-					}
-
-					result, err = c.viaRedFish(&bmcAddress, Dell, RFThermal)
-					if err != nil {
-						fmt.Println(err)
-						break
-					}
-
-					rt := &DellRedFishThermal{}
-					err = json.Unmarshal(result, rt)
-					if err != nil {
-						fmt.Println(err)
-						break
-					}
-
-					for _, item := range rt.Temperatures {
-						if strings.Compare(item.Name, "System Board Inlet Temp") == 0 {
-							// Thermal
-							fmt.Printf(c.createBladeMessage(
-								&thermalMetric,
-								&rack.Site,
-								&rack.Sitezone,
-								&rack.Sitepod,
-								&rack.Siterow,
-								&chassis.Rack,
-								&chassis.Fqdn,
-								&hostname,
-								fmt.Sprintf("%d", item.ReadingCelsius),
-								int32(time.Now().Unix()),
-							))
-						}
-					}
-				}
-			}
-		}
-	} else {
-		fmt.Printf("I dunno what to do with this device %s, skipping...\n", chassis.Fqdn)
-	}
-	return err
-}
-
 func (c *Collector) viaILOXML(ip *string) (payload []byte, err error) {
 	return c.httpGet(fmt.Sprintf("https://%s/xmldata?item=infra2", *ip))
 }
 
 func (c *Collector) viaRedFish(ip *string, collectType string, vendor string) (payload []byte, err error) {
-	return c.httpGet(fmt.Sprintf("https://%s/%s", *ip, redfish[collectType][vendor]))
+	return c.httpGet(fmt.Sprintf("https://%s/%s", *ip, redfishVendorEndPoints[collectType][vendor]))
 }
 
 func (c *Collector) pushToTelegraph(metric string) (err error) {
-	_, err = http.NewRequest("POST", c.telegrafURL, strings.NewReader(metric))
+	fmt.Println(metric)
+	return err
+	req, err := http.NewRequest("POST", c.telegrafURL, strings.NewReader(metric))
 	if err != nil {
-		fmt.Println(err)
+		return err
 	}
+	tr := &http.Transport{
+		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
+		DisableKeepAlives: true,
+		Dial: (&net.Dialer{
+			Timeout:   10 * time.Second,
+			KeepAlive: 10 * time.Second,
+		}).Dial,
+		TLSHandshakeTimeout: 10 * time.Second,
+	}
+	client := &http.Client{
+		Timeout:   time.Second * 20,
+		Transport: tr,
+	}
+	_, err = client.Do(req)
+	if err != nil {
+		return err
+	}
+
 	return err
 }
 
-func New(username string, password string) *Collector {
-	return &Collector{username: username, password: password}
+func New(username string, password string, telegrafURL string, simpleApi *simpleapi.SimpleAPI) *Collector {
+	return &Collector{username: username, password: password, telegrafURL: telegrafURL, simpleAPI: simpleApi}
 }
