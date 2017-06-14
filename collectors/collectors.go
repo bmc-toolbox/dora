@@ -1,12 +1,13 @@
 package collectors
 
 import (
+	"bytes"
 	"crypto/tls"
 	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
+
 	"net"
 	"net/http"
 	"net/http/cookiejar"
@@ -80,7 +81,6 @@ type RawCollectedData struct {
 func (c *Collector) httpGet(url string) (payload []byte, err error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		fmt.Println("error building request:", err)
 		return payload, err
 	}
 	req.SetBasicAuth(c.username, c.password)
@@ -99,14 +99,12 @@ func (c *Collector) httpGet(url string) (payload []byte, err error) {
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("error making the request:", err)
 		return payload, err
 	}
 	defer resp.Body.Close()
 
 	payload, err = ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println("error reading the response:", err)
 		return payload, err
 	}
 
@@ -120,13 +118,11 @@ func (c *Collector) httpGetDell(hostname *string) (payload []byte, err error) {
 
 	u, err := url.Parse(fmt.Sprintf("https://%s/cgi-bin/webcgi/login", *hostname))
 	if err != nil {
-		log.Println("error building the url:", err)
 		return payload, err
 	}
 
 	req, err := http.NewRequest("POST", u.String(), strings.NewReader(form.Encode()))
 	if err != nil {
-		log.Println("error building the request:", err)
 		return payload, err
 	}
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
@@ -143,7 +139,6 @@ func (c *Collector) httpGetDell(hostname *string) (payload []byte, err error) {
 
 	jar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
 	if err != nil {
-		log.Println("error building the cookie:", err)
 		return payload, err
 	}
 
@@ -155,7 +150,6 @@ func (c *Collector) httpGetDell(hostname *string) (payload []byte, err error) {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("error making the login request:", err)
 		return payload, err
 	}
 	io.Copy(ioutil.Discard, resp.Body)
@@ -163,26 +157,23 @@ func (c *Collector) httpGetDell(hostname *string) (payload []byte, err error) {
 
 	resp, err = client.Get(fmt.Sprintf("https://%s/cgi-bin/webcgi/json?method=temp-sensors", *hostname))
 	if err != nil {
-		fmt.Println("error making the request:", err)
 		return payload, err
 	}
 	defer resp.Body.Close()
 
 	payload, err = ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println("error reading the response:", err)
 		return payload, err
 	}
 
 	resp, err = client.Get(fmt.Sprintf("https://%s/cgi-bin/webcgi/logout", *hostname))
 	if err != nil {
-		fmt.Println("error making the logout request:", err)
 		return payload, err
 	}
 	io.Copy(ioutil.Discard, resp.Body)
 	defer resp.Body.Close()
 
-	return payload, err
+	return bytes.Replace(payload, []byte("\"bladeTemperature\":-1"), []byte("\"bladeTemperature\":\"0\""), -1), err
 }
 
 func (c *Collector) dellCMC(ip *string) (payload []byte, err error) {
@@ -198,6 +189,8 @@ func (c *Collector) viaRedFish(ip *string, collectType string, vendor string) (p
 }
 
 func (c *Collector) pushToTelegraph(metric string) (err error) {
+
+	return
 	req, err := http.NewRequest("POST", c.telegrafURL, strings.NewReader(metric))
 	if err != nil {
 		return err

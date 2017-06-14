@@ -97,7 +97,6 @@ type Server struct {
 func (s *SimpleAPI) httpGet(url string) (payload []byte, err error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		fmt.Println("error building request:", err)
 		return payload, err
 	}
 	req.SetBasicAuth(s.username, s.password)
@@ -116,14 +115,12 @@ func (s *SimpleAPI) httpGet(url string) (payload []byte, err error) {
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("error making the request:", err)
 		return payload, err
 	}
 	defer resp.Body.Close()
 
 	payload, err = ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println("error reading the response:", err)
 		return payload, err
 	}
 
@@ -137,20 +134,17 @@ func (s *SimpleAPI) Chassis() (chassis SimpleApiChassis, err error) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("error simpleapi:", err)
 		return chassis, err
 	}
 	defer resp.Body.Close()
 
 	payload, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println("error reading the response:", err)
 		return chassis, err
 	}
 
 	err = json.Unmarshal(payload, &chassis)
 	if err != nil {
-		fmt.Println("error unmarshalling:", err)
 		return chassis, err
 	}
 	return chassis, err
@@ -160,13 +154,11 @@ func (s *SimpleAPI) Chassis() (chassis SimpleApiChassis, err error) {
 func (s *SimpleAPI) GetServer(hostname *string) (server *Server, err error) {
 	payload, err := s.httpGet(fmt.Sprintf("%s/sdb/api/v1/servers/%s", s.simpleapiurl, *hostname))
 	if err != nil {
-		fmt.Println("error simpleapi:", err)
 		return server, err
 	}
 	sas := SimpleApiServer{}
 	err = json.Unmarshal(payload, &sas)
 	if err != nil {
-		fmt.Println("error unmarshalling:", err)
 		return server, err
 	}
 	return sas.Server, err
@@ -192,27 +184,15 @@ func (s *SimpleApiChassis) GetChassis(fqdn string) (chassis Chassis, err error) 
 	return chassis, ErrNoChassiFound
 }
 
-func (s *SimpleAPI) GetRack(name string) (rack Rack, err error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/sdb/api/v1/racks/name/%s", s.simpleapiurl, name), nil)
-	req.SetBasicAuth(s.username, s.password)
-	client := &http.Client{}
-	resp, err := client.Do(req)
+func (s *SimpleAPI) GetRack(name *string) (rack Rack, err error) {
+	payload, err := s.httpGet(fmt.Sprintf("%s/sdb/api/v1/racks/name/%s", s.simpleapiurl, *name))
 	if err != nil {
-		fmt.Println("error simpleapi:", err)
-		return rack, err
-	}
-	defer resp.Body.Close()
-
-	payload, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println("error reading the response:", err)
 		return rack, err
 	}
 	r := &SImpleApiRacks{}
 
 	err = json.Unmarshal(payload, &r)
 	if err != nil {
-		fmt.Println("error unmarshalling:", err)
 		return rack, err
 	}
 	return *r.Racks[0], err
