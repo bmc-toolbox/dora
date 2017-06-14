@@ -4,12 +4,18 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"log"
 	"net"
 	"net/http"
+	"net/http/cookiejar"
+	"net/url"
 	"regexp"
 	"strings"
 	"time"
+
+	"golang.org/x/net/publicsuffix"
 
 	"../simpleapi"
 )
@@ -107,6 +113,82 @@ func (c *Collector) httpGet(url string) (payload []byte, err error) {
 	return payload, err
 }
 
+func (c *Collector) httpGetDell(hostname *string) (payload []byte, err error) {
+	form := url.Values{}
+	form.Add("user", "Administrator")
+	form.Add("password", "D4rkne55")
+
+	u, err := url.Parse(fmt.Sprintf("https://%s/cgi-bin/webcgi/login", *hostname))
+	if err != nil {
+		log.Println("error building the url:", err)
+		return payload, err
+	}
+
+	req, err := http.NewRequest("POST", u.String(), strings.NewReader(form.Encode()))
+	if err != nil {
+		log.Println("error building the request:", err)
+		return payload, err
+	}
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+
+	tr := &http.Transport{
+		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
+		DisableKeepAlives: true,
+		Dial: (&net.Dialer{
+			Timeout:   10 * time.Second,
+			KeepAlive: 10 * time.Second,
+		}).Dial,
+		TLSHandshakeTimeout: 10 * time.Second,
+	}
+
+	jar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
+	if err != nil {
+		log.Println("error building the cookie:", err)
+		return payload, err
+	}
+
+	client := &http.Client{
+		Timeout:   time.Second * 20,
+		Transport: tr,
+		Jar:       jar,
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("error making the login request:", err)
+		return payload, err
+	}
+	io.Copy(ioutil.Discard, resp.Body)
+	defer resp.Body.Close()
+
+	resp, err = client.Get(fmt.Sprintf("https://%s/cgi-bin/webcgi/json?method=temp-sensors", *hostname))
+	if err != nil {
+		fmt.Println("error making the request:", err)
+		return payload, err
+	}
+	defer resp.Body.Close()
+
+	payload, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("error reading the response:", err)
+		return payload, err
+	}
+
+	resp, err = client.Get(fmt.Sprintf("https://%s/cgi-bin/webcgi/logout", *hostname))
+	if err != nil {
+		fmt.Println("error making the logout request:", err)
+		return payload, err
+	}
+	io.Copy(ioutil.Discard, resp.Body)
+	defer resp.Body.Close()
+
+	return payload, err
+}
+
+func (c *Collector) dellCMC(ip *string) (payload []byte, err error) {
+	return c.httpGetDell(ip)
+}
+
 func (c *Collector) viaILOXML(ip *string) (payload []byte, err error) {
 	return c.httpGet(fmt.Sprintf("https://%s/xmldata?item=infra2", *ip))
 }
@@ -116,8 +198,6 @@ func (c *Collector) viaRedFish(ip *string, collectType string, vendor string) (p
 }
 
 func (c *Collector) pushToTelegraph(metric string) (err error) {
-	//fmt.Println(metric)
-	//return err
 	req, err := http.NewRequest("POST", c.telegrafURL, strings.NewReader(metric))
 	if err != nil {
 		return err

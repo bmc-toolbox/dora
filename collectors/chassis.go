@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -43,7 +44,10 @@ func (c *Collector) createAndSendBladeMessage(metric *string, site *string, zone
 	if *site == "" || *zone == "" || *pod == "" || *row == "" || *rack == "" {
 		fmt.Printf("%s position in the datacenter is missing, please verify\n", *blade)
 	} else {
-		c.pushToTelegraph(fmt.Sprintf("%s,site=%s,zone=%s,pod=%s,row=%s,rack=%s,chassis=%s,role=%s,device_type=%s,device_name=%s value=%s %d\n", *metric, *site, *zone, *pod, *row, *rack, *chassis, *role, *device, *blade, value, now))
+		err := c.pushToTelegraph(fmt.Sprintf("%s,site=%s,zone=%s,pod=%s,row=%s,rack=%s,chassis=%s,role=%s,device_type=%s,device_name=%s value=%s %d\n", *metric, *site, *zone, *pod, *row, *rack, *chassis, *role, *device, *blade, value, now))
+		if err != nil {
+			fmt.Printf("Unable to push %s to from %s to telegraf\n", *metric, *blade)
+		}
 	}
 }
 
@@ -51,11 +55,16 @@ func (c *Collector) createAndSendChassisMessage(metric *string, site *string, zo
 	if *site == "" || *zone == "" || *pod == "" || *row == "" || *rack == "" {
 		fmt.Printf("%s position in the datacenter is missing, please verify\n", *chassis)
 	} else {
-		c.pushToTelegraph(fmt.Sprintf("%s,site=%s,zone=%s,pod=%s,row=%s,rack=%s,chassis=-,role=chassis,device_type=chassis,device_name=%s value=%s %d\n", *metric, *site, *zone, *pod, *row, *rack, *chassis, value, now))
+		err := c.pushToTelegraph(fmt.Sprintf("%s,site=%s,zone=%s,pod=%s,row=%s,rack=%s,chassis=-,role=chassis,device_type=chassis,device_name=%s value=%s %d\n", *metric, *site, *zone, *pod, *row, *rack, *chassis, value, now))
+		if err != nil {
+			fmt.Printf("Unable to push %s to from %s to telegraf\n", *metric, *chassis)
+		}
 	}
 }
 
 func (c *Collector) collectHPChassis(chassis *simpleapi.Chassis, rack *simpleapi.Rack, ip *string, iname *string) (err error) {
+	return
+
 	fmt.Println(fmt.Sprintf("Collecting data from %s[%s] via ILOXML %s", chassis.Fqdn, *ip, *iname))
 	result, err := c.viaILOXML(ip)
 	if err != nil {
@@ -107,12 +116,14 @@ func (c *Collector) collectHPChassis(chassis *simpleapi.Chassis, rack *simpleapi
 				} else if blade.Name == "" || blade.Name == "[Unknown]" || blade.Name == "host is unnamed" {
 					blade.Name, err = chassis.GetBladeNameByBay(blade.Bay.Connection)
 					if err == simpleapi.ErrNoBladeFound {
-						fmt.Printf("Blade %d with serial %s hasn't been found in ServerDB %s, please verify...\n", blade.Bay.Connection, blade.Bsn, chassis.Fqdn)
+						fmt.Printf("Blade %d with serial %s from chassis %s hasn't been found in ServerDB, please verify...\n", blade.Bay.Connection, blade.Bsn, chassis.Fqdn)
+						blade.Name = blade.Bsn
+						role = "UnknownBlade"
+						device = "blade"
 					}
-					blade.Name = blade.Bsn
-					role = "UnknownBlade"
-					device = "blade"
-				} else {
+				}
+
+				if role == "" {
 					role = "CouldNotFind"
 					server, err := c.simpleAPI.GetServer(&blade.Name)
 					if err != nil {
@@ -167,27 +178,50 @@ func (c *Collector) collectHPChassis(chassis *simpleapi.Chassis, rack *simpleapi
 }
 
 func (c *Collector) collectDellChassis(chassis *simpleapi.Chassis, rack *simpleapi.Rack, ip *string, iname *string) (err error) {
-	fmt.Println(fmt.Sprintf("Collecting data from %s[%s] via RedFish %s", chassis.Fqdn, *ip, *iname))
-	for _, blade := range chassis.Blades {
-		for hostname := range blade {
-			if strings.HasSuffix(hostname, ".com") && !strings.HasPrefix(hostname, "spare") {
-				// Fix tomorrow the spare-
+	fmt.Println(fmt.Sprintf("Collecting data from %s[%s] via Chassis %s", chassis.Fqdn, *ip, *iname))
 
-				bmcAddress := bmcAddressBuild.ReplaceAllString(hostname, ".lom.")
-				result, err := c.viaRedFish(&bmcAddress, Dell, RFPower)
-				if err != nil {
-					fmt.Println(err)
-					break
-				}
-				rp := &RedFishPower{}
-				err = json.Unmarshal(result, rp)
-				if err != nil {
-					fmt.Println(err)
-					break
-				}
+	result, err := c.dellCMC(ip)
+	if err != nil {
+		return err
+	}
+	cmcJSON := &CMC{}
+	err = json.Unmarshal(result, cmcJSON)
+	if err != nil {
+		return err
+	}
 
-				server, err := c.simpleAPI.GetServer(&hostname)
-				role := "CouldNotFind"
+	for _, blade := range cmcJSON.Blades {
+		if blade.Present == 1 {
+			now := int32(time.Now().Unix())
+
+			var role string
+			var device string
+
+			if blade.IsStorageBlade == 1 {
+				blade.Name = blade.Bsn
+				role = "storageblade"
+				device = "storageblade"
+			} else if blade.Name == "" {
+				pos, err := strconv.Atoi(blade.Slot)
+				if err == nil {
+					blade.Name, err = chassis.GetBladeNameByBay(pos)
+					if err == simpleapi.ErrNoBladeFound {
+						fmt.Printf("Blade %d with serial %s from chassis %s hasn't been found in ServerDB, please verify...\n", blade.Slot, blade.Bsn, chassis.Fqdn)
+						blade.Name = blade.Bsn
+						role = "UnknownBlade"
+						device = "blade"
+					}
+				} else {
+					fmt.Printf("Could not convert the Blade %d with serial %s from chassis %s, please verify...\n", blade.Slot, blade.Bsn, chassis.Fqdn)
+					blade.Name = blade.Bsn
+					role = "UnknownBlade"
+					device = "blade"
+				}
+			}
+
+			if role == "" {
+				role = "CouldNotFind"
+				server, err := c.simpleAPI.GetServer(&blade.Name)
 				if err != nil {
 					fmt.Println(err)
 				} else if server != nil {
@@ -198,61 +232,40 @@ func (c *Collector) collectDellChassis(chassis *simpleapi.Chassis, rack *simplea
 						}
 					}
 				}
-				device := "blade"
-
-				for _, item := range rp.PowerControl {
-					if item.Name == "System Power Control" {
-						// Power Consumption
-						c.createAndSendBladeMessage(
-							&powerMetric,
-							&rack.Site,
-							&rack.Sitezone,
-							&rack.Sitepod,
-							&rack.Siterow,
-							&chassis.Rack,
-							&chassis.Fqdn,
-							&role,
-							&device,
-							&hostname,
-							fmt.Sprintf("%.2f", item.PowerConsumedWatts/1000.00),
-							int32(time.Now().Unix()),
-						)
-					}
-				}
-
-				result, err = c.viaRedFish(&bmcAddress, Dell, RFThermal)
-				if err != nil {
-					fmt.Println(err)
-					break
-				}
-
-				rt := &RedFishThermal{}
-				err = json.Unmarshal(result, rt)
-				if err != nil {
-					fmt.Println(err)
-					break
-				}
-
-				for _, item := range rt.Temperatures {
-					if item.Name == "System Board Inlet Temp" {
-						// Thermal
-						c.createAndSendBladeMessage(
-							&thermalMetric,
-							&rack.Site,
-							&rack.Sitezone,
-							&rack.Sitepod,
-							&rack.Siterow,
-							&chassis.Rack,
-							&chassis.Fqdn,
-							&role,
-							&device,
-							&hostname,
-							fmt.Sprintf("%d", item.ReadingCelsius),
-							int32(time.Now().Unix()),
-						)
-					}
-				}
+				device = "blade"
 			}
+
+			// Power Usage
+			c.createAndSendBladeMessage(
+				&powerMetric,
+				&rack.Site,
+				&rack.Sitezone,
+				&rack.Sitepod,
+				&rack.Siterow,
+				&chassis.Rack,
+				&chassis.Fqdn,
+				&role,
+				&device,
+				&blade.Name,
+				fmt.Sprintf("%.2f", blade.CurrentConsumption/1000.00),
+				now,
+			)
+
+			// Thermal
+			c.createAndSendBladeMessage(
+				&thermalMetric,
+				&rack.Site,
+				&rack.Sitezone,
+				&rack.Sitepod,
+				&rack.Siterow,
+				&chassis.Rack,
+				&chassis.Fqdn,
+				&role,
+				&device,
+				&blade.Name,
+				blade.Temperature,
+				now,
+			)
 		}
 	}
 
