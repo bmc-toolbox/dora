@@ -26,8 +26,6 @@ func init() {
 	log.SetLevel(log.InfoLevel)
 }
 
-// TODO: Better error handling for the config
-
 func chassisStep() {
 	chassis, err := simpleAPI.Chassis()
 	if err != nil {
@@ -45,7 +43,7 @@ func chassisStep() {
 		}(cc, collector, &wg)
 	}
 
-	log.WithFields(log.Fields{"site": site}).Info("Starting data collection")
+	log.WithFields(log.Fields{"site": site, "type": "chassis"}).Info("Starting data collection")
 
 	for _, c := range chassis.Chassis {
 		if strings.Compare(c.Location, site) == 0 || strings.Compare(site, "all") == 0 {
@@ -57,7 +55,36 @@ func chassisStep() {
 	wg.Wait()
 }
 
-func discreteStep() {}
+func discreteStep() {
+	servers, err := simpleAPI.Servers()
+	if err != nil {
+		log.WithFields(log.Fields{"site": site}).Error("Unable to retrieve servers data. It's the minimum requirement, so I can't continue...")
+		return
+	}
+
+	cs := make(chan simpleapi.Server, concurrency)
+	wg := sync.WaitGroup{}
+	wg.Add(concurrency)
+	for i := 0; i < concurrency; i++ {
+		go func(input <-chan simpleapi.Server, collector *collectors.Collector, wg *sync.WaitGroup) {
+			collector.CollectDiscrete(input)
+			wg.Done()
+		}(cs, collector, &wg)
+	}
+
+	log.WithFields(log.Fields{"site": site, "type": "discretes"}).Info("Starting data collection")
+
+	for _, s := range servers.Servers {
+		if strings.Compare(s.Location, site) == 0 || strings.Compare(site, "all") == 0 {
+			if s.Chassis == "" && s.State != "retired" {
+				cs <- *s
+			}
+		}
+	}
+
+	close(cs)
+	wg.Wait()
+}
 
 func main() {
 	if err := agent.Listen(nil); err != nil {
@@ -112,5 +139,6 @@ func main() {
 	site = viper.GetString("site")
 	concurrency = viper.GetInt("concurrency")
 
-	chassisStep()
+	//chassisStep()
+	discreteStep()
 }
