@@ -95,12 +95,14 @@ func main() {
 	viper.AddConfigPath("$HOME/.bmc-toolbox")
 	viper.SetDefault("site", "all")
 	viper.SetDefault("concurrency", 20)
+	viper.SetDefault("debug", false)
+	viper.SetDefault("noop", false)
+	viper.SetDefault("disable_chassis", false)
+	viper.SetDefault("disable_discretes", false)
 
 	configItems := []string{
 		"bmc_pass",
 		"bmc_user",
-		"concurrency",
-		"debug",
 		"simpleapi_base_url",
 		"simpleapi_pass",
 		"simpleapi_user",
@@ -139,6 +141,11 @@ func main() {
 	site = viper.GetString("site")
 	concurrency = viper.GetInt("concurrency")
 
-	//chassisStep()
-	discreteStep()
+	if viper.GetBool("disable_chassis") == false {
+		chassisStep()
+	}
+
+	if viper.GetBool("disable_discrete") == false {
+		discreteStep()
+	}
 }
