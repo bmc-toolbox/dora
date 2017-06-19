@@ -36,43 +36,34 @@ func (c *Collector) CollectDiscrete(input <-chan simpleapi.Server) {
 			}
 
 			if strings.HasPrefix(server.Model, "ProLiant") || strings.HasPrefix(server.Model, "CL") {
-				log.WithFields(log.Fields{"fqdn": server.Fqdn, "type": "discrete", "vendor": HP, "method": "redfish"}).Debug("Collecting Discrete data")
+				continue
+				log.WithFields(log.Fields{"fqdn": server.Fqdn, "type": "discrete", "vendor": HP, "model": server.Model, "method": "redfish"}).Debug("Collecting Discrete data")
 				fmt.Println(rack.Name, "HP", server.Model, ifname, ifdata)
 			} else if strings.HasPrefix(server.Model, "PowerEdge") {
-				log.WithFields(log.Fields{"fqdn": server.Fqdn, "type": "discrete", "vendor": Dell, "method": "redfish"}).Debug("Collecting Discrete data")
-				c.collectDellDiscrete(&server, &rack, &ifdata.IPAddress, &ifname)
+				continue
+				log.WithFields(log.Fields{"fqdn": server.Fqdn, "type": "discrete", "vendor": Dell, "model": server.Model, "method": "redfish"}).Debug("Collecting Discrete data")
+				err := c.collectDiscreteViaRedFish(&server, &rack, &ifdata.IPAddress, &ifname, Dell)
+				if err != nil {
+					log.WithFields(log.Fields{"fqdn": server.Fqdn, "type": "discrete", "vendor": Supermicro, "model": server.Model, "method": "redfish", "error": err}).Error("Collecting Discrete data")
+				}
 			} else if strings.HasPrefix(server.Model, "SSG") || strings.HasPrefix(server.Model, "X") || strings.HasPrefix(server.Model, "Super") {
-				log.WithFields(log.Fields{"fqdn": server.Fqdn, "type": "discrete", "vendor": Supermicro, "method": "redfish"}).Debug("Collecting Discrete data")
-				fmt.Println(rack.Name, "SuperMicro", server.Model, ifname, ifdata)
+				log.WithFields(log.Fields{"fqdn": server.Fqdn, "type": "discrete", "vendor": Supermicro, "model": server.Model, "method": "redfish"}).Debug("Collecting Discrete data")
+				err := c.collectDiscreteViaRedFish(&server, &rack, &ifdata.IPAddress, &ifname, Supermicro)
+				if err != nil {
+					log.WithFields(log.Fields{"fqdn": server.Fqdn, "type": "discrete", "vendor": Supermicro, "model": server.Model, "method": "redfish"}).Info(err)
+				}
+				//fmt.Println(rack.Name, "SuperMicro", server.Model, ifname, ifdata)
 			} else {
-				fmt.Println(rack.Name, "No Idea", server.Model, ifname, ifdata)
+				log.WithFields(log.Fields{"fqdn": server.Fqdn, "type": "discrete", "vendor": "Unknown", "model": server.Model, "error": "Unknown model"}).Error("Collecting Discrete data")
 			}
-
-			// if strings.HasPrefix(chassis.Model, "BladeSystem") {
-			// 	err := c.collectHPChassis(&chassis, &rack, &ifdata.IPAddress, &ifname)
-			// 	if err == nil {
-			// 		break
-			// 	} else {
-			// 		log.WithFields(log.Fields{"chassis": chassis.Fqdn, "error": err}).Error("Error collecting chassis data")
-			// 	}
-			// } else if strings.HasPrefix(chassis.Model, "P") {
-			// 	err := c.collectDellChassis(&chassis, &rack, &ifdata.IPAddress, &ifname)
-			// 	if err == nil {
-			// 		break
-			// 	} else {
-			// 		log.WithFields(log.Fields{"chassis": chassis.Fqdn, "error": err}).Error("Error collecting chassis data")
-			// 	}
-			// } else {
-			// 	log.WithFields(log.Fields{"chassis": chassis.Fqdn}).Warning("I dunno what to do with this device, skipping..")
-			// }
 		}
 	}
 }
 
-func (c *Collector) collectDellDiscrete(server *simpleapi.Server, rack *simpleapi.Rack, ip *string, iname *string) (err error) {
+func (c *Collector) collectDiscreteViaRedFish(server *simpleapi.Server, rack *simpleapi.Rack, ip *string, iname *string, vendor string) (err error) {
 	chassis := "-"
 
-	result, err := c.viaRedFish(ip, Dell, RFPower)
+	result, err := c.viaRedFish(ip, vendor, RFPower)
 	if err != nil {
 		return err
 	}
@@ -84,7 +75,7 @@ func (c *Collector) collectDellDiscrete(server *simpleapi.Server, rack *simpleap
 	}
 
 	for _, item := range rp.PowerControl {
-		if item.Name == "System Power Control" {
+		if item.Name == redfishVendorLabels[vendor][RFPower] {
 			// Power Consumption
 			c.createAndSendMessage(
 				&powerMetric,
@@ -103,6 +94,11 @@ func (c *Collector) collectDellDiscrete(server *simpleapi.Server, rack *simpleap
 		}
 	}
 
+	result, err = c.viaRedFish(ip, vendor, RFThermal)
+	if err != nil {
+		return err
+	}
+
 	rt := &RedFishThermal{}
 	err = json.Unmarshal(result, rt)
 	if err != nil {
@@ -110,7 +106,7 @@ func (c *Collector) collectDellDiscrete(server *simpleapi.Server, rack *simpleap
 	}
 
 	for _, item := range rt.Temperatures {
-		if item.Name == "System Board Inlet Temp" {
+		if item.Name == redfishVendorLabels[vendor][RFThermal] {
 			// Thermal
 			c.createAndSendMessage(
 				&thermalMetric,
