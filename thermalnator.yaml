@@ -6,4 +6,7 @@ simpleapi_base_url: https://production.booking.com
 telegraf_url: http://localhost:8186/write
 site: ams4
 concurrency: 200
-log_file: /var/log/thermalnator.log
+disable_chassis: false
+disable_discretes: false
+noop: false
+debug: false
