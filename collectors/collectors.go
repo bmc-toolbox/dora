@@ -16,6 +16,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/spf13/viper"
+
 	"golang.org/x/net/publicsuffix"
 
 	"../simpleapi"
@@ -40,6 +42,8 @@ var (
 	discreteDevice                  = "discrete"
 	storageBladeDevice              = "storageblade"
 	ErrChassiCollectionNotSupported = errors.New("It's not possible to collect metric via chassi on this model")
+	ErrRedFishNotSupported          = errors.New("RedFish not supported")
+	ErrPageNotFound                 = errors.New("Requested page couldn't be found in the server")
 	redfishVendorEndPoints          = map[string]map[string]string{
 		Dell: map[string]string{
 			RFPower:   "redfish/v1/Chassis/System.Embedded.1/Power",
@@ -50,8 +54,8 @@ var (
 			RFThermal: "rest/v1/Chassis/1/Thermal",
 		},
 		Supermicro: map[string]string{
-			RFPower:   "rest/v1/Chassis/1/Power",
-			RFThermal: "rest/v1/Chassis/1/Thermal",
+			RFPower:   "redfish/v1/Chassis/1/Power",
+			RFThermal: "redfish/v1/Chassis/1/Thermal",
 		},
 	}
 	redfishVendorLabels = map[string]map[string]string{
@@ -85,7 +89,7 @@ type RawCollectedData struct {
 }
 
 func (c *Collector) httpGet(url string) (payload []byte, err error) {
-	log.WithFields(log.Fields{"step": "collectoers", "url": url}).Debug("Requesting data from BMC")
+	log.WithFields(log.Fields{"step": "collectors", "url": url}).Debug("Requesting data from BMC")
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -111,6 +115,10 @@ func (c *Collector) httpGet(url string) (payload []byte, err error) {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode == 404 {
+		return payload, ErrPageNotFound
+	}
+
 	payload, err = ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return payload, err
@@ -120,7 +128,7 @@ func (c *Collector) httpGet(url string) (payload []byte, err error) {
 }
 
 func (c *Collector) httpGetDell(hostname *string) (payload []byte, err error) {
-	log.WithFields(log.Fields{"step": "collectoers", "hostname": *hostname}).Debug("Requesting data from BMC")
+	log.WithFields(log.Fields{"step": "collectors", "hostname": *hostname}).Debug("Requesting data from BMC")
 
 	form := url.Values{}
 	form.Add("user", "Administrator")
@@ -165,6 +173,10 @@ func (c *Collector) httpGetDell(hostname *string) (payload []byte, err error) {
 	io.Copy(ioutil.Discard, resp.Body)
 	defer resp.Body.Close()
 
+	if resp.StatusCode == 404 {
+		return payload, ErrPageNotFound
+	}
+
 	resp, err = client.Get(fmt.Sprintf("https://%s/cgi-bin/webcgi/json?method=temp-sensors", *hostname))
 	if err != nil {
 		return payload, err
@@ -183,6 +195,10 @@ func (c *Collector) httpGetDell(hostname *string) (payload []byte, err error) {
 	io.Copy(ioutil.Discard, resp.Body)
 	defer resp.Body.Close()
 
+	if resp.StatusCode == 404 {
+		return payload, ErrPageNotFound
+	}
+
 	return bytes.Replace(payload, []byte("\"bladeTemperature\":-1"), []byte("\"bladeTemperature\":\"0\""), -1), err
 }
 
@@ -195,7 +211,11 @@ func (c *Collector) viaILOXML(ip *string) (payload []byte, err error) {
 }
 
 func (c *Collector) viaRedFish(ip *string, collectType string, vendor string) (payload []byte, err error) {
-	return c.httpGet(fmt.Sprintf("https://%s/%s", *ip, redfishVendorEndPoints[collectType][vendor]))
+	payload, err = c.httpGet(fmt.Sprintf("https://%s/%s", *ip, redfishVendorEndPoints[collectType][vendor]))
+	if err == ErrPageNotFound {
+		return payload, ErrRedFishNotSupported
+	}
+	return payload, err
 }
 
 func (c *Collector) createAndSendMessage(metric *string, site *string, zone *string, pod *string, row *string, rack *string, chassis *string, role *string, device *string, fqdn *string, value string, now int32) {
@@ -206,9 +226,12 @@ func (c *Collector) createAndSendMessage(metric *string, site *string, zone *str
 }
 
 func (c *Collector) pushToTelegraph(metric string) (err error) {
-	log.WithFields(log.Fields{"step": "collectoers", "metric": metric}).Debug("Pushing data to telegraf")
+	log.WithFields(log.Fields{"step": "collectors", "metric": metric}).Debug("Pushing data to telegraf")
 
-	return
+	if viper.GetBool("noop") {
+		return err
+	}
+
 	req, err := http.NewRequest("POST", c.telegrafURL, strings.NewReader(metric))
 	if err != nil {
 		return err
@@ -226,9 +249,14 @@ func (c *Collector) pushToTelegraph(metric string) (err error) {
 		Timeout:   time.Second * 20,
 		Transport: tr,
 	}
-	_, err = client.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return err
+	}
+	io.Copy(ioutil.Discard, resp.Body)
+
+	if resp.StatusCode == 404 {
+		return ErrPageNotFound
 	}
 
 	return err
