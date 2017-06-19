@@ -19,6 +19,8 @@ import (
 	"golang.org/x/net/publicsuffix"
 
 	"../simpleapi"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -33,6 +35,10 @@ const (
 var (
 	powerMetric                     = "power_kw"
 	thermalMetric                   = "temp_c"
+	bladeDevice                     = "blade"
+	chassisDevice                   = "chassis"
+	discreteDevice                  = "discrete"
+	storageBladeDevice              = "storageblade"
 	ErrChassiCollectionNotSupported = errors.New("It's not possible to collect metric via chassi on this model")
 	redfishVendorEndPoints          = map[string]map[string]string{
 		Dell: map[string]string{
@@ -79,6 +85,8 @@ type RawCollectedData struct {
 }
 
 func (c *Collector) httpGet(url string) (payload []byte, err error) {
+	log.WithFields(log.Fields{"step": "collectoers", "url": url}).Debug("Requesting data from BMC")
+
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return payload, err
@@ -112,6 +120,8 @@ func (c *Collector) httpGet(url string) (payload []byte, err error) {
 }
 
 func (c *Collector) httpGetDell(hostname *string) (payload []byte, err error) {
+	log.WithFields(log.Fields{"step": "collectoers", "hostname": *hostname}).Debug("Requesting data from BMC")
+
 	form := url.Values{}
 	form.Add("user", "Administrator")
 	form.Add("password", "D4rkne55")
@@ -188,7 +198,15 @@ func (c *Collector) viaRedFish(ip *string, collectType string, vendor string) (p
 	return c.httpGet(fmt.Sprintf("https://%s/%s", *ip, redfishVendorEndPoints[collectType][vendor]))
 }
 
+func (c *Collector) createAndSendMessage(metric *string, site *string, zone *string, pod *string, row *string, rack *string, chassis *string, role *string, device *string, fqdn *string, value string, now int32) {
+	err := c.pushToTelegraph(fmt.Sprintf("%s,site=%s,zone=%s,pod=%s,row=%s,rack=%s,chassis=%s,role=%s,device_type=%s,device_name=%s value=%s %d\n", *metric, *site, *zone, *pod, *row, *rack, *chassis, *role, *device, *fqdn, value, now))
+	if err != nil {
+		log.WithFields(log.Fields{"fqdn": *fqdn, "type": "blade", "metric": *metric}).Info("Unable to push data to telegraf")
+	}
+}
+
 func (c *Collector) pushToTelegraph(metric string) (err error) {
+	log.WithFields(log.Fields{"step": "collectoers", "metric": metric}).Debug("Pushing data to telegraf")
 
 	return
 	req, err := http.NewRequest("POST", c.telegrafURL, strings.NewReader(metric))
