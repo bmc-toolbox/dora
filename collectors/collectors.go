@@ -20,7 +20,7 @@ import (
 
 	"golang.org/x/net/publicsuffix"
 
-	"../simpleapi"
+	"gitlab.booking.com/infra/thermalnator/simpleapi"
 
 	log "github.com/sirupsen/logrus"
 )

@@ -5,8 +5,8 @@ import (
 	"strings"
 	"sync"
 
-	"./collectors"
-	"./simpleapi"
+	"gitlab.booking.com/infra/thermalnator/collectors"
+	"gitlab.booking.com/infra/thermalnator/simpleapi"
 
 	"github.com/google/gops/agent"
 	log "github.com/sirupsen/logrus"

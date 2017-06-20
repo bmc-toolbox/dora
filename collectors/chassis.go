@@ -10,7 +10,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"../simpleapi"
+	"gitlab.booking.com/infra/thermalnator/simpleapi"
 )
 
 func (c *Collector) CollectChassis(input <-chan simpleapi.Chassis) {

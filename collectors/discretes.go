@@ -9,7 +9,7 @@ import (
 
 	"fmt"
 
-	"../simpleapi"
+	"gitlab.booking.com/infra/thermalnator/simpleapi"
 )
 
 func (c *Collector) CollectDiscrete(input <-chan simpleapi.Server) {
