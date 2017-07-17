@@ -131,8 +131,8 @@ func (c *Collector) httpGetDell(hostname *string) (payload []byte, err error) {
 	log.WithFields(log.Fields{"step": "collectors", "hostname": *hostname}).Debug("Requesting data from BMC")
 
 	form := url.Values{}
-	form.Add("user", "Administrator")
-	form.Add("password", "D4rkne55")
+	form.Add("user", c.username)
+	form.Add("password", c.password)
 
 	u, err := url.Parse(fmt.Sprintf("https://%s/cgi-bin/webcgi/login", *hostname))
 	if err != nil {
