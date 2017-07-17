@@ -221,7 +221,7 @@ func (c *Collector) viaRedFish(ip *string, collectType string, vendor string) (p
 func (c *Collector) createAndSendMessage(metric *string, site *string, zone *string, pod *string, row *string, rack *string, chassis *string, role *string, device *string, fqdn *string, value string, now int32) {
 	err := c.pushToTelegraph(fmt.Sprintf("%s,site=%s,zone=%s,pod=%s,row=%s,rack=%s,chassis=%s,role=%s,device_type=%s,device_name=%s value=%s %d\n", *metric, *site, *zone, *pod, *row, *rack, *chassis, *role, *device, *fqdn, value, now))
 	if err != nil {
-		log.WithFields(log.Fields{"fqdn": *fqdn, "type": "blade", "metric": *metric}).Info("Unable to push data to telegraf")
+		log.WithFields(log.Fields{"fqdn": *fqdn, "type": "blade", "metric": *metric, "error": err}).Info("Unable to push data to telegraf")
 	}
 }
 
@@ -240,13 +240,13 @@ func (c *Collector) pushToTelegraph(metric string) (err error) {
 		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
 		DisableKeepAlives: true,
 		Dial: (&net.Dialer{
-			Timeout:   10 * time.Second,
-			KeepAlive: 10 * time.Second,
+			Timeout:   15 * time.Second,
+			KeepAlive: 15 * time.Second,
 		}).Dial,
-		TLSHandshakeTimeout: 10 * time.Second,
+		TLSHandshakeTimeout: 15 * time.Second,
 	}
 	client := &http.Client{
-		Timeout:   time.Second * 20,
+		Timeout:   time.Second * 30,
 		Transport: tr,
 	}
 	resp, err := client.Do(req)
