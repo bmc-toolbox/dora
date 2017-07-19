@@ -9,8 +9,6 @@ import (
 	"io"
 	"io/ioutil"
 
-	"gitlab.booking.com/infra/thermalnator/collectors"
-
 	"net"
 	"net/http"
 	"net/http/cookiejar"
@@ -28,6 +26,8 @@ const (
 	Dell       = "Dell"
 	Supermicro = "Supermicro"
 	Unknown    = "Unknown"
+	RFPower    = "power"
+	RFThermal  = "thermal"
 )
 
 var (
@@ -197,9 +197,9 @@ func (c *ChassisConnection) Hp(ip *string) (chassis Chassis, err error) {
 		return chassis, err
 	}
 
-	var previousSlot collectors.Blade
+	var previousSlot Blade
 
-	if iloXML.Infra2 != nil {
+	if iloXML.HpInfra2 != nil {
 		chassis.Name = iloXML.Infra2.Encl
 		chassis.Serial = iloXML.Infra2.EnclSn
 		chassis.Model = iloXML.Infra2.Pn

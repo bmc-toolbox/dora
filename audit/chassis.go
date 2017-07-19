@@ -1,7 +1,7 @@
 package audit
 
 import (
-	"gitlab.booking.com/infra/thermalnator/connection"
+	"gitlab.booking.com/infra/thermalnator/connectors"
 	"gitlab.booking.com/infra/thermalnator/simpleapi"
 
 	log "github.com/sirupsen/logrus"
@@ -38,8 +38,8 @@ func (a *Audit) AuditChassis(input <-chan simpleapi.Chassis) {
 
 func (a *Audit) chassis(chassis *simpleapi.Chassis, rack *simpleapi.Rack, ip *string, iname *string) (err error) {
 
-	conn := connection.NewChassisConnection(a.username, a.password)
-	chassisData, err := c.HpChassis(ip)
+	conn := connectors.NewChassisConnection(a.username, a.password)
+	chassisData, err := a.HpChassis(ip)
 	if err != nil {
 		return err
 	}

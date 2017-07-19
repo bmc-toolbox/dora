@@ -1,14 +1,14 @@
 package connectors
 
 type HpBlade struct {
-	Bay        *Bay   `xml:" BAY,omitempty" json:"BAY,omitempty"`
-	Bsn        string `xml:" BSN,omitempty" json:"BSN,omitempty"`
-	MgmtIPAddr string `xml:" MGMTIPADDR,omitempty" json:"MGMTIPADDR,omitempty"`
-	Name       string `xml:" NAME,omitempty" json:"NAME,omitempty"`
-	Power      *Power `xml:" POWER,omitempty" json:"POWER,omitempty"`
-	Status     string `xml:" STATUS,omitempty" json:"STATUS,omitempty"`
-	Spn        string `xml:" SPN,omitempty" json:"SPN,omitempty"`
-	HpTemps      *HpTemps `xml:" TEMPS,omitempty" json:"TEMPS,omitempty"`
+	HpBay      *HpBay   `xml:" BAY,omitempty" json:"BAY,omitempty"`
+	Bsn        string   `xml:" BSN,omitempty" json:"BSN,omitempty"`
+	MgmtIPAddr string   `xml:" MGMTIPADDR,omitempty" json:"MGMTIPADDR,omitempty"`
+	Name       string   `xml:" NAME,omitempty" json:"NAME,omitempty"`
+	HpPower    *HpPower `xml:" POWER,omitempty" json:"POWER,omitempty"`
+	Status     string   `xml:" STATUS,omitempty" json:"STATUS,omitempty"`
+	Spn        string   `xml:" SPN,omitempty" json:"SPN,omitempty"`
+	HpTemps    *HpTemps `xml:" TEMPS,omitempty" json:"TEMPS,omitempty"`
 }
 
 type HpBay struct {
@@ -16,15 +16,15 @@ type HpBay struct {
 }
 
 type HpInfra2 struct {
-	Addr   string  `xml:" ADDR,omitempty" json:"ADDR,omitempty"`
+	Addr     string    `xml:" ADDR,omitempty" json:"ADDR,omitempty"`
 	HpBlades *HpBlades `xml:" BLADES,omitempty" json:"BLADES,omitempty"`
 	HpPower  *HpPower  `xml:" POWER,omitempty" json:"POWER,omitempty"`
-	Status string  `xml:" STATUS,omitempty" json:"STATUS,omitempty"`
+	Status   string    `xml:" STATUS,omitempty" json:"STATUS,omitempty"`
 	HpTemps  *HpTemps  `xml:" TEMPS,omitempty" json:"TEMPS,omitempty"`
-	EnclSn string  `xml:" ENCL_SN,omitempty" json:"ENCL_SN,omitempty"`
-	Pn     string  `xml:" PN,omitempty" json:"PN,omitempty"`
-	Encl   string  `xml:" ENCL,omitempty" json:"ENCL,omitempty"`
-	Rack   string  `xml:" RACK,omitempty" json:"RACK,omitempty"`
+	EnclSn   string    `xml:" ENCL_SN,omitempty" json:"ENCL_SN,omitempty"`
+	Pn       string    `xml:" PN,omitempty" json:"PN,omitempty"`
+	Encl     string    `xml:" ENCL,omitempty" json:"ENCL,omitempty"`
+	Rack     string    `xml:" RACK,omitempty" json:"RACK,omitempty"`
 }
 
 type HpBlades struct {
@@ -36,7 +36,7 @@ type HpPower struct {
 }
 
 type HpRimp struct {
-	HpInfra2 *Infra2 `xml:" INFRA2,omitempty" json:"INFRA2,omitempty"`
+	HpInfra2 *HpInfra2 `xml:" INFRA2,omitempty" json:"INFRA2,omitempty"`
 }
 
 type HpTemp struct {
@@ -45,5 +45,5 @@ type HpTemp struct {
 }
 
 type HpTemps struct {
-	Temp *Temp `xml:" TEMP,omitempty" json:"TEMP,omitempty"`
+	HpTemp *HpTemp `xml:" TEMP,omitempty" json:"TEMP,omitempty"`
 }
