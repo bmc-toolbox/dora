@@ -9,6 +9,7 @@ import (
 
 	"fmt"
 
+	"gitlab.booking.com/infra/thermalnator/connectors"
 	"gitlab.booking.com/infra/thermalnator/simpleapi"
 )
 
@@ -63,19 +64,19 @@ func (c *Collector) CollectDiscrete(input <-chan simpleapi.Server) {
 func (c *Collector) collectDiscreteViaRedFish(server *simpleapi.Server, rack *simpleapi.Rack, ip *string, iname *string, vendor string) (err error) {
 	chassis := "-"
 
-	result, err := c.viaRedFish(ip, vendor, RFPower)
+	result, err := c.viaRedFish(ip, vendor, connectors.RFPower)
 	if err != nil {
 		return err
 	}
 
-	rp := &RedFishPower{}
+	rp := &connectors.RedFishPower{}
 	err = json.Unmarshal(result, rp)
 	if err != nil {
 		return err
 	}
 
 	for _, item := range rp.PowerControl {
-		if item.Name == redfishVendorLabels[vendor][RFPower] {
+		if item.Name == redfishVendorLabels[vendor][connectors.RFPower] {
 			// Power Consumption
 			c.createAndSendMessage(
 				&powerMetric,
@@ -94,19 +95,19 @@ func (c *Collector) collectDiscreteViaRedFish(server *simpleapi.Server, rack *si
 		}
 	}
 
-	result, err = c.viaRedFish(ip, vendor, RFThermal)
+	result, err = c.viaRedFish(ip, vendor, connectors.RFThermal)
 	if err != nil {
 		return err
 	}
 
-	rt := &RedFishThermal{}
+	rt := &connectors.RedFishThermal{}
 	err = json.Unmarshal(result, rt)
 	if err != nil {
 		return err
 	}
 
 	for _, item := range rt.Temperatures {
-		if item.Name == redfishVendorLabels[vendor][RFThermal] {
+		if item.Name == redfishVendorLabels[vendor][connectors.RFThermal] {
 			// Thermal
 			c.createAndSendMessage(
 				&thermalMetric,

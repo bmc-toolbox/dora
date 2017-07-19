@@ -2,7 +2,6 @@ package collectors
 
 import (
 	"strings"
-	"time"
 
 	log "github.com/sirupsen/logrus"
 
@@ -28,7 +27,7 @@ func (c *Collector) CollectChassis(input <-chan simpleapi.Chassis) {
 				continue
 			}
 
-			err := c.collectHPChassis(&chassis, &rack, &ifdata.IPAddress, &ifname)
+			err := c.collectChassis(&chassis, &rack, &ifdata.IPAddress, &ifname)
 			if err == nil {
 				break
 			} else {
@@ -41,70 +40,72 @@ func (c *Collector) CollectChassis(input <-chan simpleapi.Chassis) {
 func (c *Collector) collectChassis(chassis *simpleapi.Chassis, rack *simpleapi.Rack, ip *string, iname *string) (err error) {
 	log.WithFields(log.Fields{"fqdn": chassis.Fqdn, "type": "chassis", "address": *ip, "interface": *iname, "level": "chasssis", "vendor": HP}).Info("Collecting data via Chassi XML Interface")
 
-	conn := connectors.NewChassisConnection(a.username, a.password)
+	conn := connectors.NewChassisConnection(c.username, c.password)
+	var chassisData connectors.Chassis
 	if strings.HasPrefix(chassis.Model, "BladeSystem") {
-		chassisData, err := a.HpChassis(ip)
-	} else if strings.HasPrefix(chassis.Model, "P") {
-		chassisData, err := a.DellChassis(ip)
+		chassisData, err = conn.Hp(ip)
+		if err != nil {
+			return err
+		}
+		// } else if strings.HasPrefix(chassis.Model, "P") {
+		// 	chassisData, err = conn.Dell(ip)
+		// 	if err != nil {
+		// 		return err
+		// 	}
 	} else {
 		return ErrChassiCollectionNotSupported
 	}
 
-	if err != nil {
-		return err
-	}
-
-	now := int32(time.Now().Unix())
+	// now := int32(time.Now().Unix())
 
 	log.WithFields(log.Fields{"metric": powerMetric, "site": rack.Site, "zone": rack.Sitezone, "pod": rack.Sitepod, "row": rack.Siterow, "rack": chassis.Rack, "fqdn": chassis.Fqdn, "type": "chassis"}).Debug("Pushing metric to telegraf")
 
 	// Power Usage
-	c.createAndSendMessage(
-		&powerMetric,
-		&rack.Site,
-		&rack.Sitezone,
-		&rack.Sitepod,
-		&rack.Siterow,
-		&chassis.Rack,
-		&chassis.Fqdn,
-		&chassisDevice,
-		&chassisDevice,
-		&chassis.Fqdn,
-		chassisData.Power,
-		now,
-	)
+	// c.createAndSendMessage(
+	// 	&powerMetric,
+	// 	&rack.Site,
+	// 	&rack.Sitezone,
+	// 	&rack.Sitepod,
+	// 	&rack.Siterow,
+	// 	&chassis.Rack,
+	// 	&chassis.Fqdn,
+	// 	&chassisDevice,
+	// 	&chassisDevice,
+	// 	&chassis.Fqdn,
+	// 	chassisData.Power,
+	// 	now,
+	// )
 
 	log.WithFields(log.Fields{"metric": thermalMetric, "site": rack.Site, "zone": rack.Sitezone, "pod": rack.Sitepod, "row": rack.Siterow, "rack": chassis.Rack, "fqdn": chassis.Fqdn, "type": "chassis"}).Debug("Pushing metric to telegraf")
 
-	// Thermal
-	c.createAndSendMessage(
-		&thermalMetric,
-		&rack.Site,
-		&rack.Sitezone,
-		&rack.Sitepod,
-		&rack.Siterow,
-		&chassis.Rack,
-		&chassis.Fqdn,
-		&chassisDevice,
-		&chassisDevice,
-		&chassis.Fqdn,
-		chassisData.Temp,
-		now,
-	)
+	// // Thermal
+	// c.createAndSendMessage(
+	// 	&thermalMetric,
+	// 	&rack.Site,
+	// 	&rack.Sitezone,
+	// 	&rack.Sitepod,
+	// 	&rack.Siterow,
+	// 	&chassis.Rack,
+	// 	&chassis.Fqdn,
+	// 	&chassisDevice,
+	// 	&chassisDevice,
+	// 	&chassis.Fqdn,
+	// 	chassisData.Temp,
+	// 	now,
+	// )
 
-	for _, blade := range iloXML.Infra2.Blades.Blade {
+	for _, blade := range chassisData.Blades {
 		role := "CouldNotFind"
-		device := "blade"
+		// device := "blade"
 
-		if blade.IsStorageBlade {
-			blade.Name = blade.Bsn
+		if blade.IsStorageBlade() {
 			role = "storageblade"
-			device = "storageblade"
+			// device = "storageblade"
 		} else if blade.Name == "" || blade.Name == "[Unknown]" || blade.Name == "host is unnamed" || blade.Name == "localhost.localdomain" {
-			blade.Name, err = chassis.GetBladeNameByBay(blade.Bay.Connection)
+			blade.Name, err = chassis.GetBladeNameByBay(blade.BladePosition)
 			if err == simpleapi.ErrBladeNotFound {
-				log.WithFields(log.Fields{"slot": blade.Bay.Connection, "serial": blade.Bsn, "chassis": chassis.Fqdn}).Warning("Blade not found in SimpleAPI")
-				blade.Name = blade.Bsn
+				log.WithFields(log.Fields{"slot": blade.BladePosition, "serial": blade.Serial, "chassis": chassis.Fqdn}).Warning("Blade not found in SimpleAPI")
+				blade.Name = blade.Serial
 				role = "UnknownBlade"
 			}
 		}
@@ -126,38 +127,38 @@ func (c *Collector) collectChassis(chassis *simpleapi.Chassis, rack *simpleapi.R
 		log.WithFields(log.Fields{"metric": powerMetric, "site": rack.Site, "zone": rack.Sitezone, "pod": rack.Sitepod, "row": rack.Siterow, "rack": chassis.Rack, "fqdn": blade.Name, "type": "blade"}).Debug("Pushing metric to telegraf")
 
 		// Power Usage
-		c.createAndSendMessage(
-			&powerMetric,
-			&rack.Site,
-			&rack.Sitezone,
-			&rack.Sitepod,
-			&rack.Siterow,
-			&chassis.Rack,
-			&chassis.Fqdn,
-			&role,
-			&device,
-			&blade.Name,
-			blade.Power,
-			now,
-		)
+		// c.createAndSendMessage(
+		// 	&powerMetric,
+		// 	&rack.Site,
+		// 	&rack.Sitezone,
+		// 	&rack.Sitepod,
+		// 	&rack.Siterow,
+		// 	&chassis.Rack,
+		// 	&chassis.Fqdn,
+		// 	&role,
+		// 	&device,
+		// 	&blade.Name,
+		// 	blade.Power,
+		// 	now,
+		// )
 
 		log.WithFields(log.Fields{"metric": thermalMetric, "site": rack.Site, "zone": rack.Sitezone, "pod": rack.Sitepod, "row": rack.Siterow, "rack": chassis.Rack, "fqdn": blade.Name, "type": "blade"}).Debug("Pushing metric to telegraf")
 
 		// Thermal
-		c.createAndSendMessage(
-			&thermalMetric,
-			&rack.Site,
-			&rack.Sitezone,
-			&rack.Sitepod,
-			&rack.Siterow,
-			&chassis.Rack,
-			&chassis.Fqdn,
-			&role,
-			&device,
-			&blade.Name,
-			blade.Temp,
-			now,
-		)
+		// c.createAndSendMessage(
+		// 	&thermalMetric,
+		// 	&rack.Site,
+		// 	&rack.Sitezone,
+		// 	&rack.Sitepod,
+		// 	&rack.Siterow,
+		// 	&chassis.Rack,
+		// 	&chassis.Fqdn,
+		// 	&role,
+		// 	&device,
+		// 	&blade.Name,
+		// 	blade.Temp,
+		// 	now,
+		// )
 	}
 
 	return nil

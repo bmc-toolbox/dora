@@ -38,7 +38,7 @@ var (
 )
 
 type Blade struct {
-	name          string  `json:"name"`
+	Name          string  `json:"name"`
 	MgmtIPAddress string  `json:"mgmt_ip_address"`
 	BladePosition int     `json:"blade_position"`
 	Temp          int     `json:"temp_c"`
@@ -64,18 +64,14 @@ type ChassisConnection struct {
 	password string
 }
 
-func (b *Blade) isStorageBlade(bool) {
-	return b.isStorageBlade
-}
-
-func (c *ChassisConnection) httpGet(url string) (payload []byte, err error) {
+func httpGet(url string, username *string, password *string) (payload []byte, err error) {
 	log.WithFields(log.Fields{"step": "ChassisConnections", "url": url}).Debug("Requesting data from BMC")
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return payload, err
 	}
-	req.SetBasicAuth(c.username, c.password)
+	req.SetBasicAuth(*username, *password)
 	tr := &http.Transport{
 		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
 		DisableKeepAlives: true,
@@ -107,12 +103,12 @@ func (c *ChassisConnection) httpGet(url string) (payload []byte, err error) {
 	return payload, err
 }
 
-func (c *ChassisConnection) httpGetDell(hostname *string) (payload []byte, err error) {
+func httpGetDell(hostname *string, username *string, password *string) (payload []byte, err error) {
 	log.WithFields(log.Fields{"step": "ChassisConnections", "hostname": *hostname}).Debug("Requesting data from BMC")
 
 	form := url.Values{}
-	form.Add("user", c.username)
-	form.Add("password", c.password)
+	form.Add("user", *username)
+	form.Add("password", *password)
 
 	u, err := url.Parse(fmt.Sprintf("https://%s/cgi-bin/webcgi/login", *hostname))
 	if err != nil {
@@ -182,49 +178,54 @@ func (c *ChassisConnection) httpGetDell(hostname *string) (payload []byte, err e
 	return bytes.Replace(payload, []byte("\"bladeTemperature\":-1"), []byte("\"bladeTemperature\":\"0\""), -1), err
 }
 
+func (b *Blade) IsStorageBlade() bool {
+	return b.storageBlade
+}
+
 func (c *ChassisConnection) Dell(ip *string) (payload []byte, err error) {
-	return c.httpGetDell(ip)
+	return httpGetDell(ip, &c.username, &c.password)
 }
 
 func (c *ChassisConnection) Hp(ip *string) (chassis Chassis, err error) {
-	result, err = c.httpGet(fmt.Sprintf("https://%s/xmldata?item=infra2", *ip))
+	result, err := httpGet(fmt.Sprintf("https://%s/xmldata?item=infra2", *ip), &c.username, &c.password)
 	if err != nil {
 		return chassis, err
 	}
-	iloXML := &Rimp{}
+	iloXML := &HpRimp{}
 	err = xml.Unmarshal(result, iloXML)
 	if err != nil {
 		return chassis, err
 	}
 
-	var previousSlot Blade
-
 	if iloXML.HpInfra2 != nil {
-		chassis.Name = iloXML.Infra2.Encl
-		chassis.Serial = iloXML.Infra2.EnclSn
-		chassis.Model = iloXML.Infra2.Pn
-		chassis.Rack = iloXML.Infra2.Rack
-		chassis.Power = iloXML.Infra2.Power.PowerConsumed / 1000.00
-		chassis.Temp = iloXML.Infra2.Temps.Temp.C
+		chassis.Name = iloXML.HpInfra2.Encl
+		chassis.Serial = iloXML.HpInfra2.EnclSn
+		chassis.Model = iloXML.HpInfra2.Pn
+		chassis.Rack = iloXML.HpInfra2.Rack
+		chassis.Power = iloXML.HpInfra2.HpPower.PowerConsumed / 1000.00
+
+		chassis.Temp = iloXML.HpInfra2.HpTemps.HpTemp.C
 
 		log.WithFields(log.Fields{"operation": "connection", "ip": ip, "name": chassis.Name, "serial": chassis.Serial, "type": "chassis"}).Debug("Auditing chassis")
 
-		if iloXML.Infra2.Blades != nil {
-			for _, blade := range iloXML.Infra2.Blades.Blade {
+		if iloXML.HpInfra2.HpBlades != nil {
+			for _, blade := range iloXML.HpInfra2.HpBlades.HpBlade {
 				b := Blade{}
 
-				b.BladePosition = blade.Bay.Connection
-				b.MgmtIPAddress = blade.MgmtIPAddress
-				b.Power = blade.Power.PowerConsumed / 1000.00
-				b.Temp = blade.Temps.Temp.C
+				b.BladePosition = blade.HpBay.Connection
+				b.MgmtIPAddress = blade.MgmtIPAddr
+				b.Power = blade.HpPower.PowerConsumed / 1000.00
+				b.Temp = blade.HpTemps.HpTemp.C
 				b.Serial = blade.Bsn
 
 				if strings.Contains(blade.Spn, "Storage") {
+					b.Name = b.Serial
 					b.storageBlade = true
 				} else {
+					b.Name = blade.Name
 					b.storageBlade = false
 				}
-				chassis.Blades = append(chassis.Blades, b)
+				chassis.Blades = append(chassis.Blades, &b)
 			}
 		}
 	}

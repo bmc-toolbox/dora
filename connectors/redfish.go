@@ -2,7 +2,6 @@ package connectors
 
 import (
 	"errors"
-	"fmt"
 	"regexp"
 )
 
@@ -58,10 +57,10 @@ type RedFishConnection struct {
 	password string
 }
 
-func (c *RedFishConnection) read(ip *string, collectType string, vendor string) (payload []byte, err error) {
-	payload, err = c.httpGet(fmt.Sprintf("https://%s/%s", *ip, redfishVendorEndPoints[collectType][vendor]))
-	if err == ErrPageNotFound {
-		return payload, ErrRedFishNotSupported
-	}
-	return payload, err
-}
+// func (c *RedFishConnection) read(ip *string, collectType string, vendor string) (payload []byte, err error) {
+// 	payload, err = c.httpGet(fmt.Sprintf("https://%s/%s", *ip, redfishVendorEndPoints[collectType][vendor]))
+// 	if err == ErrPageNotFound {
+// 		return payload, ErrRedFishNotSupported
+// 	}
+// 	return payload, err
+// }

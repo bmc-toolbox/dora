@@ -28,7 +28,7 @@ type HpInfra2 struct {
 }
 
 type HpBlades struct {
-	Blade []*Blade `xml:" BLADE,omitempty" json:"BLADE,omitempty"`
+	HpBlade []*HpBlade `xml:" BLADE,omitempty" json:"BLADE,omitempty"`
 }
 
 type HpPower struct {
@@ -40,7 +40,7 @@ type HpRimp struct {
 }
 
 type HpTemp struct {
-	C    string `xml:" C,omitempty" json:"C,omitempty"`
+	C    int    `xml:" C,omitempty" json:"C,omitempty"`
 	Desc string `xml:" DESC,omitempty" json:"DESC,omitempty"`
 }
 
