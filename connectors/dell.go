@@ -1,6 +1,6 @@
-package collectors
+package connectors
 
-type CMC struct {
+type DellCMC struct {
 	Chassis *DellChassis          `json:"1"`
 	Blades  map[string]*DellBlade `json:"blades_status"`
 }

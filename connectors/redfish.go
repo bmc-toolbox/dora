@@ -1,4 +1,4 @@
-package collectors
+package connectors
 
 type RedFishPower struct {
 	PowerControl []struct {
