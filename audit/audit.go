@@ -1,6 +1,6 @@
 package audit
 
-import "gitlab.booking.com/infra/thermalnator/simpleapi"
+import "gitlab.booking.com/infra/dora/simpleapi"
 
 type Audit struct {
 	username  string

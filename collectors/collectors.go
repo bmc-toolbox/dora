@@ -1,78 +1,13 @@
 package collectors
 
 import (
-	"bytes"
-	"crypto/tls"
-	"errors"
-	"fmt"
-	"io"
-	"io/ioutil"
-
-	"net"
-	"net/http"
-	"net/http/cookiejar"
-	"net/url"
-	"regexp"
 	"strings"
-	"time"
-
-	"github.com/spf13/viper"
-
-	"golang.org/x/net/publicsuffix"
-
-	"gitlab.booking.com/infra/thermalnator/simpleapi"
 
 	log "github.com/sirupsen/logrus"
-)
-
-const (
-	HP         = "HP"
-	Dell       = "Dell"
-	Supermicro = "Supermicro"
-	Unknown    = "Unknown"
-	RFPower    = "power"
-	RFThermal  = "thermal"
-)
-
-var (
-	powerMetric                     = "power_kw"
-	thermalMetric                   = "temp_c"
-	bladeDevice                     = "blade"
-	chassisDevice                   = "chassis"
-	discreteDevice                  = "discrete"
-	storageBladeDevice              = "storageblade"
-	ErrChassiCollectionNotSupported = errors.New("It's not possible to collect metric via chassi on this model")
-	ErrRedFishNotSupported          = errors.New("RedFish not supported")
-	ErrPageNotFound                 = errors.New("Requested page couldn't be found in the server")
-	redfishVendorEndPoints          = map[string]map[string]string{
-		Dell: map[string]string{
-			RFPower:   "redfish/v1/Chassis/System.Embedded.1/Power",
-			RFThermal: "redfish/v1/Chassis/System.Embedded.1/Thermal",
-		},
-		HP: map[string]string{
-			RFPower:   "rest/v1/Chassis/1/Power",
-			RFThermal: "rest/v1/Chassis/1/Thermal",
-		},
-		Supermicro: map[string]string{
-			RFPower:   "redfish/v1/Chassis/1/Power",
-			RFThermal: "redfish/v1/Chassis/1/Thermal",
-		},
-	}
-	redfishVendorLabels = map[string]map[string]string{
-		Dell: map[string]string{
-			RFPower:   "System Power Control",
-			RFThermal: "System Board Inlet Temp",
-		},
-		HP: map[string]string{
-			//			RFPower:   "PowerMetrics",
-			RFThermal: "30-System Board",
-		},
-		Supermicro: map[string]string{
-			RFPower:   "System Power Control",
-			RFThermal: "System Temp",
-		},
-	}
-	bmcAddressBuild = regexp.MustCompile(".(prod|corp|dqs).")
+	"gitlab.booking.com/infra/dora/connectors"
+	"gitlab.booking.com/infra/dora/model"
+	"gitlab.booking.com/infra/dora/simpleapi"
+	"gitlab.booking.com/infra/dora/storage"
 )
 
 type Collector struct {
@@ -88,178 +23,66 @@ type RawCollectedData struct {
 	Vendor      string
 }
 
-func (c *Collector) httpGet(url string) (payload []byte, err error) {
-	log.WithFields(log.Fields{"step": "collectors", "url": url}).Debug("Requesting data from BMC")
+func (c *Collector) CollectChassis(input <-chan simpleapi.Chassis) {
+	for chassis := range input {
+		rack, err := c.simpleAPI.GetRack(&chassis.Rack)
+		if err != nil {
+			log.WithFields(log.Fields{"fqdn": chassis.Fqdn, "type": "chassis"}).Info("Received errors %s trying to to get data of rack %s\n", err, chassis.Rack)
+			continue
+		}
 
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return payload, err
-	}
-	req.SetBasicAuth(c.username, c.password)
-	tr := &http.Transport{
-		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
-		DisableKeepAlives: true,
-		Dial: (&net.Dialer{
-			Timeout:   10 * time.Second,
-			KeepAlive: 10 * time.Second,
-		}).Dial,
-		TLSHandshakeTimeout: 10 * time.Second,
-	}
-	client := &http.Client{
-		Timeout:   time.Second * 20,
-		Transport: tr,
-	}
-	resp, err := client.Do(req)
-	if err != nil {
-		return payload, err
-	}
-	defer resp.Body.Close()
+		if rack.Site == "" || rack.Sitezone == "" || rack.Sitepod == "" || rack.Siterow == "" || chassis.Rack == "" {
+			log.WithFields(log.Fields{"fqdn": chassis.Fqdn, "type": "chassis"}).Error("Position in the datacenter missing")
+			continue
+		}
 
-	if resp.StatusCode == 404 {
-		return payload, ErrPageNotFound
-	}
+		for ifname, ifdata := range chassis.Interfaces {
+			if ifdata.IPAddress == "" {
+				continue
+			}
 
-	payload, err = ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return payload, err
-	}
-
-	return payload, err
-}
-
-func (c *Collector) httpGetDell(hostname *string) (payload []byte, err error) {
-	log.WithFields(log.Fields{"step": "collectors", "hostname": *hostname}).Debug("Requesting data from BMC")
-
-	form := url.Values{}
-	form.Add("user", c.username)
-	form.Add("password", c.password)
-
-	u, err := url.Parse(fmt.Sprintf("https://%s/cgi-bin/webcgi/login", *hostname))
-	if err != nil {
-		return payload, err
-	}
-
-	req, err := http.NewRequest("POST", u.String(), strings.NewReader(form.Encode()))
-	if err != nil {
-		return payload, err
-	}
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-
-	tr := &http.Transport{
-		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
-		DisableKeepAlives: true,
-		Dial: (&net.Dialer{
-			Timeout:   10 * time.Second,
-			KeepAlive: 10 * time.Second,
-		}).Dial,
-		TLSHandshakeTimeout: 10 * time.Second,
-	}
-
-	jar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
-	if err != nil {
-		return payload, err
-	}
-
-	client := &http.Client{
-		Timeout:   time.Second * 20,
-		Transport: tr,
-		Jar:       jar,
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return payload, err
-	}
-	io.Copy(ioutil.Discard, resp.Body)
-	defer resp.Body.Close()
-
-	if resp.StatusCode == 404 {
-		return payload, ErrPageNotFound
-	}
-
-	resp, err = client.Get(fmt.Sprintf("https://%s/cgi-bin/webcgi/json?method=temp-sensors", *hostname))
-	if err != nil {
-		return payload, err
-	}
-	defer resp.Body.Close()
-
-	payload, err = ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return payload, err
-	}
-
-	resp, err = client.Get(fmt.Sprintf("https://%s/cgi-bin/webcgi/logout", *hostname))
-	if err != nil {
-		return payload, err
-	}
-	io.Copy(ioutil.Discard, resp.Body)
-	defer resp.Body.Close()
-
-	if resp.StatusCode == 404 {
-		return payload, ErrPageNotFound
-	}
-
-	return bytes.Replace(payload, []byte("\"bladeTemperature\":-1"), []byte("\"bladeTemperature\":\"0\""), -1), err
-}
-
-func (c *Collector) dellCMC(ip *string) (payload []byte, err error) {
-	return c.httpGetDell(ip)
-}
-
-func (c *Collector) viaILOXML(ip *string) (payload []byte, err error) {
-	return c.httpGet(fmt.Sprintf("https://%s/xmldata?item=infra2", *ip))
-}
-
-func (c *Collector) viaRedFish(ip *string, collectType string, vendor string) (payload []byte, err error) {
-	payload, err = c.httpGet(fmt.Sprintf("https://%s/%s", *ip, redfishVendorEndPoints[collectType][vendor]))
-	if err == ErrPageNotFound {
-		return payload, ErrRedFishNotSupported
-	}
-	return payload, err
-}
-
-func (c *Collector) createAndSendMessage(metric *string, site *string, zone *string, pod *string, row *string, rack *string, chassis *string, role *string, device *string, fqdn *string, value string, now int32) {
-	err := c.pushToTelegraph(fmt.Sprintf("%s,site=%s,zone=%s,pod=%s,row=%s,rack=%s,chassis=%s,role=%s,device_type=%s,device_name=%s value=%s %d\n", *metric, *site, *zone, *pod, *row, *rack, *chassis, *role, *device, *fqdn, value, now))
-	if err != nil {
-		log.WithFields(log.Fields{"fqdn": *fqdn, "type": "blade", "metric": *metric, "error": err}).Info("Unable to push data to telegraf")
+			err := c.collectChassis(&chassis, &rack, &ifdata.IPAddress, &ifname)
+			if err == nil {
+				break
+			} else {
+				log.WithFields(log.Fields{"fqdn": chassis.Fqdn, "type": "chassis", "error": err}).Error("Error collecting chassis data")
+			}
+		}
 	}
 }
 
-func (c *Collector) pushToTelegraph(metric string) (err error) {
-	log.WithFields(log.Fields{"step": "collectors", "metric": metric}).Debug("Pushing data to telegraf")
+func (c *Collector) collectChassis(chassis *simpleapi.Chassis, rack *simpleapi.Rack, ip *string, iname *string) (err error) {
+	log.WithFields(log.Fields{"fqdn": chassis.Fqdn, "type": "chassis", "address": *ip, "interface": *iname, "level": "chasssis"}).Info("Collecting data")
 
-	if viper.GetBool("noop") {
+	conn := connectors.NewChassisConnection(c.username, c.password)
+	var chassisData model.Chassis
+	if strings.HasPrefix(chassis.Model, "BladeSystem") {
+		chassisData, err = conn.Hp(ip)
+		if err != nil {
+			return err
+		}
+	} else if strings.HasPrefix(chassis.Model, "P") {
+		chassisData, err = conn.Dell(ip)
+		if err != nil {
+			return err
+		}
+	} else {
+		log.WithFields(log.Fields{"fqdn": chassis.Fqdn, "type": "chassis", "address": *ip, "interface": *iname, "level": "chasssis", "Error": "Vendor unknown"}).Error("Collecting data")
+	}
+
+	db, err := storage.InitDB()
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	chassisStorage := storage.NewChassisStorage(db)
+	_, err = chassisStorage.UpdateOrCreate(&chassisData)
+	if err != nil {
 		return err
 	}
 
-	req, err := http.NewRequest("POST", c.telegrafURL, strings.NewReader(metric))
-	if err != nil {
-		return err
-	}
-	tr := &http.Transport{
-		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
-		DisableKeepAlives: true,
-		Dial: (&net.Dialer{
-			Timeout:   15 * time.Second,
-			KeepAlive: 15 * time.Second,
-		}).Dial,
-		TLSHandshakeTimeout: 15 * time.Second,
-	}
-	client := &http.Client{
-		Timeout:   time.Second * 30,
-		Transport: tr,
-	}
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	io.Copy(ioutil.Discard, resp.Body)
-
-	if resp.StatusCode == 404 {
-		return ErrPageNotFound
-	}
-
-	return err
+	return nil
 }
 
 func New(username string, password string, telegrafURL string, simpleApi *simpleapi.SimpleAPI) *Collector {

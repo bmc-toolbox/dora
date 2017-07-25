@@ -1,8 +1,8 @@
 package audit
 
 import (
-	"gitlab.booking.com/infra/thermalnator/connectors"
-	"gitlab.booking.com/infra/thermalnator/simpleapi"
+	"gitlab.booking.com/infra/dora/connectors"
+	"gitlab.booking.com/infra/dora/simpleapi"
 
 	log "github.com/sirupsen/logrus"
 )

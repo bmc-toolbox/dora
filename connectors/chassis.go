@@ -1,193 +1,108 @@
 package connectors
 
 import (
-	"bytes"
-	"crypto/tls"
+	"encoding/json"
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"io"
-	"io/ioutil"
+	"strconv"
 
-	"net"
-	"net/http"
-	"net/http/cookiejar"
-	"net/url"
+	"gitlab.booking.com/infra/dora/model"
+
 	"strings"
-	"time"
-
-	"golang.org/x/net/publicsuffix"
 
 	log "github.com/sirupsen/logrus"
 )
 
 const (
-	HP         = "HP"
-	Dell       = "Dell"
+	// HP is the constant that defines the vendor HP
+	HP = "HP"
+	// Dell is the constant that defines the vendor Dell
+	Dell = "Dell"
+	// Supermicro is the constant that defines the vendor Supermicro
 	Supermicro = "Supermicro"
-	Unknown    = "Unknown"
-	RFPower    = "power"
-	RFThermal  = "thermal"
+	// Unknown is the constant that defines Unknowns vendors
+	Unknown = "Unknown"
+	// RFPower is the constant for power definition on RedFish
+	RFPower = "power"
+	// RFThermal is the constant for thermal definition on RedFish
+	RFThermal = "thermal"
 )
 
 var (
 	bladeDevice        = "blade"
 	chassisDevice      = "chassis"
 	storageBladeDevice = "storageblade"
-	ErrPageNotFound    = errors.New("Requested page couldn't be found in the server")
+	// ErrPageNotFound is used to inform the http request that we couldn't find the expected page and/or endpoint
+	ErrPageNotFound = errors.New("Requested page couldn't be found in the server")
 )
 
-type Blade struct {
-	Name          string  `json:"name"`
-	MgmtIPAddress string  `json:"mgmt_ip_address"`
-	BladePosition int     `json:"blade_position"`
-	Temp          int     `json:"temp_c"`
-	Serial        string  `json:"serial"`
-	Power         float64 `json:"power_kw"`
-	storageBlade  bool    `json:"is_storage_blade"`
-	Vandor        string  `json:"vendor"`
-}
-
-type Chassis struct {
-	Name   string   `json:"name"`
-	Rack   string   `json:"rack"`
-	Blades []*Blade `json:"blades"`
-	Temp   int      `json:"temp_c"`
-	Power  float64  `json:"power_kw"`
-	Serial string   `json:"serial"`
-	Model  string   `json:"model"`
-	Vandor string   `json:"vendor"`
-}
-
+// ChassisConnection is the basic
 type ChassisConnection struct {
 	username string
 	password string
 }
 
-func httpGet(url string, username *string, password *string) (payload []byte, err error) {
-	log.WithFields(log.Fields{"step": "ChassisConnections", "url": url}).Debug("Requesting data from BMC")
-
-	req, err := http.NewRequest("GET", url, nil)
+func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) {
+	result, err := httpGetDell(ip, &c.username, &c.password)
 	if err != nil {
-		return payload, err
+		return chassis, err
 	}
-	req.SetBasicAuth(*username, *password)
-	tr := &http.Transport{
-		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
-		DisableKeepAlives: true,
-		Dial: (&net.Dialer{
-			Timeout:   10 * time.Second,
-			KeepAlive: 10 * time.Second,
-		}).Dial,
-		TLSHandshakeTimeout: 10 * time.Second,
-	}
-	client := &http.Client{
-		Timeout:   time.Second * 20,
-		Transport: tr,
-	}
-	resp, err := client.Do(req)
+	dellCMC := &DellCMC{}
+	err = json.Unmarshal(result, dellCMC)
 	if err != nil {
-		return payload, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode == 404 {
-		return payload, ErrPageNotFound
+		return chassis, err
 	}
 
-	payload, err = ioutil.ReadAll(resp.Body)
+	chassis.Name = dellCMC.DellChassis.DellChassisGroupMemberHealthBlob.DellChassisStatus.CHASSISName
+	chassis.Serial = dellCMC.DellChassis.DellChassisGroupMemberHealthBlob.DellChassisStatus.ROChassisServiceTag
+	chassis.Model = strings.TrimSpace(dellCMC.DellChassis.DellChassisGroupMemberHealthBlob.DellChassisStatus.ROChassisProductname)
+	chassis.FwVersion = dellCMC.DellChassis.DellChassisGroupMemberHealthBlob.DellChassisStatus.ROCmcFwVersionString
+	power, err := strconv.Atoi(strings.TrimRight(dellCMC.DellChassis.DellChassisGroupMemberHealthBlob.DellPsuStatus.AcPower, " W"))
 	if err != nil {
-		return payload, err
+		log.WithFields(log.Fields{"operation": "connection", "ip": *ip, "name": chassis.Name, "serial": chassis.ID, "type": "chassis", "error": err}).Error("Auditing chassis")
+		return
+	}
+	chassis.Power = float64(power) / 1000
+	chassis.Vendor = Dell
+	// chassis.Temp = ?
+
+	log.WithFields(log.Fields{"operation": "connection", "ip": *ip, "name": chassis.Name, "serial": chassis.ID, "type": "chassis"}).Debug("Auditing chassis")
+
+	for _, blade := range dellCMC.DellChassis.DellChassisGroupMemberHealthBlob.DellBlades {
+		if blade.BladePresent == 1 {
+			b := model.Blade{}
+
+			b.BladePosition = blade.BladeMasterSlot
+			b.Power = float64(blade.ActualPwrConsump) / 1000
+			temp, err := strconv.Atoi(blade.BladeTemperature)
+			if err != nil {
+				log.WithFields(log.Fields{"operation": "connection", "ip": *ip, "name": chassis.Name, "serial": chassis.Serial, "type": "chassis", "error": err, "blade": blade.BladeSvcTag}).Error("Auditing blade")
+				continue
+			}
+			b.Temp = temp
+			b.Serial = blade.BladeSvcTag
+			b.Status = blade.BladeLogDescription
+			b.Vendor = Dell
+
+			if blade.IsStorageBlade == 1 {
+				b.IsStorageBlade = true
+				b.Name = blade.BladeSvcTag
+			} else {
+				b.IsStorageBlade = false
+				b.Name = blade.BladeName
+				b.BmcAddress = blade.IdracURL
+				b.BmcVersion = blade.BladeUSCVer
+			}
+			chassis.Blades = append(chassis.Blades, &b)
+		}
 	}
 
-	return payload, err
+	return chassis, err
 }
 
-func httpGetDell(hostname *string, username *string, password *string) (payload []byte, err error) {
-	log.WithFields(log.Fields{"step": "ChassisConnections", "hostname": *hostname}).Debug("Requesting data from BMC")
-
-	form := url.Values{}
-	form.Add("user", *username)
-	form.Add("password", *password)
-
-	u, err := url.Parse(fmt.Sprintf("https://%s/cgi-bin/webcgi/login", *hostname))
-	if err != nil {
-		return payload, err
-	}
-
-	req, err := http.NewRequest("POST", u.String(), strings.NewReader(form.Encode()))
-	if err != nil {
-		return payload, err
-	}
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-
-	tr := &http.Transport{
-		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
-		DisableKeepAlives: true,
-		Dial: (&net.Dialer{
-			Timeout:   10 * time.Second,
-			KeepAlive: 10 * time.Second,
-		}).Dial,
-		TLSHandshakeTimeout: 10 * time.Second,
-	}
-
-	jar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
-	if err != nil {
-		return payload, err
-	}
-
-	client := &http.Client{
-		Timeout:   time.Second * 20,
-		Transport: tr,
-		Jar:       jar,
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return payload, err
-	}
-	io.Copy(ioutil.Discard, resp.Body)
-	defer resp.Body.Close()
-
-	if resp.StatusCode == 404 {
-		return payload, ErrPageNotFound
-	}
-
-	resp, err = client.Get(fmt.Sprintf("https://%s/cgi-bin/webcgi/json?method=temp-sensors", *hostname))
-	if err != nil {
-		return payload, err
-	}
-	defer resp.Body.Close()
-
-	payload, err = ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return payload, err
-	}
-
-	resp, err = client.Get(fmt.Sprintf("https://%s/cgi-bin/webcgi/logout", *hostname))
-	if err != nil {
-		return payload, err
-	}
-	io.Copy(ioutil.Discard, resp.Body)
-	defer resp.Body.Close()
-
-	if resp.StatusCode == 404 {
-		return payload, ErrPageNotFound
-	}
-
-	return bytes.Replace(payload, []byte("\"bladeTemperature\":-1"), []byte("\"bladeTemperature\":\"0\""), -1), err
-}
-
-func (b *Blade) IsStorageBlade() bool {
-	return b.storageBlade
-}
-
-func (c *ChassisConnection) Dell(ip *string) (payload []byte, err error) {
-	return httpGetDell(ip, &c.username, &c.password)
-}
-
-func (c *ChassisConnection) Hp(ip *string) (chassis Chassis, err error) {
-	result, err := httpGet(fmt.Sprintf("https://%s/xmldata?item=infra2", *ip), &c.username, &c.password)
+func (c *ChassisConnection) Hp(ip *string) (chassis model.Chassis, err error) {
+	result, err := httpGet(fmt.Sprintf("https://%s/xmldata?item=all", *ip), &c.username, &c.password)
 	if err != nil {
 		return chassis, err
 	}
@@ -203,27 +118,31 @@ func (c *ChassisConnection) Hp(ip *string) (chassis Chassis, err error) {
 		chassis.Model = iloXML.HpInfra2.Pn
 		chassis.Rack = iloXML.HpInfra2.Rack
 		chassis.Power = iloXML.HpInfra2.HpPower.PowerConsumed / 1000.00
-
 		chassis.Temp = iloXML.HpInfra2.HpTemps.HpTemp.C
+		chassis.Vendor = HP
+		chassis.FwVersion = iloXML.HpMP.Fwri
 
-		log.WithFields(log.Fields{"operation": "connection", "ip": ip, "name": chassis.Name, "serial": chassis.Serial, "type": "chassis"}).Debug("Auditing chassis")
+		log.WithFields(log.Fields{"operation": "connection", "ip": *ip, "name": chassis.Name, "serial": chassis.Serial, "type": "chassis"}).Debug("Auditing chassis")
 
 		if iloXML.HpInfra2.HpBlades != nil {
 			for _, blade := range iloXML.HpInfra2.HpBlades.HpBlade {
-				b := Blade{}
+				b := model.Blade{}
 
 				b.BladePosition = blade.HpBay.Connection
-				b.MgmtIPAddress = blade.MgmtIPAddr
 				b.Power = blade.HpPower.PowerConsumed / 1000.00
 				b.Temp = blade.HpTemps.HpTemp.C
-				b.Serial = blade.Bsn
+				b.Serial = strings.TrimSpace(blade.Bsn)
+				b.Status = blade.Status
+				b.Vendor = HP
 
 				if strings.Contains(blade.Spn, "Storage") {
 					b.Name = b.Serial
-					b.storageBlade = true
+					b.IsStorageBlade = true
 				} else {
 					b.Name = blade.Name
-					b.storageBlade = false
+					b.IsStorageBlade = false
+					b.BmcAddress = blade.MgmtIPAddr
+					b.BmcVersion = blade.MgmtVersion
 				}
 				chassis.Blades = append(chassis.Blades, &b)
 			}

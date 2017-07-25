@@ -1,14 +1,16 @@
 package connectors
 
 type HpBlade struct {
-	HpBay      *HpBay   `xml:" BAY,omitempty" json:"BAY,omitempty"`
-	Bsn        string   `xml:" BSN,omitempty" json:"BSN,omitempty"`
-	MgmtIPAddr string   `xml:" MGMTIPADDR,omitempty" json:"MGMTIPADDR,omitempty"`
-	Name       string   `xml:" NAME,omitempty" json:"NAME,omitempty"`
-	HpPower    *HpPower `xml:" POWER,omitempty" json:"POWER,omitempty"`
-	Status     string   `xml:" STATUS,omitempty" json:"STATUS,omitempty"`
-	Spn        string   `xml:" SPN,omitempty" json:"SPN,omitempty"`
-	HpTemps    *HpTemps `xml:" TEMPS,omitempty" json:"TEMPS,omitempty"`
+	HpBay       *HpBay   `xml:" BAY,omitempty" json:"BAY,omitempty"`
+	Bsn         string   `xml:" BSN,omitempty" json:"BSN,omitempty"`
+	MgmtIPAddr  string   `xml:" MGMTIPADDR,omitempty" json:"MGMTIPADDR,omitempty"`
+	MgmtType    string   `xml:" MGMTPN,omitempty" json:"MGMTPN,omitempty"`
+	MgmtVersion string   `xml:" MGMTFWVERSION,omitempty" json:"MGMTFWVERSION,omitempty"`
+	Name        string   `xml:" NAME,omitempty" json:"NAME,omitempty"`
+	HpPower     *HpPower `xml:" POWER,omitempty" json:"POWER,omitempty"`
+	Status      string   `xml:" STATUS,omitempty" json:"STATUS,omitempty"`
+	Spn         string   `xml:" SPN,omitempty" json:"SPN,omitempty"`
+	HpTemps     *HpTemps `xml:" TEMPS,omitempty" json:"TEMPS,omitempty"`
 }
 
 type HpBay struct {
@@ -27,6 +29,11 @@ type HpInfra2 struct {
 	Rack     string    `xml:" RACK,omitempty" json:"RACK,omitempty"`
 }
 
+type HpMP struct {
+	Sn   string `xml:" SN,omitempty" json:"SN,omitempty"`
+	Fwri string `xml:" FWRI,omitempty" json:"FWRI,omitempty"`
+}
+
 type HpBlades struct {
 	HpBlade []*HpBlade `xml:" BLADE,omitempty" json:"BLADE,omitempty"`
 }
@@ -37,6 +44,7 @@ type HpPower struct {
 
 type HpRimp struct {
 	HpInfra2 *HpInfra2 `xml:" INFRA2,omitempty" json:"INFRA2,omitempty"`
+	HpMP     *HpMP     `xml:" MP,omitempty" json:"MP,omitempty"`
 }
 
 type HpTemp struct {
