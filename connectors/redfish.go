@@ -3,7 +3,20 @@ package connectors
 import (
 	"errors"
 	"regexp"
+
+	"gitlab.booking.com/infra/dora/model"
 )
+
+// This is the minumun we required from the redfish connection to learn from a vendor
+// HP is easy since it identify its name
+// Supermicro and Dell are pretty similar, but Supermicro doesn't expose description and that's how we know
+type RedfishEntry struct {
+	OdataType      string `json:"@odata.type"`
+	Description    string `json:"Description"`
+	ID             string `json:"Id"`
+	Name           string `json:"Name"`
+	RedfishVersion string `json:"RedfishVersion"`
+}
 
 /*
 
@@ -219,8 +232,8 @@ var (
 	ErrRedFishNotSupported = errors.New("RedFish not supported")
 	redfishVendorEndPoints = map[string]map[string]string{
 		Common: map[string]string{
-			RFEntry: "redfish/v1", 
-		}
+			RFEntry: "redfish/v1",
+		},
 		Dell: map[string]string{
 			RFPower:   "redfish/v1/Chassis/System.Embedded.1/Power",
 			RFThermal: "redfish/v1/Chassis/System.Embedded.1/Thermal",
@@ -272,8 +285,5 @@ type RedFishConnection struct {
 
 func (c *RedFishConnection) Get(ip *string) (chassis model.Chassis, err error) {
 
-
-	return 
+	return
 }
-
-
