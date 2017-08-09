@@ -21,12 +21,16 @@ const (
 	Dell = "Dell"
 	// Supermicro is the constant that defines the vendor Supermicro
 	Supermicro = "Supermicro"
+	// Common is the constant of thinks we could use across multiple vendors
+	Common = "Common"
 	// Unknown is the constant that defines Unknowns vendors
 	Unknown = "Unknown"
 	// RFPower is the constant for power definition on RedFish
 	RFPower = "power"
 	// RFThermal is the constant for thermal definition on RedFish
 	RFThermal = "thermal"
+	// RFEntry is used to identify the vendor of the redfish we are using
+	RFEntry = "entry"
 )
 
 var (

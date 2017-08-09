@@ -12,6 +12,7 @@ type Blade struct {
 	ID             int64     `json:"-"`
 	Serial         string    `json:"serial"`
 	Name           string    `json:"name"`
+	BiosVersion    string    `json:"bios_version"`
 	BmcAddress     string    `json:"bmc_addres"`
 	BmcVersion     string    `json:"bmc_version"`
 	BmcType        string    `json:"bmc_type"`
@@ -53,16 +54,6 @@ func (b Blade) GetReferencedIDs() []jsonapi.ReferenceID {
 		},
 	}
 }
-
-// // GetReferencedStructs to satisfy the jsonapi.MarhsalIncludedRelations interface
-// func (c Chassis) GetReferencedStructs() []jsonapi.MarshalIdentifier {
-// 	result := []jsonapi.MarshalIdentifier{}
-// 	for _, blade := range c.Blades {
-// 		result = append(result, blade)
-// 	}
-
-// 	return result
-// }
 
 // Chassis contains all the chassis the information we will expose across diferent vendors
 type Chassis struct {
