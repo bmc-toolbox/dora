@@ -12,7 +12,11 @@ import (
 )
 
 // RunGin is responsible to spin up the gin webservice
-func RunGin(port int) {
+func RunGin(port int, debug bool) {
+	if !debug {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
 	r := gin.Default()
 	api := api2go.NewAPIWithRouting(
 		"v0",

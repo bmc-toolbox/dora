@@ -47,5 +47,5 @@ func main() {
 		log.SetLevel(log.DebugLevel)
 	}
 
-	web.RunGin(viper.GetInt("http_server_port"))
+	web.RunGin(viper.GetInt("http_server_port"), viper.GetBool("debug"))
 }
