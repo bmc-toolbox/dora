@@ -59,5 +59,6 @@ type DellBlade struct {
 
 // DellPsuStatus contains the information and power usage of the pdus
 type DellPsuStatus struct {
-	AcPower string `json:"acPower"`
+	AcPower  string `json:"acPower"`
+	PsuCount string `json:"psuCount"`
 }
