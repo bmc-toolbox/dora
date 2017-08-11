@@ -95,6 +95,14 @@ func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) 
 			b.Status = blade.BladeLogDescription
 			b.Vendor = Dell
 
+			if chassis.PassThru == "" {
+				if strings.Contains(blade.Nics["0"].BladeNicName, "10G") {
+					chassis.PassThru = "10G"
+				} else {
+					chassis.PassThru = "1G"
+				}
+			}
+
 			if blade.IsStorageBlade == 1 {
 				b.IsStorageBlade = true
 				b.Name = blade.BladeSvcTag
@@ -127,11 +135,17 @@ func (c *ChassisConnection) Hp(ip *string) (chassis model.Chassis, err error) {
 		chassis.Serial = iloXML.HpInfra2.EnclSn
 		chassis.Model = iloXML.HpInfra2.Pn
 		chassis.Rack = iloXML.HpInfra2.Rack
-		chassis.Power = iloXML.HpInfra2.HpPower.PowerConsumed / 1000.00
+		chassis.Power = iloXML.HpInfra2.HpChassisPower.PowerConsumed / 1000.00
 		chassis.Temp = iloXML.HpInfra2.HpTemps.HpTemp.C
 		chassis.Status = iloXML.HpInfra2.Status
 		chassis.Vendor = HP
 		chassis.FwVersion = iloXML.HpMP.Fwri
+
+		if strings.Contains(iloXML.HpInfra2.HpSwitches.HpSwitch[0].Spn, "10G") {
+			chassis.PassThru = "10G"
+		} else {
+			chassis.PassThru = "1G"
+		}
 
 		log.WithFields(log.Fields{"operation": "connection", "ip": *ip, "name": chassis.Name, "serial": chassis.Serial, "type": "chassis"}).Debug("Auditing chassis")
 
