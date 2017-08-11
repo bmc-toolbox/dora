@@ -57,20 +57,22 @@ func (b Blade) GetReferencedIDs() []jsonapi.ReferenceID {
 
 // Chassis contains all the chassis the information we will expose across diferent vendors
 type Chassis struct {
-	ID        int64     `json:"-"`
-	Serial    string    `json:"serial"`
-	Name      string    `json:"name"`
-	Rack      string    `json:"rack"`
-	Blades    []*Blade  `json:"-"`
-	BladesIDS []int64   `json:"-" sql:"-"`
-	Temp      int       `json:"temp_c"`
-	Status    string    `json:"status"`
-	Power     float64   `json:"power_kw"`
-	Model     string    `json:"model"`
-	Vendor    string    `json:"vendor"`
-	FwVersion string    `json:"fw_version"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID               int64     `json:"-"`
+	Serial           string    `json:"serial"`
+	Name             string    `json:"name"`
+	Rack             string    `json:"rack"`
+	Blades           []*Blade  `json:"-"`
+	BladesIDS        []int64   `json:"-" sql:"-"`
+	Temp             int       `json:"temp_c"`
+	PowerSupplyCount int       `json:"power_supply_count"`
+	PassThru         string    `json:"pass_thru"`
+	Status           string    `json:"status"`
+	Power            float64   `json:"power_kw"`
+	Model            string    `json:"model"`
+	Vendor           string    `json:"vendor"`
+	FwVersion        string    `json:"fw_version"`
+	CreatedAt        time.Time `json:"created_at"`
+	UpdatedAt        time.Time `json:"updated_at"`
 }
 
 // GetID to satisfy jsonapi.MarshalIdentifier interface
