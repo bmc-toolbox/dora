@@ -37,5 +37,14 @@ func RunGin(port int, debug bool) {
 	r.GET("/ping", func(c *gin.Context) {
 		c.String(200, "pong")
 	})
+
+	r.GET("/ping_db", func(c *gin.Context) {
+		if db.HasTable("chassis") {
+			c.String(200, "pong")
+		} else {
+			c.String(451, "database has gone away")
+		}
+	})
+
 	r.Run(fmt.Sprintf(":%d", port))
 }
