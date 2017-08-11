@@ -32,8 +32,7 @@ func (c *Collector) CollectChassis(input <-chan simpleapi.Chassis) {
 		}
 
 		if rack.Site == "" || rack.Sitezone == "" || rack.Sitepod == "" || rack.Siterow == "" || chassis.Rack == "" {
-			log.WithFields(log.Fields{"fqdn": chassis.Fqdn, "type": "chassis"}).Error("Position in the datacenter missing")
-			continue
+			log.WithFields(log.Fields{"fqdn": chassis.Fqdn, "type": "chassis"}).Warning("Position in the datacenter missing")
 		}
 
 		for ifname, ifdata := range chassis.Interfaces {

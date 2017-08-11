@@ -16,6 +16,7 @@ type DellChassisGroupMemberHealthBlob struct {
 	DellBlades        map[string]*DellBlade `json:"blades_status"`
 	DellPsuStatus     *DellPsuStatus        `json:"psu_status"`
 	DellChassisStatus *DellChassisStatus    `json:"chassis_status"`
+	DellCMCStatus     *DellCMCStatus        `json:"cmc_status"`
 	// TODO: active_alerts
 }
 
@@ -25,6 +26,11 @@ type DellChassisStatus struct {
 	ROChassisServiceTag  string `json:"RO_chassis_service_tag"`
 	ROChassisProductname string `json:"RO_chassis_productname"`
 	CHASSISName          string `json:"CHASSIS_name"`
+}
+
+// DellCMCStatus brings the information about the cmc status itself we will use it to know if the chassis has errors
+type DellCMCStatus struct {
+	CMCActiveError string `json:"cmcActiveError"`
 }
 
 // DellNic is the nic we have on a servers

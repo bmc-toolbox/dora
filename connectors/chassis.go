@@ -62,6 +62,12 @@ func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) 
 	chassis.Serial = dellCMC.DellChassis.DellChassisGroupMemberHealthBlob.DellChassisStatus.ROChassisServiceTag
 	chassis.Model = strings.TrimSpace(dellCMC.DellChassis.DellChassisGroupMemberHealthBlob.DellChassisStatus.ROChassisProductname)
 	chassis.FwVersion = dellCMC.DellChassis.DellChassisGroupMemberHealthBlob.DellChassisStatus.ROCmcFwVersionString
+	if dellCMC.DellChassis.DellChassisGroupMemberHealthBlob.DellCMCStatus.CMCActiveError == "No Errors" {
+		chassis.Status = "OK"
+	} else {
+		chassis.Status = dellCMC.DellChassis.DellChassisGroupMemberHealthBlob.DellCMCStatus.CMCActiveError
+	}
+
 	power, err := strconv.Atoi(strings.TrimRight(dellCMC.DellChassis.DellChassisGroupMemberHealthBlob.DellPsuStatus.AcPower, " W"))
 	if err != nil {
 		log.WithFields(log.Fields{"operation": "connection", "ip": *ip, "name": chassis.Name, "serial": chassis.ID, "type": "chassis", "error": err}).Error("Auditing chassis")
@@ -123,6 +129,7 @@ func (c *ChassisConnection) Hp(ip *string) (chassis model.Chassis, err error) {
 		chassis.Rack = iloXML.HpInfra2.Rack
 		chassis.Power = iloXML.HpInfra2.HpPower.PowerConsumed / 1000.00
 		chassis.Temp = iloXML.HpInfra2.HpTemps.HpTemp.C
+		chassis.Status = iloXML.HpInfra2.Status
 		chassis.Vendor = HP
 		chassis.FwVersion = iloXML.HpMP.Fwri
 
