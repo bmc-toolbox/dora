@@ -48,7 +48,7 @@ type ChassisConnection struct {
 }
 
 func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) {
-	result, err := httpGetDell(ip, &c.username, &c.password)
+	result, err := httpGetDell(ip, "json?method=groupinfo", &c.username, &c.password)
 	if err != nil {
 		return chassis, err
 	}
@@ -62,6 +62,7 @@ func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) 
 	chassis.Serial = dellCMC.DellChassis.DellChassisGroupMemberHealthBlob.DellChassisStatus.ROChassisServiceTag
 	chassis.Model = strings.TrimSpace(dellCMC.DellChassis.DellChassisGroupMemberHealthBlob.DellChassisStatus.ROChassisProductname)
 	chassis.FwVersion = dellCMC.DellChassis.DellChassisGroupMemberHealthBlob.DellChassisStatus.ROCmcFwVersionString
+	chassis.PowerSupplyCount = dellCMC.DellChassis.DellChassisGroupMemberHealthBlob.DellPsuStatus.PsuCount
 	if dellCMC.DellChassis.DellChassisGroupMemberHealthBlob.DellCMCStatus.CMCActiveError == "No Errors" {
 		chassis.Status = "OK"
 	} else {
@@ -75,7 +76,6 @@ func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) 
 	}
 	chassis.Power = float64(power) / 1000
 	chassis.Vendor = Dell
-	// chassis.Temp = ?
 
 	log.WithFields(log.Fields{"operation": "connection", "ip": *ip, "name": chassis.Name, "serial": chassis.ID, "type": "chassis"}).Debug("Auditing chassis")
 
@@ -94,6 +94,7 @@ func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) 
 			b.Serial = blade.BladeSvcTag
 			b.Status = blade.BladeLogDescription
 			b.Vendor = Dell
+			b.BiosVersion = blade.BladeBIOSver
 
 			if chassis.PassThru == "" {
 				if strings.Contains(blade.Nics["0"].BladeNicName, "10G") {
@@ -115,6 +116,18 @@ func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) 
 			chassis.Blades = append(chassis.Blades, &b)
 		}
 	}
+
+	result, err = httpGetDell(ip, "json?method=temp-sensors", &c.username, &c.password)
+	if err != nil {
+		return chassis, err
+	}
+	dellCMCTemp := &DellCMCTemp{}
+	err = json.Unmarshal(result, dellCMCTemp)
+	if err != nil {
+		return chassis, err
+	}
+
+	chassis.Temp = dellCMCTemp.DellChassisTemp.TempCurrentValue
 
 	return chassis, err
 }
@@ -140,6 +153,7 @@ func (c *ChassisConnection) Hp(ip *string) (chassis model.Chassis, err error) {
 		chassis.Status = iloXML.HpInfra2.Status
 		chassis.Vendor = HP
 		chassis.FwVersion = iloXML.HpMP.Fwri
+		chassis.PowerSupplyCount = len(iloXML.HpInfra2.HpChassisPower.HpPowersupply)
 
 		if strings.Contains(iloXML.HpInfra2.HpSwitches.HpSwitch[0].Spn, "10G") {
 			chassis.PassThru = "10G"
