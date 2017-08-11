@@ -57,7 +57,7 @@ func httpGet(url string, username *string, password *string) (payload []byte, er
 	return payload, err
 }
 
-func httpGetDell(hostname *string, username *string, password *string) (payload []byte, err error) {
+func httpGetDell(hostname *string, endpoint string, username *string, password *string) (payload []byte, err error) {
 	log.WithFields(log.Fields{"step": "ChassisConnections", "hostname": *hostname}).Debug("Requesting data from BMC")
 
 	form := url.Values{}
@@ -107,7 +107,7 @@ func httpGetDell(hostname *string, username *string, password *string) (payload 
 		return payload, ErrPageNotFound
 	}
 
-	resp, err = client.Get(fmt.Sprintf("https://%s/cgi-bin/webcgi/json?method=groupinfo", *hostname))
+	resp, err = client.Get(fmt.Sprintf("https://%s/cgi-bin/webcgi/%s", *hostname, endpoint))
 	if err != nil {
 		return payload, err
 	}
