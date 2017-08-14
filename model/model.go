@@ -1,8 +1,12 @@
 package model
 
 import (
+	"fmt"
+	"net"
 	"strconv"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/manyminds/api2go/jsonapi"
 )
@@ -15,7 +19,9 @@ type Blade struct {
 	BiosVersion    string    `json:"bios_version"`
 	BmcAddress     string    `json:"bmc_addres"`
 	BmcVersion     string    `json:"bmc_version"`
-	BmcType        string    `json:"bmc_type"`
+	BmcSSH         bool      `json:"bmc_ssh_status"`
+	BmcWEB         bool      `json:"bmc_web_status"`
+	BmcIPMI        bool      `json:"bmc_ipmi_status"`
 	BladePosition  int       `json:"blade_position"`
 	Temp           int       `json:"temp_c"`
 	Power          float64   `json:"power_kw"`
@@ -25,6 +31,37 @@ type Blade struct {
 	ChassisID      int64     `json:"chassis_id"`
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`
+}
+
+// TestConnections as the name says, test connections from the bkbuild machines to the bmcs and update the struct data
+func (b *Blade) TestConnections() {
+	if b.IsStorageBlade == true {
+		return
+	}
+
+	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", b.BmcAddress, 443))
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "test http connection", "ip": b.BmcAddress, "serial": b.Serial, "type": "blade", "error": err, "blade": b.Name, "vendor": b.Vendor}).Error("Auditing blade")
+	} else {
+		b.BmcWEB = true
+		conn.Close()
+	}
+
+	conn, err = net.Dial("tcp", fmt.Sprintf("%s:%d", b.BmcAddress, 22))
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "test ssh connection", "ip": b.BmcAddress, "serial": b.Serial, "type": "blade", "error": err, "blade": b.Name, "vendor": b.Vendor}).Error("Auditing blade")
+	} else {
+		b.BmcSSH = true
+		conn.Close()
+	}
+
+	conn, err = net.Dial("udp", fmt.Sprintf("%s:%d", b.BmcAddress, 161))
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "test ipmi connection", "ip": b.BmcAddress, "serial": b.Serial, "type": "blade", "error": err, "blade": b.Name, "vendor": b.Vendor}).Error("Auditing blade")
+	} else {
+		b.BmcIPMI = true
+		conn.Close()
+	}
 }
 
 // GetID to satisfy jsonapi.MarshalIdentifier interface

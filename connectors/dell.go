@@ -6,6 +6,22 @@ type DellCMC struct {
 	DellChassis *DellChassis `json:"0"`
 }
 
+// DellCMCTemp is the entry of the json exposed by dell when reading the temp metrics
+type DellCMCTemp struct {
+	DellChassisTemp *DellChassisTemp `json:"1"`
+}
+
+// DellChassisTemp is where the chassis thermal data is kept
+type DellChassisTemp struct {
+	TempHealth                 int    `json:"TempHealth"`
+	TempUpperCriticalThreshold int    `json:"TempUpperCriticalThreshold"`
+	TempSensorID               int    `json:"TempSensorID"`
+	TempCurrentValue           int    `json:"TempCurrentValue"`
+	TempLowerCriticalThreshold int    `json:"TempLowerCriticalThreshold"`
+	TempPresence               int    `json:"TempPresence"`
+	TempSensorName             string `json:"TempSensorName"`
+}
+
 // DellChassis groups all the interresting stuff we will ready from the chassis
 type DellChassis struct {
 	DellChassisGroupMemberHealthBlob *DellChassisGroupMemberHealthBlob `json:"ChassisGroupMemberHealthBlob"`
@@ -60,5 +76,5 @@ type DellBlade struct {
 // DellPsuStatus contains the information and power usage of the pdus
 type DellPsuStatus struct {
 	AcPower  string `json:"acPower"`
-	PsuCount string `json:"psuCount"`
+	PsuCount int    `json:"psuCount"`
 }

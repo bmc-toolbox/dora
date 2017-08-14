@@ -110,9 +110,13 @@ func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) 
 			} else {
 				b.IsStorageBlade = false
 				b.Name = blade.BladeName
-				b.BmcAddress = blade.IdracURL
+				idracURL := strings.TrimLeft(blade.IdracURL, "https://")
+				idracURL = strings.TrimLeft(idracURL, "http://")
+				idracURL = strings.Split(idracURL, ":")[0]
+				b.BmcAddress = idracURL
 				b.BmcVersion = blade.BladeUSCVer
 			}
+			b.TestConnections()
 			chassis.Blades = append(chassis.Blades, &b)
 		}
 	}
@@ -183,6 +187,7 @@ func (c *ChassisConnection) Hp(ip *string) (chassis model.Chassis, err error) {
 					b.BmcAddress = blade.MgmtIPAddr
 					b.BmcVersion = blade.MgmtVersion
 				}
+				b.TestConnections()
 				chassis.Blades = append(chassis.Blades, &b)
 			}
 		}
