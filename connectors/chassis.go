@@ -92,7 +92,11 @@ func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) 
 			}
 			b.Temp = temp
 			b.Serial = blade.BladeSvcTag
-			b.Status = blade.BladeLogDescription
+			if blade.BladeLogDescription == "No Errors" {
+				b.Status = "OK"
+			} else {
+				chassis.Status = blade.BladeLogDescription
+			}
 			b.Vendor = Dell
 			b.BiosVersion = blade.BladeBIOSver
 
