@@ -209,7 +209,6 @@ func (c *ChassisConnection) Hp(ip *string) (chassis model.Chassis, err error) {
 						} else {
 							fmt.Println(bladeIloXML.HpHSI.HpNICS)
 							for id, nic := range bladeIloXML.HpHSI.HpNICS.HpNIC {
-								fmt.Println(id, nic)
 								if strings.Contains("iLo", nic.Description) {
 									continue
 								}
