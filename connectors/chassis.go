@@ -122,14 +122,12 @@ func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) 
 
 				for _, nic := range blade.Nics {
 					n := &model.Nic{
-						MacAddress: nic.BladeNicName[len(nic.BladeNicName)-17:],
+						MacAddress: strings.ToLower(nic.BladeNicName[len(nic.BladeNicName)-17:]),
 					}
-					fmt.Println(n)
 					b.Nics = append(b.Nics, n)
 				}
 			}
 			b.TestConnections()
-			fmt.Println(b.Nics)
 			chassis.Blades = append(chassis.Blades, &b)
 		}
 	}
@@ -199,6 +197,29 @@ func (c *ChassisConnection) Hp(ip *string) (chassis model.Chassis, err error) {
 					b.IsStorageBlade = false
 					b.BmcAddress = blade.MgmtIPAddr
 					b.BmcVersion = blade.MgmtVersion
+
+					result, err := httpGet(fmt.Sprintf("https://%s/xmldata?item=all", b.BmcAddress), &c.username, &c.password)
+					if err != nil {
+						log.WithFields(log.Fields{"operation": "connection", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Error("Auditing blade")
+					} else {
+						bladeIloXML := &HpRimpBlade{}
+						err = xml.Unmarshal(result, bladeIloXML)
+						if err != nil {
+							log.WithFields(log.Fields{"operation": "connection", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Error("Auditing blade")
+						} else {
+							fmt.Println(bladeIloXML.HpHSI.HpNICS)
+							for id, nic := range bladeIloXML.HpHSI.HpNICS.HpNIC {
+								fmt.Println(id, nic)
+								if strings.Contains("iLo", nic.Description) {
+									continue
+								}
+								n := &model.Nic{
+									MacAddress: strings.ToLower(nic.MacAddr),
+								}
+								b.Nics = append(b.Nics, n)
+							}
+						}
+					}
 				}
 				b.TestConnections()
 				chassis.Blades = append(chassis.Blades, &b)
