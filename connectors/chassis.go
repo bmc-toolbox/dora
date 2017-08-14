@@ -59,7 +59,7 @@ func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) 
 	}
 
 	chassis.Name = dellCMC.DellChassis.DellChassisGroupMemberHealthBlob.DellChassisStatus.CHASSISName
-	chassis.Serial = dellCMC.DellChassis.DellChassisGroupMemberHealthBlob.DellChassisStatus.ROChassisServiceTag
+	chassis.Serial = strings.ToLower(dellCMC.DellChassis.DellChassisGroupMemberHealthBlob.DellChassisStatus.ROChassisServiceTag)
 	chassis.Model = strings.TrimSpace(dellCMC.DellChassis.DellChassisGroupMemberHealthBlob.DellChassisStatus.ROChassisProductname)
 	chassis.FwVersion = dellCMC.DellChassis.DellChassisGroupMemberHealthBlob.DellChassisStatus.ROCmcFwVersionString
 	chassis.PowerSupplyCount = dellCMC.DellChassis.DellChassisGroupMemberHealthBlob.DellPsuStatus.PsuCount
@@ -71,13 +71,13 @@ func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) 
 
 	power, err := strconv.Atoi(strings.TrimRight(dellCMC.DellChassis.DellChassisGroupMemberHealthBlob.DellPsuStatus.AcPower, " W"))
 	if err != nil {
-		log.WithFields(log.Fields{"operation": "connection", "ip": *ip, "name": chassis.Name, "serial": chassis.ID, "type": "chassis", "error": err}).Error("Auditing chassis")
+		log.WithFields(log.Fields{"operation": "connection", "ip": *ip, "name": chassis.Name, "serial": chassis.Serial, "type": "chassis", "error": err}).Error("Auditing chassis")
 		return
 	}
 	chassis.Power = float64(power) / 1000
 	chassis.Vendor = Dell
 
-	log.WithFields(log.Fields{"operation": "connection", "ip": *ip, "name": chassis.Name, "serial": chassis.ID, "type": "chassis"}).Debug("Auditing chassis")
+	log.WithFields(log.Fields{"operation": "connection", "ip": *ip, "name": chassis.Name, "serial": chassis.Serial, "type": "chassis"}).Debug("Auditing chassis")
 
 	for _, blade := range dellCMC.DellChassis.DellChassisGroupMemberHealthBlob.DellBlades {
 		if blade.BladePresent == 1 {
@@ -91,7 +91,7 @@ func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) 
 				continue
 			}
 			b.Temp = temp
-			b.Serial = blade.BladeSvcTag
+			b.Serial = strings.ToLower(blade.BladeSvcTag)
 			if blade.BladeLogDescription == "No Errors" {
 				b.Status = "OK"
 			} else {
@@ -110,7 +110,7 @@ func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) 
 
 			if blade.IsStorageBlade == 1 {
 				b.IsStorageBlade = true
-				b.Name = blade.BladeSvcTag
+				b.Name = b.Serial
 			} else {
 				b.IsStorageBlade = false
 				b.Name = blade.BladeName
@@ -119,8 +119,17 @@ func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) 
 				idracURL = strings.Split(idracURL, ":")[0]
 				b.BmcAddress = idracURL
 				b.BmcVersion = blade.BladeUSCVer
+
+				for _, nic := range blade.Nics {
+					n := &model.Nic{
+						MacAddress: nic.BladeNicName[len(nic.BladeNicName)-17:],
+					}
+					fmt.Println(n)
+					b.Nics = append(b.Nics, n)
+				}
 			}
 			b.TestConnections()
+			fmt.Println(b.Nics)
 			chassis.Blades = append(chassis.Blades, &b)
 		}
 	}
@@ -153,7 +162,7 @@ func (c *ChassisConnection) Hp(ip *string) (chassis model.Chassis, err error) {
 
 	if iloXML.HpInfra2 != nil {
 		chassis.Name = iloXML.HpInfra2.Encl
-		chassis.Serial = iloXML.HpInfra2.EnclSn
+		chassis.Serial = strings.ToLower(iloXML.HpInfra2.EnclSn)
 		chassis.Model = iloXML.HpInfra2.Pn
 		chassis.Rack = iloXML.HpInfra2.Rack
 		chassis.Power = iloXML.HpInfra2.HpChassisPower.PowerConsumed / 1000.00
@@ -178,7 +187,7 @@ func (c *ChassisConnection) Hp(ip *string) (chassis model.Chassis, err error) {
 				b.BladePosition = blade.HpBay.Connection
 				b.Power = blade.HpPower.PowerConsumed / 1000.00
 				b.Temp = blade.HpTemps.HpTemp.C
-				b.Serial = strings.TrimSpace(blade.Bsn)
+				b.Serial = strings.ToLower(strings.TrimSpace(blade.Bsn))
 				b.Status = blade.Status
 				b.Vendor = HP
 
