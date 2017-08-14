@@ -31,8 +31,10 @@ func RunGin(port int, debug bool) {
 	defer db.Close()
 	chassisStorage := storage.NewChassisStorage(db)
 	bladeStorage := storage.NewBladeStorage(db)
+	nicStorage := storage.NewNicStorage(db)
 	api.AddResource(model.Chassis{}, resource.ChassisResource{BladeStorage: bladeStorage, ChassisStorage: chassisStorage})
-	api.AddResource(model.Blade{}, resource.BladeResource{BladeStorage: bladeStorage, ChassisStorage: chassisStorage})
+	api.AddResource(model.Blade{}, resource.BladeResource{BladeStorage: bladeStorage, ChassisStorage: chassisStorage, NicStorage: nicStorage})
+	api.AddResource(model.Nic{}, resource.NicResource{BladeStorage: bladeStorage, NicStorage: nicStorage})
 
 	r.GET("/ping", func(c *gin.Context) {
 		c.String(200, "pong")
