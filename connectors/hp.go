@@ -73,3 +73,21 @@ type HpTemp struct {
 type HpTemps struct {
 	HpTemp *HpTemp `xml:" TEMP,omitempty" json:"TEMP,omitempty"`
 }
+
+type HpRimpBlade struct {
+	HpHSI *HpHSI `xml:" HSI,omitempty" json:"HSI,omitempty"`
+}
+
+type HpHSI struct {
+	HpNICS *HpNICS `xml:" NICS,omitempty" json:"NICS,omitempty"`
+}
+
+type HpNICS struct {
+	HpNIC []*HpNIC `xml:" NIC,omitempty" json:"NICS,omitempty"`
+}
+
+type HpNIC struct {
+	Description string `xml:" DESCRIPTION,omitempty" json:"DESCRIPTION,omitempty"`
+	MacAddr     string `xml:" MACADDR,omitempty" json:"MACADDR,omitempty"`
+	Status      string `xml:" STATUS,omitempty" json:"STATUS,omitempty"`
+}
