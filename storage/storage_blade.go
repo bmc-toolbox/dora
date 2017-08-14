@@ -24,6 +24,14 @@ func (b BladeStorage) GetAll() (blades []model.Blade, err error) {
 	return blades, err
 }
 
+// GetAllWithAssociations returns all chassis with their relationships
+func (b BladeStorage) GetAllWithAssociations() (blades []model.Blade, err error) {
+	if err = b.db.Preload("Nics").Find(&blades).Error; err != nil {
+		return blades, err
+	}
+	return blades, err
+}
+
 // GetAllByChassisID of the Blades by chassisID
 func (b BladeStorage) GetAllByChassisID(serials []string) (blades []model.Blade, err error) {
 	for _, serial := range serials {

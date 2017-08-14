@@ -22,17 +22,34 @@ func (b BladeResource) FindAll(r api2go.Request) (api2go.Responder, error) {
 	var blades []model.Blade
 	var err error
 	_, hasFilters := r.QueryParams["filter[serial]"]
+	include, hasInclude := r.QueryParams["include"]
 	chassisID, hasChassis := r.QueryParams["chassisID"]
 
 	for key, values := range r.QueryParams {
 		fmt.Println(key, values)
 	}
 
+	if hasInclude && include[0] == "nics" {
+		if len(blades) == 0 {
+			blades, err = b.BladeStorage.GetAllWithAssociations()
+		} else {
+			var bladesWithInclude []model.Blade
+			for _, bl := range blades {
+				blWithInclude, err := b.BladeStorage.GetOne(bl.Serial)
+				if err != nil {
+					return &Response{}, err
+				}
+				bladesWithInclude = append(bladesWithInclude, blWithInclude)
+			}
+			blades = bladesWithInclude
+		}
+	}
+
 	if hasChassis {
 		blades, err = b.BladeStorage.GetAllByChassisID(chassisID)
 	}
 
-	if !hasFilters && !hasChassis /* && !hasInclude */ {
+	if !hasFilters && !hasChassis && !hasInclude {
 		blades, err = b.BladeStorage.GetAll()
 		if err != nil {
 			return &Response{Res: blades}, err

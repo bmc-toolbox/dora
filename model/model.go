@@ -56,7 +56,7 @@ type Blade struct {
 	BmcSSH         bool      `json:"bmc_ssh_status"`
 	BmcWEB         bool      `json:"bmc_web_status"`
 	BmcIPMI        bool      `json:"bmc_ipmi_status"`
-	Nics           []*Nic    `json:"nics" gorm:"ForeignKey:BladeSerial"`
+	Nics           []*Nic    `json:"-" gorm:"ForeignKey:BladeSerial"`
 	NicsIDs        []int64   `json:"-" sql:"-"`
 	BladePosition  int       `json:"blade_position"`
 	Temp           int       `json:"temp_c"`
@@ -113,12 +113,17 @@ func (b Blade) GetReferences() []jsonapi.Reference {
 			Name:         "chassis",
 			Relationship: jsonapi.ToOneRelationship,
 		},
+		{
+			Type:         "nics",
+			Name:         "nics",
+			Relationship: jsonapi.ToManyRelationship,
+		},
 	}
 }
 
 // GetReferencedIDs to satisfy the jsonapi.MarshalLinkedRelations interface
 func (b Blade) GetReferencedIDs() []jsonapi.ReferenceID {
-	return []jsonapi.ReferenceID{
+	result := []jsonapi.ReferenceID{
 		{
 			ID:           b.ChasssisSerial,
 			Type:         "chassis",
@@ -126,6 +131,16 @@ func (b Blade) GetReferencedIDs() []jsonapi.ReferenceID {
 			Relationship: jsonapi.ToOneRelationship,
 		},
 	}
+	for _, nic := range b.Nics {
+		result = append(result, jsonapi.ReferenceID{
+			ID:           nic.GetID(),
+			Type:         "nics",
+			Name:         "nics",
+			Relationship: jsonapi.ToManyRelationship,
+		})
+	}
+
+	return result
 }
 
 // Chassis contains all the chassis the information we will expose across diferent vendors

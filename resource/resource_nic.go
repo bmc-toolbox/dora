@@ -26,7 +26,7 @@ func (n NicResource) FindAll(r api2go.Request) (api2go.Responder, error) {
 		nics, err = n.NicStorage.GetAllByBladeID(bladeID)
 	}
 
-	if !hasFilters && !hasBlade /* && !hasInclude */ {
+	if !hasFilters && !hasBlade {
 		nics, err = n.NicStorage.GetAll()
 		if err != nil {
 			return &Response{Res: nics}, err
