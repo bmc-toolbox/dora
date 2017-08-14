@@ -61,7 +61,6 @@ func (c *Collector) collectChassis(chassis *simpleapi.Chassis, rack *simpleapi.R
 			return err
 		}
 	} else if strings.HasPrefix(chassis.Model, "P") {
-		return
 		chassisData, err = conn.Dell(ip)
 		if err != nil {
 			return err

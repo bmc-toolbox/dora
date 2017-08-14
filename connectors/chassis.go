@@ -206,9 +206,8 @@ func (c *ChassisConnection) Hp(ip *string) (chassis model.Chassis, err error) {
 						err = xml.Unmarshal(result, bladeIloXML)
 						if err != nil {
 							log.WithFields(log.Fields{"operation": "connection", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Error("Auditing blade")
-						} else {
-							fmt.Println(bladeIloXML.HpHSI.HpNICS)
-							for id, nic := range bladeIloXML.HpHSI.HpNICS.HpNIC {
+						} else if bladeIloXML.HpHSI != nil && bladeIloXML.HpHSI.HpNICS != nil && bladeIloXML.HpHSI.HpNICS.HpNIC != nil {
+							for _, nic := range bladeIloXML.HpHSI.HpNICS.HpNIC {
 								if strings.Contains("iLo", nic.Description) {
 									continue
 								}
