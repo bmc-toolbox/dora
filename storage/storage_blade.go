@@ -1,8 +1,6 @@
 package storage
 
 import (
-	"strconv"
-
 	"github.com/jinzhu/gorm"
 	"gitlab.booking.com/infra/dora/model"
 )
@@ -20,21 +18,16 @@ type BladeStorage struct {
 
 // GetAll of the Blades
 func (b BladeStorage) GetAll() (blades []model.Blade, err error) {
-	if err = b.db.Order("id").Find(&blades).Error; err != nil {
+	if err = b.db.Order("serial").Preload("Nics").Find(&blades).Error; err != nil {
 		return blades, err
 	}
 	return blades, err
 }
 
 // GetAllByChassisID of the Blades by chassisID
-func (b BladeStorage) GetAllByChassisID(IDs []string) (blades []model.Blade, err error) {
-	for _, id := range IDs {
-		iid, err := strconv.ParseInt(id, 10, 64)
-		if err != nil {
-			return nil, err
-		}
-
-		bl, err := b.getByChassisID(iid)
+func (b BladeStorage) GetAllByChassisID(serials []string) (blades []model.Blade, err error) {
+	for _, serial := range serials {
+		bl, err := b.getByChassisID(serial)
 		if err == gorm.ErrRecordNotFound {
 			continue
 		} else if err != nil {
@@ -45,38 +38,17 @@ func (b BladeStorage) GetAllByChassisID(IDs []string) (blades []model.Blade, err
 	return blades, nil
 }
 
-func (b BladeStorage) getByChassisID(id int64) (blade model.Blade, err error) {
-	if err = b.db.Where("chassis_id = ?", id).First(&blade).Error; err != nil {
+func (b BladeStorage) getByChassisID(serial string) (blade model.Blade, err error) {
+	if err = b.db.Where("chassis_serial = ?", serial).Preload("Nics").First(&blade).Error; err != nil {
 		return blade, err
 	}
 	return blade, err
 }
 
 // GetOne  Blade
-func (s BladeStorage) GetOne(id int64) (blade model.Blade, err error) {
-	if err := s.db.First(&blade, id).Error; err != nil {
+func (s BladeStorage) GetOne(serial string) (blade model.Blade, err error) {
+	if err := s.db.Preload("Nics").Where("serial = ?", serial).First(&blade).Error; err != nil {
 		return blade, err
 	}
 	return blade, err
-}
-
-func (s BladeStorage) getBySerial(serial string) (blade model.Blade, err error) {
-	if err = s.db.Where("serial = ?", serial).First(&blade).Error; err != nil {
-		return blade, err
-	}
-	return blade, err
-}
-
-// GetBySerial Blade
-func (s BladeStorage) GetBySerial(serials []string) (blades []model.Blade, err error) {
-	for _, serial := range serials {
-		bl, err := s.getBySerial(serial)
-		if err == gorm.ErrRecordNotFound {
-			continue
-		} else if err != nil {
-			return blades, err
-		}
-		blades = append(blades, bl)
-	}
-	return blades, nil
 }
