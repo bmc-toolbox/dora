@@ -3,7 +3,6 @@ package model
 import (
 	"fmt"
 	"net"
-	"strconv"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -11,24 +10,61 @@ import (
 	"github.com/manyminds/api2go/jsonapi"
 )
 
+// Nic contains the network information of the cards attached to blades or chassis
+type Nic struct {
+	MacAddress  string    `json:"mac_address" gorm:"primary_key"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	BladeSerial string    `json:"-"`
+}
+
+// GetID to satisfy jsonapi.MarshalIdentifier interface
+func (n Nic) GetID() string {
+	return n.MacAddress
+}
+
+// GetReferences to satisfy the jsonapi.MarshalReferences interface
+func (n Nic) GetReferences() []jsonapi.Reference {
+	return []jsonapi.Reference{
+		{
+			Type:         "blade",
+			Name:         "blade",
+			Relationship: jsonapi.ToOneRelationship,
+		},
+	}
+}
+
+// GetReferencedIDs to satisfy the jsonapi.MarshalLinkedRelations interface
+func (n Nic) GetReferencedIDs() []jsonapi.ReferenceID {
+	return []jsonapi.ReferenceID{
+		{
+			ID:           n.BladeSerial,
+			Type:         "blade",
+			Name:         "blade",
+			Relationship: jsonapi.ToOneRelationship,
+		},
+	}
+}
+
 // Blade contains all the blade information we will expose across diferent vendors
 type Blade struct {
-	ID             int64     `json:"-"`
-	Serial         string    `json:"serial"`
+	Serial         string    `json:"serial" gorm:"primary_key"`
 	Name           string    `json:"name"`
 	BiosVersion    string    `json:"bios_version"`
-	BmcAddress     string    `json:"bmc_addres"`
+	BmcAddress     string    `json:"bmc_address"`
 	BmcVersion     string    `json:"bmc_version"`
 	BmcSSH         bool      `json:"bmc_ssh_status"`
 	BmcWEB         bool      `json:"bmc_web_status"`
 	BmcIPMI        bool      `json:"bmc_ipmi_status"`
+	Nics           []*Nic    `json:"nics" gorm:"ForeignKey:BladeSerial"`
+	NicsIDs        []int64   `json:"-" sql:"-"`
 	BladePosition  int       `json:"blade_position"`
 	Temp           int       `json:"temp_c"`
 	Power          float64   `json:"power_kw"`
 	Status         string    `json:"status"`
 	IsStorageBlade bool      `json:"is_storage_blade"`
 	Vendor         string    `json:"vendor"`
-	ChassisID      int64     `json:"chassis_id"`
+	ChasssisSerial string    `json:"-"`
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`
 }
@@ -66,7 +102,7 @@ func (b *Blade) TestConnections() {
 
 // GetID to satisfy jsonapi.MarshalIdentifier interface
 func (b Blade) GetID() string {
-	return strconv.FormatInt(b.ID, 10)
+	return b.Serial
 }
 
 // GetReferences to satisfy the jsonapi.MarshalReferences interface
@@ -84,7 +120,7 @@ func (b Blade) GetReferences() []jsonapi.Reference {
 func (b Blade) GetReferencedIDs() []jsonapi.ReferenceID {
 	return []jsonapi.ReferenceID{
 		{
-			ID:           strconv.FormatInt(b.ChassisID, 10),
+			ID:           b.ChasssisSerial,
 			Type:         "chassis",
 			Name:         "chassis",
 			Relationship: jsonapi.ToOneRelationship,
@@ -94,11 +130,14 @@ func (b Blade) GetReferencedIDs() []jsonapi.ReferenceID {
 
 // Chassis contains all the chassis the information we will expose across diferent vendors
 type Chassis struct {
-	ID               int64     `json:"-"`
-	Serial           string    `json:"serial"`
+	Serial           string    `json:"serial" gorm:"primary_key"`
 	Name             string    `json:"name"`
 	Rack             string    `json:"rack"`
-	Blades           []*Blade  `json:"-"`
+	BmcAddress       string    `json:"bmc_address"`
+	BmcSSH           bool      `json:"bmc_ssh_status"`
+	BmcWEB           bool      `json:"bmc_web_status"`
+	BmcIPMI          bool      `json:"bmc_ipmi_status"`
+	Blades           []*Blade  `json:"-" gorm:"ForeignKey:ChasssisSerial"`
 	BladesIDS        []int64   `json:"-" sql:"-"`
 	Temp             int       `json:"temp_c"`
 	PowerSupplyCount int       `json:"power_supply_count"`
@@ -114,7 +153,7 @@ type Chassis struct {
 
 // GetID to satisfy jsonapi.MarshalIdentifier interface
 func (c Chassis) GetID() string {
-	return strconv.FormatInt(c.ID, 10)
+	return c.Serial
 }
 
 // GetReferences to satisfy the jsonapi.MarshalReferences interface

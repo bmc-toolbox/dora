@@ -19,7 +19,7 @@ func InitDB() (*gorm.DB, error) {
 
 	db.LogMode(viper.GetBool("debug"))
 	db.SingularTable(true)
-	db.AutoMigrate(&model.Blade{}, &model.Chassis{})
+	db.AutoMigrate(&model.Blade{}, &model.Chassis{}, &model.Nic{})
 
 	return db, nil
 }
