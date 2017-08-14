@@ -2,7 +2,6 @@ package resource
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/jinzhu/gorm"
 	"github.com/manyminds/api2go"
@@ -20,16 +19,9 @@ type ChassisResource struct {
 func (c ChassisResource) FindAll(r api2go.Request) (api2go.Responder, error) {
 	var chassis []model.Chassis
 	var err error
-	filterSerial, hasFilters := r.QueryParams["filter[serial]"]
+	_, hasFilters := r.QueryParams["filter[serial]"]
 	include, hasInclude := r.QueryParams["include"]
 	bladesID, hasBlade := r.QueryParams["bladesID"]
-
-	if hasFilters {
-		chassis, err = c.ChassisStorage.GetBySerial(filterSerial)
-		if err != nil {
-			return &Response{}, err
-		}
-	}
 
 	if hasInclude && include[0] == "blades" {
 		if len(chassis) == 0 {
@@ -37,7 +29,7 @@ func (c ChassisResource) FindAll(r api2go.Request) (api2go.Responder, error) {
 		} else {
 			var chassisWithInclude []model.Chassis
 			for _, ch := range chassis {
-				chWithInclude, err := c.ChassisStorage.GetOne(ch.ID)
+				chWithInclude, err := c.ChassisStorage.GetOne(ch.Serial)
 				if err != nil {
 					return &Response{}, err
 				}
@@ -62,12 +54,7 @@ func (c ChassisResource) FindAll(r api2go.Request) (api2go.Responder, error) {
 
 // FindOne Chassis
 func (c ChassisResource) FindOne(ID string, r api2go.Request) (api2go.Responder, error) {
-	id, err := strconv.ParseInt(ID, 10, 64)
-	if err != nil {
-		return &Response{}, api2go.NewHTTPError(ErrInvalidID, ErrInvalidID.Error(), http.StatusBadRequest)
-	}
-
-	res, err := c.ChassisStorage.GetOne(id)
+	res, err := c.ChassisStorage.GetOne(ID)
 	if err == gorm.ErrRecordNotFound {
 		return &Response{}, api2go.NewHTTPError(err, err.Error(), http.StatusNotFound)
 	}
