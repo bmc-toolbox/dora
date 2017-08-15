@@ -66,6 +66,8 @@ type Blade struct {
 	IsStorageBlade bool      `json:"is_storage_blade"`
 	Vendor         string    `json:"vendor"`
 	ChasssisSerial string    `json:"-"`
+	Processor      string    `json:"proc"`
+	Memory         int       `json:"memory_in_gb"`
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`
 }
