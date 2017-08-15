@@ -84,6 +84,13 @@ func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) 
 			b := model.Blade{}
 
 			b.BladePosition = blade.BladeMasterSlot
+			b.Serial = strings.ToLower(blade.BladeSvcTag)
+
+			if b.Serial == "" {
+				log.WithFields(log.Fields{"operation": "connection", "ip": *ip, "name": chassis.Name, "position": b.BladePosition, "type": "chassis", "error": "Review this blade. The chassis identifies it as connected, but we have no data"}).Error("Auditing blade")
+				continue
+			}
+
 			b.Power = float64(blade.ActualPwrConsump) / 1000
 			temp, err := strconv.Atoi(blade.BladeTemperature)
 			if err != nil {
@@ -91,7 +98,6 @@ func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) 
 				continue
 			}
 			b.Temp = temp
-			b.Serial = strings.ToLower(blade.BladeSvcTag)
 			if blade.BladeLogDescription == "No Errors" {
 				b.Status = "OK"
 			} else {
@@ -121,6 +127,11 @@ func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) 
 				b.BmcVersion = blade.BladeUSCVer
 
 				for _, nic := range blade.Nics {
+					if nic.BladeNicName == "" {
+						log.WithFields(log.Fields{"operation": "connection", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": "Network card information missing, please verify"}).Error("Auditing blade")
+						continue
+					}
+
 					n := &model.Nic{
 						MacAddress: strings.ToLower(nic.BladeNicName[len(nic.BladeNicName)-17:]),
 					}
@@ -220,6 +231,29 @@ func (c *ChassisConnection) Hp(ip *string) (chassis model.Chassis, err error) {
 					}
 				}
 				b.TestConnections()
+
+				if b.BmcWEB {
+					result, err := httpGetHP(&b.BmcAddress, "json/fw_info", &c.username, &c.password)
+					if err == nil {
+						hpFwData := &HpFirmware{}
+						err = json.Unmarshal(result, hpFwData)
+						if err == nil {
+							for _, entry := range hpFwData.Firmware {
+								if entry.FwName == "System ROM" {
+									b.BiosVersion = entry.FwVersion
+								}
+							}
+						} else {
+							log.WithFields(log.Fields{"operation": "connection", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+						}
+					} else if err == ErrPageNotFound {
+						log.WithFields(log.Fields{"operation": "read firware data", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Debug("Auditing blade")
+					} else {
+						log.WithFields(log.Fields{"operation": "read firware data", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+					}
+
+				}
+
 				chassis.Blades = append(chassis.Blades, &b)
 			}
 		}
