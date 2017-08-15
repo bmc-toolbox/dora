@@ -256,7 +256,7 @@ func (i *IloReader) Memory() (mem int, err error) {
 		return mem, err
 	}
 
-	return hpMemData.MemTotalMemSize / 1024 / 1024, err
+	return hpMemData.MemTotalMemSize / 1024, err
 }
 
 // CPU return the cpu type of the server
@@ -272,7 +272,7 @@ func (i *IloReader) CPU() (cpu string, err error) {
 		return cpu, err
 	}
 
-	return fmt.Sprintf("2 x %s", hpProcData.Processors[0].ProcName), err
+	return fmt.Sprintf("2 x %s", strings.Trim(hpProcData.Processors[0].ProcName), err
 }
 
 // BiosVersion return the current verion of the bios
