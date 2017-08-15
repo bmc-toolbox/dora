@@ -58,7 +58,7 @@ func httpGet(url string, username *string, password *string) (payload []byte, er
 }
 
 func httpGetDell(hostname *string, endpoint string, username *string, password *string) (payload []byte, err error) {
-	log.WithFields(log.Fields{"step": "ChassisConnections", "hostname": *hostname}).Debug("Requesting data from BMC")
+	log.WithFields(log.Fields{"step": "ChassisConnections Dell", "hostname": *hostname}).Debug("Requesting data from BMC")
 
 	form := url.Values{}
 	form.Add("user", *username)
@@ -133,6 +133,87 @@ func httpGetDell(hostname *string, endpoint string, username *string, password *
 	payload = bytes.Replace(payload, []byte("\"bladeTemperature\":-1"), []byte("\"bladeTemperature\":\"0\""), -1)
 	payload = bytes.Replace(payload, []byte("\"nic\": [],"), []byte("\"nic\": {},"), -1)
 	payload = bytes.Replace(payload, []byte("N\\/A"), []byte("0"), -1)
+
+	return payload, err
+}
+
+func httpGetHP(hostname *string, endpoint string, username *string, password *string) (payload []byte, err error) {
+	log.WithFields(log.Fields{"step": "ChassisConnections HP", "hostname": *hostname}).Debug("Requesting data from BMC")
+
+	data := []byte(fmt.Sprintf("{\"method\":\"login\", \"user_login\":\"%s\", \"password\":\"%s\" }", *username, *password))
+	u, err := url.Parse(fmt.Sprintf("https://%s/json/login_session", *hostname))
+	if err != nil {
+		return payload, err
+	}
+
+	req, err := http.NewRequest("POST", u.String(), bytes.NewBuffer(data))
+	if err != nil {
+		return payload, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	tr := &http.Transport{
+		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
+		DisableKeepAlives: false,
+		Dial: (&net.Dialer{
+			Timeout:   10 * time.Second,
+			KeepAlive: 10 * time.Second,
+		}).Dial,
+		TLSHandshakeTimeout: 10 * time.Second,
+	}
+
+	jar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
+	if err != nil {
+		return payload, err
+	}
+
+	client := &http.Client{
+		Timeout:   time.Second * 20,
+		Transport: tr,
+		Jar:       jar,
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return payload, err
+	}
+
+	io.Copy(ioutil.Discard, resp.Body)
+	defer resp.Body.Close()
+
+	if resp.StatusCode == 404 {
+		return payload, ErrPageNotFound
+	}
+
+	resp, err = client.Get(fmt.Sprintf("https://%s/%s", *hostname, endpoint))
+	if err != nil {
+		return payload, err
+	}
+	defer resp.Body.Close()
+
+	payload, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return payload, err
+	}
+
+	data = []byte(`{"method":"logout"}`)
+
+	req, err = http.NewRequest("POST", u.String(), bytes.NewBuffer(data))
+	if err != nil {
+		return payload, err
+	}
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err = client.Do(req)
+	if err != nil {
+		return payload, err
+	}
+	io.Copy(ioutil.Discard, resp.Body)
+	defer resp.Body.Close()
+
+	if resp.StatusCode == 404 {
+		return payload, ErrPageNotFound
+	}
 
 	return payload, err
 }
