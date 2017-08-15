@@ -75,7 +75,7 @@ func (b *Blade) TestConnections() {
 		return
 	}
 
-	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", b.BmcAddress, 443))
+	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", b.BmcAddress, 443), 15*time.Second)
 	if err != nil {
 		log.WithFields(log.Fields{"operation": "test http connection", "ip": b.BmcAddress, "serial": b.Serial, "type": "blade", "error": err, "blade": b.Name, "vendor": b.Vendor}).Error("Auditing blade")
 	} else {
@@ -83,7 +83,7 @@ func (b *Blade) TestConnections() {
 		conn.Close()
 	}
 
-	conn, err = net.Dial("tcp", fmt.Sprintf("%s:%d", b.BmcAddress, 22))
+	conn, err = net.DialTimeout("tcp", fmt.Sprintf("%s:%d", b.BmcAddress, 22), 15*time.Second)
 	if err != nil {
 		log.WithFields(log.Fields{"operation": "test ssh connection", "ip": b.BmcAddress, "serial": b.Serial, "type": "blade", "error": err, "blade": b.Name, "vendor": b.Vendor}).Error("Auditing blade")
 	} else {
@@ -91,7 +91,7 @@ func (b *Blade) TestConnections() {
 		conn.Close()
 	}
 
-	conn, err = net.Dial("udp", fmt.Sprintf("%s:%d", b.BmcAddress, 161))
+	conn, err = net.DialTimeout("udp", fmt.Sprintf("%s:%d", b.BmcAddress, 161), 15*time.Second)
 	if err != nil {
 		log.WithFields(log.Fields{"operation": "test ipmi connection", "ip": b.BmcAddress, "serial": b.Serial, "type": "blade", "error": err, "blade": b.Name, "vendor": b.Vendor}).Error("Auditing blade")
 	} else {
