@@ -62,6 +62,7 @@ type DellBlade struct {
 	IdracURL            string              `json:"idracURL"`
 	BladeLogDescription string              `json:"bladeLogDescription"`
 	StorageNumDrives    int                 `json:"storageNumDrives"`
+	BladeCPUInfo        string              `json:"bladeCpuInfo"`
 	Nics                map[string]*DellNic `json:"nic"`
 	BladeMasterSlot     int                 `json:"bladeMasterSlot"`
 	BladeUSCVer         string              `json:"bladeUSCVer"`
