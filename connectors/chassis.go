@@ -91,6 +91,7 @@ func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) 
 				continue
 			}
 
+			b.Model = blade.BladeModel
 			b.Power = float64(blade.ActualPwrConsump) / 1000
 			temp, err := strconv.Atoi(blade.BladeTemperature)
 			if err != nil {
@@ -154,6 +155,7 @@ func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) 
 	}
 
 	chassis.Temp = dellCMCTemp.DellChassisTemp.TempCurrentValue
+	chassis.TestConnections()
 
 	return chassis, err
 }
@@ -208,6 +210,7 @@ func (c *ChassisConnection) Hp(ip *string) (chassis model.Chassis, err error) {
 					b.IsStorageBlade = false
 					b.BmcAddress = blade.MgmtIPAddr
 					b.BmcVersion = blade.MgmtVersion
+					b.Model = blade.Spn
 
 					result, err := httpGet(fmt.Sprintf("https://%s/xmldata?item=all", b.BmcAddress), &c.username, &c.password)
 					if err != nil {
@@ -258,6 +261,7 @@ func (c *ChassisConnection) Hp(ip *string) (chassis model.Chassis, err error) {
 			}
 		}
 	}
+	chassis.TestConnections()
 
 	return chassis, err
 }
