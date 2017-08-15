@@ -85,6 +85,7 @@ func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) 
 
 			b.BladePosition = blade.BladeMasterSlot
 			b.Serial = strings.ToLower(blade.BladeSvcTag)
+			b.Processor = blade.BladeCPUInfo
 
 			if b.Serial == "" {
 				log.WithFields(log.Fields{"operation": "connection", "ip": *ip, "name": chassis.Name, "position": b.BladePosition, "type": "chassis", "error": "Review this blade. The chassis identifies it as connected, but we have no data"}).Error("Auditing blade")
@@ -236,25 +237,34 @@ func (c *ChassisConnection) Hp(ip *string) (chassis model.Chassis, err error) {
 				b.TestConnections()
 
 				if b.BmcWEB {
-					result, err := httpGetHP(&b.BmcAddress, "json/fw_info", &c.username, &c.password)
-					if err == nil {
-						hpFwData := &HpFirmware{}
-						err = json.Unmarshal(result, hpFwData)
-						if err == nil {
-							for _, entry := range hpFwData.Firmware {
-								if entry.FwName == "System ROM" {
-									b.BiosVersion = entry.FwVersion
-								}
-							}
-						} else {
-							log.WithFields(log.Fields{"operation": "connection", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
-						}
-					} else if err == ErrPageNotFound {
-						log.WithFields(log.Fields{"operation": "read firware data", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Debug("Auditing blade")
-					} else {
-						log.WithFields(log.Fields{"operation": "read firware data", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+					ilo, err := NewIloReader(&b.BmcAddress, &c.username, &c.password)
+					if err != nil {
+						log.WithFields(log.Fields{"operation": "create ilo connection", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
 					}
 
+					err = ilo.Login()
+					if err != nil {
+						log.WithFields(log.Fields{"operation": "opening ilo connection", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+					}
+
+					if err == nil {
+						b.BiosVersion, err = ilo.BiosVersion()
+						if err != nil {
+							log.WithFields(log.Fields{"operation": "read bios version", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+						}
+
+						b.Processor, err = ilo.CPU()
+						if err != nil {
+							log.WithFields(log.Fields{"operation": "read cpu data", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+						}
+
+						b.Memory, err = ilo.Memory()
+						if err != nil {
+							log.WithFields(log.Fields{"operation": "read memory data", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+						}
+					} else {
+						log.WithFields(log.Fields{"operation": "ilo login", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+					}
 				}
 
 				chassis.Blades = append(chassis.Blades, &b)
