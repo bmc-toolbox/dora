@@ -1,5 +1,20 @@
 package connectors
 
+import (
+	"crypto/tls"
+	"fmt"
+	"io"
+	"io/ioutil"
+	"net"
+	"net/http"
+	"net/http/cookiejar"
+	"net/url"
+	"strings"
+	"time"
+
+	"golang.org/x/net/publicsuffix"
+)
+
 // DellCMC is the entry of the json exposed by dell
 // We don't need to use an maps[string] with DellChassis, because we don't have clusters
 type DellCMC struct {
@@ -79,4 +94,74 @@ type DellBlade struct {
 type DellPsuStatus struct {
 	AcPower  string `json:"acPower"`
 	PsuCount int    `json:"psuCount"`
+}
+
+// IDracReader holds the status and properties of a connection to an iDrac device
+type IDracReader struct {
+	ip       *string
+	username *string
+	password *string
+	client   *http.Client
+}
+
+// NewIDracReader returns a new IloReader ready to be used
+func NewIDracReader(ip *string, username *string, password *string) (iDrac *IDracReader) {
+	return &IDracReader{ip: ip, username: username, password: password}
+}
+
+// Login initiates the connection to an iLO device
+func (i *IDracReader) Login() (err error) {
+	log.WithFields(log.Fields{"step": "iDrac Connection Dell", "ip": *i.ip}).Debug("Connecting to iDrac")
+
+	form := url.Values{}
+	form.Add("user", *username)
+	form.Add("password", *password)
+
+	u, err := url.Parse(fmt.Sprintf("https://%s/data/login", *hostname))
+	if err != nil {
+		return payload, err
+	}
+
+	req, err := http.NewRequest("POST", u.String(), strings.NewReader(form.Encode()))
+	if err != nil {
+		return payload, err
+	}
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+
+	tr := &http.Transport{
+		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
+		DisableKeepAlives: true,
+		Dial: (&net.Dialer{
+			Timeout:   10 * time.Second,
+			KeepAlive: 10 * time.Second,
+		}).Dial,
+		TLSHandshakeTimeout: 10 * time.Second,
+	}
+
+	jar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
+	if err != nil {
+		return err
+	}
+
+	client := &http.Client{
+		Timeout:   time.Second * 20,
+		Transport: tr,
+		Jar:       jar,
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	io.Copy(ioutil.Discard, resp.Body)
+	defer resp.Body.Close()
+
+	if resp.StatusCode == 404 {
+		return ErrPageNotFound
+	}
+
+	i.client = client
+
+	return err
 }
