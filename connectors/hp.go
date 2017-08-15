@@ -91,3 +91,18 @@ type HpNIC struct {
 	MacAddr     string `xml:" MACADDR,omitempty" json:"MACADDR,omitempty"`
 	Status      string `xml:" STATUS,omitempty" json:"STATUS,omitempty"`
 }
+
+// HpFirmware is the struct used to render the data from https://$ip/json/fw_info
+type HpFirmware struct {
+	HostpwrState     string `json:"hostpwr_state"`
+	InPost           int    `json:"in_post"`
+	AmsReady         string `json:"ams_ready"`
+	DataStateNetwork string `json:"data_state_network"`
+	DataStateStorage string `json:"data_state_storage"`
+	Firmware         []struct {
+		FwIndex   int    `json:"fw_index"`
+		FwName    string `json:"fw_name"`
+		FwVersion string `json:"fw_version"`
+		Location  string `json:"Location"`
+	} `json:"firmware"`
+}
