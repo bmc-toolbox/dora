@@ -241,6 +241,7 @@ func (c *ChassisConnection) Hp(ip *string) (chassis model.Chassis, err error) {
 					if err != nil {
 						log.WithFields(log.Fields{"operation": "create ilo connection", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
 					}
+					b.BmcAuth = true
 
 					err = ilo.Login()
 					if err != nil {

@@ -56,6 +56,7 @@ type Blade struct {
 	BmcSSH         bool      `json:"bmc_ssh_status"`
 	BmcWEB         bool      `json:"bmc_web_status"`
 	BmcIPMI        bool      `json:"bmc_ipmi_status"`
+	BmcAuth        bool      `json:"bmc_auth"`
 	Nics           []*Nic    `json:"-" gorm:"ForeignKey:BladeSerial"`
 	NicsIDs        []int64   `json:"-" sql:"-"`
 	BladePosition  int       `json:"blade_position"`
