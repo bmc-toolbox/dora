@@ -59,6 +59,7 @@ type Blade struct {
 	Nics           []*Nic    `json:"-" gorm:"ForeignKey:BladeSerial"`
 	NicsIDs        []int64   `json:"-" sql:"-"`
 	BladePosition  int       `json:"blade_position"`
+	Model          string    `json:"model"`
 	Temp           int       `json:"temp_c"`
 	Power          float64   `json:"power_kw"`
 	Status         string    `json:"status"`
@@ -71,7 +72,7 @@ type Blade struct {
 
 // TestConnections as the name says, test connections from the bkbuild machines to the bmcs and update the struct data
 func (b *Blade) TestConnections() {
-	if b.IsStorageBlade == true {
+	if b.IsStorageBlade == true || b.BmcAddress == "0.0.0.0" {
 		return
 	}
 
@@ -164,6 +165,33 @@ type Chassis struct {
 	FwVersion        string    `json:"fw_version"`
 	CreatedAt        time.Time `json:"created_at"`
 	UpdatedAt        time.Time `json:"updated_at"`
+}
+
+// TestConnections as the name says, test connections from the bkbuild machines to the bmcs and update the struct data
+func (c *Chassis) TestConnections() {
+	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", c.BmcAddress, 443), 15*time.Second)
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "test http connection", "ip": c.BmcAddress, "serial": c.Serial, "type": "blade", "error": err, "chassis": c.Name, "vendor": c.Vendor}).Error("Auditing chassis")
+	} else {
+		c.BmcWEB = true
+		conn.Close()
+	}
+
+	conn, err = net.DialTimeout("tcp", fmt.Sprintf("%s:%d", c.BmcAddress, 22), 15*time.Second)
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "test ssh connection", "ip": c.BmcAddress, "serial": c.Serial, "type": "blade", "error": err, "chassis": c.Name, "vendor": c.Vendor}).Error("Auditing chassis")
+	} else {
+		c.BmcSSH = true
+		conn.Close()
+	}
+
+	conn, err = net.DialTimeout("udp", fmt.Sprintf("%s:%d", c.BmcAddress, 161), 15*time.Second)
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "test ipmi connection", "ip": c.BmcAddress, "serial": c.Serial, "type": "blade", "error": err, "chassis": c.Name, "vendor": c.Vendor}).Error("Auditing chassis")
+	} else {
+		c.BmcIPMI = true
+		conn.Close()
+	}
 }
 
 // GetID to satisfy jsonapi.MarshalIdentifier interface
