@@ -69,6 +69,7 @@ type DellBlade struct {
 	BladeBIOSver        string              `json:"bladeBIOSver"`
 	ActualPwrConsump    int                 `json:"actualPwrConsump"`
 	IsStorageBlade      int                 `json:"isStorageBlade"`
+	BladeModel          string              `json:"bladeModel"`
 	BladeName           string              `json:"bladeName"`
 	BladeSerialNum      string              `json:"bladeSerialNum"`
 }
