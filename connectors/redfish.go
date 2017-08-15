@@ -18,6 +18,26 @@ type RedfishEntry struct {
 	RedfishVersion string `json:"RedfishVersion"`
 }
 
+type HpRedfishFirmwareData struct {
+	ImageSizeBytes  int      `json:"ImageSizeBytes"`
+	Key             string   `json:"Key"`
+	Location        string   `json:"Location"`
+	Name            string   `json:"Name"`
+	UEFIDevicePaths []string `json:"UEFIDevicePaths"`
+	Updateable      bool     `json:"Updateable"`
+	VersionString   string   `json:"VersionString"`
+}
+
+type HpRedfishFirmware struct {
+	OdataContext string                           `json:"@odata.context"`
+	OdataID      string                           `json:"@odata.id"`
+	OdataType    string                           `json:"@odata.type"`
+	Current      map[string]HpRedfishFirmwareData `json:"Current"`
+	ID           string                           `json:"Id"`
+	Name         string                           `json:"Name"`
+	Type         string                           `json:"Type"`
+}
+
 /*
 
 HP RedFish Root
