@@ -2,7 +2,9 @@ package connectors
 
 import (
 	"bytes"
+	"crypto/rand"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -17,6 +19,27 @@ import (
 
 	"golang.org/x/net/publicsuffix"
 )
+
+var (
+	// ErrLoginFailed is returned when we fail to login to a bmc
+	ErrLoginFailed = errors.New("Failed to login")
+	// ErrBiosNotFound is returned when we are not able to find the server bios version
+	ErrBiosNotFound = errors.New("Bios version not found")
+)
+
+// newUUID generates a random UUID according to RFC 4122
+func newUUID() (string, error) {
+	uuid := make([]byte, 16)
+	n, err := io.ReadFull(rand.Reader, uuid)
+	if n != len(uuid) || err != nil {
+		return "", err
+	}
+	// variant bits; see section 4.1.1
+	uuid[8] = uuid[8]&^0xc0 | 0x80
+	// version 4 (pseudo-random); see section 4.1.3
+	uuid[6] = uuid[6]&^0xf0 | 0x40
+	return fmt.Sprintf("%x-%x-%x-%x-%x", uuid[0:4], uuid[4:6], uuid[6:8], uuid[8:10], uuid[10:]), nil
+}
 
 func httpGet(url string, username *string, password *string) (payload []byte, err error) {
 	log.WithFields(log.Fields{"step": "ChassisConnections", "url": url}).Debug("Requesting data from BMC")
