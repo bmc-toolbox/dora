@@ -51,8 +51,8 @@ func (c ChassisStorage) GetAllByBladesID(serials []string) (chassis []model.Chas
 	return chassis, nil
 }
 
-func (c ChassisStorage) getByBladeID(id string) (chassis model.Chassis, err error) {
-	if err = c.db.Joins("INNER JOIN blade ON blade.chassis_serial = chassis.serial").Where("blade.serial = ?", id).Find(&chassis).Error; err != nil {
+func (c ChassisStorage) getByBladeID(serial string) (chassis model.Chassis, err error) {
+	if err = c.db.Joins("INNER JOIN blade ON blade.chassis_serial = chassis.serial").Where("blade.serial = ?", serial).Find(&chassis).Error; err != nil {
 		return chassis, err
 	}
 	return chassis, err

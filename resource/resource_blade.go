@@ -24,6 +24,7 @@ func (b BladeResource) FindAll(r api2go.Request) (api2go.Responder, error) {
 	_, hasFilters := r.QueryParams["filter[serial]"]
 	include, hasInclude := r.QueryParams["include"]
 	chassisID, hasChassis := r.QueryParams["chassisID"]
+	nicsID, hasNIC := r.QueryParams["nicsID"]
 
 	for key, values := range r.QueryParams {
 		fmt.Println(key, values)
@@ -49,7 +50,11 @@ func (b BladeResource) FindAll(r api2go.Request) (api2go.Responder, error) {
 		blades, err = b.BladeStorage.GetAllByChassisID(chassisID)
 	}
 
-	if !hasFilters && !hasChassis && !hasInclude {
+	if hasNIC {
+		blades, err = b.BladeStorage.GetAllByNicsID(nicsID)
+	}
+
+	if !hasFilters && !hasChassis && !hasInclude && !hasNIC {
 		blades, err = b.BladeStorage.GetAll()
 		if err != nil {
 			return &Response{Res: blades}, err

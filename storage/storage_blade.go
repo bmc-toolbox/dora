@@ -35,27 +35,48 @@ func (b BladeStorage) GetAllWithAssociations() (blades []model.Blade, err error)
 // GetAllByChassisID of the Blades by chassisID
 func (b BladeStorage) GetAllByChassisID(serials []string) (blades []model.Blade, err error) {
 	for _, serial := range serials {
-		bl, err := b.getByChassisID(serial)
+		bls, err := b.getByChassisID(serial)
 		if err == gorm.ErrRecordNotFound {
 			continue
 		} else if err != nil {
 			return blades, err
 		}
-		blades = append(blades, bl)
+		blades = append(blades, bls...)
 	}
 	return blades, nil
 }
 
-func (b BladeStorage) getByChassisID(serial string) (blade model.Blade, err error) {
-	if err = b.db.Where("chassis_serial = ?", serial).Preload("Nics").First(&blade).Error; err != nil {
-		return blade, err
+func (b BladeStorage) getByChassisID(serial string) (blades []model.Blade, err error) {
+	if err = b.db.Where("chassis_serial = ?", serial).Preload("Nics").Find(&blades).Error; err != nil {
+		return blades, err
 	}
-	return blade, err
+	return blades, err
+}
+
+// GetAllByNicsID of the Blades by chassisID
+func (b BladeStorage) GetAllByNicsID(macAddresses []string) (blades []model.Blade, err error) {
+	for _, macAddress := range macAddresses {
+		bls, err := b.getByCNicID(macAddress)
+		if err == gorm.ErrRecordNotFound {
+			continue
+		} else if err != nil {
+			return blades, err
+		}
+		blades = append(blades, bls...)
+	}
+	return blades, nil
+}
+
+func (b BladeStorage) getByCNicID(macAddress string) (blades []model.Blade, err error) {
+	if err = b.db.Joins("INNER JOIN nic ON nic.blade_serial = blade.serial").Where("nic.mac_address = ?", macAddress).Find(&blades).Error; err != nil {
+		return blades, err
+	}
+	return blades, err
 }
 
 // GetOne  Blade
-func (s BladeStorage) GetOne(serial string) (blade model.Blade, err error) {
-	if err := s.db.Preload("Nics").Where("serial = ?", serial).First(&blade).Error; err != nil {
+func (b BladeStorage) GetOne(serial string) (blade model.Blade, err error) {
+	if err := b.db.Preload("Nics").Where("serial = ?", serial).First(&blade).Error; err != nil {
 		return blade, err
 	}
 	return blade, err
