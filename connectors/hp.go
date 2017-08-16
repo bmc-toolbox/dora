@@ -1,7 +1,6 @@
 package connectors
 
 import (
-	"strings"
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
@@ -13,6 +12,7 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
+	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -273,7 +273,7 @@ func (i *IloReader) CPU() (cpu string, err error) {
 		return cpu, err
 	}
 
-	return fmt.Sprintf("2 x %s", strings.TrimSpace(hpProcData.Processors[0].ProcName), err
+	return fmt.Sprintf("2 x %s", strings.TrimSpace(hpProcData.Processors[0].ProcName)), err
 }
 
 // BiosVersion return the current verion of the bios
