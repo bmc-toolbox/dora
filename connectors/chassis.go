@@ -202,7 +202,7 @@ func (c *ChassisConnection) Hp(ip *string) (chassis model.Chassis, err error) {
 		chassis.FwVersion = iloXML.HpMP.Fwri
 		chassis.PowerSupplyCount = len(iloXML.HpInfra2.HpChassisPower.HpPowersupply)
 
-		if strings.Contains(iloXML.HpInfra2.HpSwitches.HpSwitch[0].Spn, "10G") {
+		if len(iloXML.HpInfra2.HpSwitches.HpSwitch) > 1 && strings.Contains(iloXML.HpInfra2.HpSwitches.HpSwitch[0].Spn, "10G") {
 			chassis.PassThru = "10G"
 		} else {
 			chassis.PassThru = "1G"

@@ -274,7 +274,11 @@ func (i *IloReader) CPU() (cpu string, err error) {
 		return cpu, err
 	}
 
-	return fmt.Sprintf("2 x %s", strings.TrimSpace(hpProcData.Processors[0].ProcName)), err
+	if len(hpProcData.Processors) > 1 {
+		return fmt.Sprintf("2 x %s", strings.TrimSpace(hpProcData.Processors[0].ProcName)), err
+	} else {
+		return cpu, err
+	}
 }
 
 // BiosVersion return the current verion of the bios
