@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	log "github.com/sirupsen/logrus"
+
 	"golang.org/x/net/publicsuffix"
 )
 
@@ -114,17 +116,17 @@ func (i *IDracReader) Login() (err error) {
 	log.WithFields(log.Fields{"step": "iDrac Connection Dell", "ip": *i.ip}).Debug("Connecting to iDrac")
 
 	form := url.Values{}
-	form.Add("user", *username)
-	form.Add("password", *password)
+	form.Add("user", *i.username)
+	form.Add("password", *i.password)
 
-	u, err := url.Parse(fmt.Sprintf("https://%s/data/login", *hostname))
+	u, err := url.Parse(fmt.Sprintf("https://%s/data/login", *i.ip))
 	if err != nil {
-		return payload, err
+		return err
 	}
 
 	req, err := http.NewRequest("POST", u.String(), strings.NewReader(form.Encode()))
 	if err != nil {
-		return payload, err
+		return err
 	}
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
