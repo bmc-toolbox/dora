@@ -1,20 +1,28 @@
 package connectors
 
 import (
+	"bytes"
 	"crypto/tls"
+	"encoding/json"
+	"encoding/xml"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"net/http/cookiejar"
-	"net/url"
 	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
 
 	"golang.org/x/net/publicsuffix"
+)
+
+var (
+	// ErrLoginFailed is returned when we fail to login to a bmc
+	ErrLoginFailed = errors.New("Failed to login")
 )
 
 // DellCMC is the entry of the json exposed by dell
@@ -98,12 +106,34 @@ type DellPsuStatus struct {
 	PsuCount int    `json:"psuCount"`
 }
 
+// DellBladeMemoryEndpoint is the struct used to collect data from "https://$ip/sysmgmt/2012/server/memory" when passing the header X_SYSMGMT_OPTIMIZE:true
+type DellBladeMemoryEndpoint struct {
+	Memory *DellBladeMemory `json:"Memory"`
+}
+
+type DellBladeMemory struct {
+	Capacity       int `json:"capacity"`
+	ErrCorrection  int `json:"err_correction"`
+	MaxCapacity    int `json:"max_capacity"`
+	SlotsAvailable int `json:"slots_available"`
+	SlotsUsed      int `json:"slots_used"`
+}
+
+type IDracAuth struct {
+	Status     string `xml:"status"`
+	AuthResult int    `xml:"authResult"`
+	ForwardUrl string `xml:"forwardUrl"`
+	ErrorMsg   string `xml:"errorMsg"`
+}
+
 // IDracReader holds the status and properties of a connection to an iDrac device
 type IDracReader struct {
 	ip       *string
 	username *string
 	password *string
 	client   *http.Client
+	st1      string
+	st2      string
 }
 
 // NewIDracReader returns a new IloReader ready to be used
@@ -115,16 +145,8 @@ func NewIDracReader(ip *string, username *string, password *string) (iDrac *IDra
 func (i *IDracReader) Login() (err error) {
 	log.WithFields(log.Fields{"step": "iDrac Connection Dell", "ip": *i.ip}).Debug("Connecting to iDrac")
 
-	form := url.Values{}
-	form.Add("user", *i.username)
-	form.Add("password", *i.password)
-
-	u, err := url.Parse(fmt.Sprintf("https://%s/data/login", *i.ip))
-	if err != nil {
-		return err
-	}
-
-	req, err := http.NewRequest("POST", u.String(), strings.NewReader(form.Encode()))
+	data := fmt.Sprintf("user=%s&password=%s", *i.username, *i.password)
+	req, err := http.NewRequest("POST", fmt.Sprintf("https://%s/data/login", *i.ip), bytes.NewBufferString(data))
 	if err != nil {
 		return err
 	}
@@ -156,14 +178,96 @@ func (i *IDracReader) Login() (err error) {
 		return err
 	}
 
-	io.Copy(ioutil.Discard, resp.Body)
-	defer resp.Body.Close()
-
 	if resp.StatusCode == 404 {
 		return ErrPageNotFound
 	}
 
+	payload, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	iDracAuth := &IDracAuth{}
+	err = xml.Unmarshal(payload, iDracAuth)
+	if err != nil {
+		return err
+	}
+
+	if iDracAuth.AuthResult == 1 {
+		return ErrLoginFailed
+	}
+
+	stTemp := strings.Split(iDracAuth.ForwardUrl, ",")
+	i.st1 = strings.TrimLeft(stTemp[0], "index.html?ST1=")
+	i.st2 = strings.TrimLeft(stTemp[1], "ST2=")
+
 	i.client = client
+
+	return err
+}
+
+// get calls a given json endpoint of the ilo and returns the data
+func (i *IDracReader) get(endpoint string, extraHeaders *map[string]string) (payload []byte, err error) {
+	log.WithFields(log.Fields{"step": "iDrac Connection Dell", "ip": *i.ip, "endpoint": endpoint}).Debug("Retrieving data from iDrac")
+
+	req, err := http.NewRequest("GET", fmt.Sprintf("https://%s/%s", *i.ip, endpoint), nil)
+	if err != nil {
+		return nil, err
+	}
+	//req.Header.Add("Referer", fmt.Sprintf("https://%s/index.htm", *i.ip))
+	req.Header.Add("ST2", i.st2)
+	for key, value := range *extraHeaders {
+		req.Header.Add(key, value)
+	}
+
+	resp, err := i.client.Do(req)
+	if err != nil {
+		return payload, err
+	}
+	defer resp.Body.Close()
+
+	payload, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return payload, err
+	}
+
+	if resp.StatusCode == 404 {
+		return payload, ErrPageNotFound
+	}
+
+	return payload, err
+}
+
+// Memory return the total amount of memory of the server
+func (i *IDracReader) Memory() (mem int, err error) {
+	extraHeaders := &map[string]string{
+		"X_SYSMGMT_OPTIMIZE": "true",
+	}
+
+	result, err := i.get("sysmgmt/2012/server/memory", extraHeaders)
+	if err != nil {
+		return mem, err
+	}
+
+	dellBladeMemory := &DellBladeMemoryEndpoint{}
+	err = json.Unmarshal(result, dellBladeMemory)
+	if err != nil {
+		return mem, err
+	}
+
+	return dellBladeMemory.Memory.Capacity / 1024, err
+}
+
+// Logout logs out and close the iLo connection
+func (i *IDracReader) Logout() (err error) {
+	log.WithFields(log.Fields{"step": "iDrac Connection Dell", "ip": *i.ip}).Debug("Logout from iDrac")
+
+	resp, err := i.client.Get(fmt.Sprintf("https://%s/data/logout", *i.ip))
+	if err != nil {
+		return err
+	}
+	io.Copy(ioutil.Discard, resp.Body)
+	defer resp.Body.Close()
 
 	return err
 }
