@@ -139,8 +139,26 @@ func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) 
 					}
 					b.Nics = append(b.Nics, n)
 				}
+
 			}
+
 			b.TestConnections()
+			if b.BmcWEB {
+				iDrac := NewIDracReader(&b.BmcAddress, &c.username, &c.password)
+				err := iDrac.Login()
+				if err != nil {
+					log.WithFields(log.Fields{"operation": "opening ilo connection", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+				} else {
+					defer iDrac.Logout()
+					b.BmcAuth = true
+
+					b.Memory, err = iDrac.Memory()
+					if err != nil {
+						log.WithFields(log.Fields{"operation": "read memory data", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+					}
+				}
+			}
+
 			chassis.Blades = append(chassis.Blades, &b)
 		}
 	}
@@ -246,10 +264,9 @@ func (c *ChassisConnection) Hp(ip *string) (chassis model.Chassis, err error) {
 					err = ilo.Login()
 					if err != nil {
 						log.WithFields(log.Fields{"operation": "opening ilo connection", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
-					}
-					defer ilo.Logout()
+					} else {
+						defer ilo.Logout()
 
-					if err == nil {
 						b.BiosVersion, err = ilo.BiosVersion()
 						if err != nil {
 							log.WithFields(log.Fields{"operation": "read bios version", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
@@ -264,8 +281,6 @@ func (c *ChassisConnection) Hp(ip *string) (chassis model.Chassis, err error) {
 						if err != nil {
 							log.WithFields(log.Fields{"operation": "read memory data", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
 						}
-					} else {
-						log.WithFields(log.Fields{"operation": "ilo login", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
 					}
 				}
 
