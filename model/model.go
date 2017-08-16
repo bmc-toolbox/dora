@@ -66,7 +66,7 @@ type Blade struct {
 	Status         string    `json:"status"`
 	IsStorageBlade bool      `json:"is_storage_blade"`
 	Vendor         string    `json:"vendor"`
-	ChasssisSerial string    `json:"-"`
+	ChassisSerial  string    `json:"-"`
 	Processor      string    `json:"proc"`
 	Memory         int       `json:"memory_in_gb"`
 	CreatedAt      time.Time `json:"created_at"`
@@ -129,7 +129,7 @@ func (b Blade) GetReferences() []jsonapi.Reference {
 func (b Blade) GetReferencedIDs() []jsonapi.ReferenceID {
 	result := []jsonapi.ReferenceID{
 		{
-			ID:           b.ChasssisSerial,
+			ID:           b.ChassisSerial,
 			Type:         "chassis",
 			Name:         "chassis",
 			Relationship: jsonapi.ToOneRelationship,
@@ -156,7 +156,7 @@ type Chassis struct {
 	BmcSSH           bool      `json:"bmc_ssh_status"`
 	BmcWEB           bool      `json:"bmc_web_status"`
 	BmcIPMI          bool      `json:"bmc_ipmi_status"`
-	Blades           []*Blade  `json:"-" gorm:"ForeignKey:ChasssisSerial"`
+	Blades           []*Blade  `json:"-" gorm:"ForeignKey:ChassisSerial"`
 	BladesIDS        []int64   `json:"-" sql:"-"`
 	Temp             int       `json:"temp_c"`
 	PowerSupplyCount int       `json:"power_supply_count"`
