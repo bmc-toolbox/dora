@@ -27,8 +27,8 @@ func (n Nic) GetID() string {
 func (n Nic) GetReferences() []jsonapi.Reference {
 	return []jsonapi.Reference{
 		{
-			Type:         "blade",
-			Name:         "blade",
+			Type:         "blades",
+			Name:         "blades",
 			Relationship: jsonapi.ToOneRelationship,
 		},
 	}
@@ -39,8 +39,8 @@ func (n Nic) GetReferencedIDs() []jsonapi.ReferenceID {
 	return []jsonapi.ReferenceID{
 		{
 			ID:           n.BladeSerial,
-			Type:         "blade",
-			Name:         "blade",
+			Type:         "blades",
+			Name:         "blades",
 			Relationship: jsonapi.ToOneRelationship,
 		},
 	}
