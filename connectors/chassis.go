@@ -221,6 +221,11 @@ func (c *ChassisConnection) Hp(ip *string) (chassis model.Chassis, err error) {
 				b.Status = blade.Status
 				b.Vendor = HP
 
+				if b.Serial == "[unknown]" {
+					log.WithFields(log.Fields{"operation": "connection", "ip": *ip, "name": chassis.Name, "position": b.BladePosition, "type": "chassis", "error": "Review this blade. The chassis identifies it as connected, but we have no data"}).Error("Auditing blade")
+					continue
+				}
+
 				if strings.Contains(blade.Spn, "Storage") {
 					b.Name = b.Serial
 					b.IsStorageBlade = true
