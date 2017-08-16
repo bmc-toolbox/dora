@@ -176,9 +176,9 @@ func NewIloReader(ip *string, username *string, password *string) (ilo *IloReade
 func (i *IloReader) Login() (err error) {
 	log.WithFields(log.Fields{"step": "Ilo Connection HP", "ip": *i.ip}).Debug("Connecting to iLO")
 
-	data := []byte(fmt.Sprintf("{\"method\":\"login\", \"user_login\":\"%s\", \"password\":\"%s\" }", *i.username, *i.password))
+	data := fmt.Sprintf("{\"method\":\"login\", \"user_login\":\"%s\", \"password\":\"%s\" }", *i.username, *i.password)
 
-	req, err := http.NewRequest("POST", i.loginURL.String(), bytes.NewBuffer(data))
+	req, err := http.NewRequest("POST", i.loginURL.String(), bytes.NewBufferString(data))
 	if err != nil {
 		return err
 	}
@@ -222,8 +222,8 @@ func (i *IloReader) Login() (err error) {
 	return err
 }
 
-// Get calls a given json endpoint of the ilo and returns the data
-func (i *IloReader) Get(endpoint string) (payload []byte, err error) {
+// get calls a given json endpoint of the ilo and returns the data
+func (i *IloReader) get(endpoint string) (payload []byte, err error) {
 	log.WithFields(log.Fields{"step": "Ilo Connection HP", "ip": *i.ip, "endpoint": endpoint}).Debug("Retrieving data from iLO")
 
 	resp, err := i.client.Get(fmt.Sprintf("https://%s/%s", *i.ip, endpoint))
@@ -246,7 +246,7 @@ func (i *IloReader) Get(endpoint string) (payload []byte, err error) {
 
 // Memory return the total amount of memory of the server
 func (i *IloReader) Memory() (mem int, err error) {
-	result, err := i.Get("json/mem_info")
+	result, err := i.get("json/mem_info")
 	if err != nil {
 		return mem, err
 	}
@@ -262,7 +262,7 @@ func (i *IloReader) Memory() (mem int, err error) {
 
 // CPU return the cpu type of the server
 func (i *IloReader) CPU() (cpu string, err error) {
-	result, err := i.Get("json/proc_info")
+	result, err := i.get("json/proc_info")
 	if err != nil {
 		return cpu, err
 	}
@@ -278,7 +278,7 @@ func (i *IloReader) CPU() (cpu string, err error) {
 
 // BiosVersion return the current verion of the bios
 func (i *IloReader) BiosVersion() (version string, err error) {
-	result, err := i.Get("json/fw_info")
+	result, err := i.get("json/fw_info")
 	if err != nil {
 		return version, err
 	}
