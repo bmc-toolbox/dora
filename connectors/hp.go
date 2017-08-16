@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -18,11 +17,6 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"golang.org/x/net/publicsuffix"
-)
-
-var (
-	// ErrBiosNotFound is returned when we are not able to find the server bios version
-	ErrBiosNotFound = errors.New("Bios version not found")
 )
 
 // HpBlade contains the unmarshalled data from the hp chassis
@@ -210,11 +204,18 @@ func (i *IloReader) Login() (err error) {
 		return err
 	}
 
-	io.Copy(ioutil.Discard, resp.Body)
+	payload, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == 404 {
 		return ErrPageNotFound
+	}
+
+	if strings.Contains(string(payload), "Invalid login attempt") {
+		return ErrLoginFailed
 	}
 
 	i.client = client

@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"encoding/xml"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -18,11 +17,6 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"golang.org/x/net/publicsuffix"
-)
-
-var (
-	// ErrLoginFailed is returned when we fail to login to a bmc
-	ErrLoginFailed = errors.New("Failed to login")
 )
 
 // DellCMC is the entry of the json exposed by dell
@@ -178,13 +172,14 @@ func (i *IDracReader) Login() (err error) {
 		return err
 	}
 
-	if resp.StatusCode == 404 {
-		return ErrPageNotFound
-	}
-
 	payload, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == 404 {
+		return ErrPageNotFound
 	}
 
 	iDracAuth := &IDracAuth{}
