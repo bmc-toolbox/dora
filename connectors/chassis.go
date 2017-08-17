@@ -52,6 +52,7 @@ func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) 
 	if err != nil {
 		return chassis, err
 	}
+	chassis.BmcAuth = true
 	dellCMC := &DellCMC{}
 	err = json.Unmarshal(result, dellCMC)
 	if err != nil {
@@ -143,7 +144,7 @@ func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) 
 			}
 
 			b.TestConnections()
-			if b.BmcWEB {
+			if b.BmcWEBReacheable {
 				iDrac := NewIDracReader(&b.BmcAddress, &c.username, &c.password)
 				err := iDrac.Login()
 				if err != nil {
@@ -194,7 +195,6 @@ func (c *ChassisConnection) Hp(ip *string) (chassis model.Chassis, err error) {
 		chassis.Name = iloXML.HpInfra2.Encl
 		chassis.Serial = strings.ToLower(iloXML.HpInfra2.EnclSn)
 		chassis.Model = iloXML.HpInfra2.Pn
-		chassis.Rack = iloXML.HpInfra2.Rack
 		chassis.Power = iloXML.HpInfra2.HpChassisPower.PowerConsumed / 1000.00
 		chassis.Temp = iloXML.HpInfra2.HpTemps.HpTemp.C
 		chassis.Status = iloXML.HpInfra2.Status
@@ -262,7 +262,7 @@ func (c *ChassisConnection) Hp(ip *string) (chassis model.Chassis, err error) {
 				}
 				b.TestConnections()
 
-				if b.BmcWEB {
+				if b.BmcWEBReacheable {
 					ilo, err := NewIloReader(&b.BmcAddress, &c.username, &c.password)
 					if err != nil {
 						log.WithFields(log.Fields{"operation": "create ilo connection", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
