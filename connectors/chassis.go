@@ -75,7 +75,7 @@ func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) 
 		log.WithFields(log.Fields{"operation": "connection", "ip": *ip, "name": chassis.Name, "serial": chassis.Serial, "type": "chassis", "error": err}).Error("Auditing chassis")
 		return
 	}
-	chassis.Power = float64(power) / 1000
+	chassis.PowerKw = float64(power) / 1000
 	chassis.Vendor = Dell
 
 	log.WithFields(log.Fields{"operation": "connection", "ip": *ip, "name": chassis.Name, "serial": chassis.Serial, "type": "chassis"}).Debug("Auditing chassis")
@@ -94,13 +94,13 @@ func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) 
 			}
 
 			b.Model = blade.BladeModel
-			b.Power = float64(blade.ActualPwrConsump) / 1000
+			b.PowerKw = float64(blade.ActualPwrConsump) / 1000
 			temp, err := strconv.Atoi(blade.BladeTemperature)
 			if err != nil {
 				log.WithFields(log.Fields{"operation": "connection", "ip": *ip, "name": chassis.Name, "serial": chassis.Serial, "type": "chassis", "error": err, "blade": blade.BladeSvcTag}).Error("Auditing blade")
 				continue
 			}
-			b.Temp = temp
+			b.TempC = temp
 			if blade.BladeLogDescription == "No Errors" {
 				b.Status = "OK"
 			} else {
@@ -174,7 +174,7 @@ func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) 
 		return chassis, err
 	}
 
-	chassis.Temp = dellCMCTemp.DellChassisTemp.TempCurrentValue
+	chassis.TempC = dellCMCTemp.DellChassisTemp.TempCurrentValue
 	chassis.TestConnections()
 
 	return chassis, err
@@ -195,8 +195,8 @@ func (c *ChassisConnection) Hp(ip *string) (chassis model.Chassis, err error) {
 		chassis.Name = iloXML.HpInfra2.Encl
 		chassis.Serial = strings.ToLower(iloXML.HpInfra2.EnclSn)
 		chassis.Model = iloXML.HpInfra2.Pn
-		chassis.Power = iloXML.HpInfra2.HpChassisPower.PowerConsumed / 1000.00
-		chassis.Temp = iloXML.HpInfra2.HpTemps.HpTemp.C
+		chassis.PowerKw = iloXML.HpInfra2.HpChassisPower.PowerConsumed / 1000.00
+		chassis.TempC = iloXML.HpInfra2.HpTemps.HpTemp.C
 		chassis.Status = iloXML.HpInfra2.Status
 		chassis.Vendor = HP
 		chassis.FwVersion = iloXML.HpMP.Fwri
@@ -218,8 +218,8 @@ func (c *ChassisConnection) Hp(ip *string) (chassis model.Chassis, err error) {
 				b := model.Blade{}
 
 				b.BladePosition = blade.HpBay.Connection
-				b.Power = blade.HpPower.PowerConsumed / 1000.00
-				b.Temp = blade.HpTemps.HpTemp.C
+				b.PowerKw = blade.HpPower.PowerConsumed / 1000.00
+				b.TempC = blade.HpTemps.HpTemp.C
 				b.Serial = strings.ToLower(strings.TrimSpace(blade.Bsn))
 				b.Status = blade.Status
 				b.Vendor = HP
