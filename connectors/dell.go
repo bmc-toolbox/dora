@@ -105,6 +105,7 @@ type DellBladeMemoryEndpoint struct {
 	Memory *DellBladeMemory `json:"Memory"`
 }
 
+// DellBladeMemory is part of the payload returned by "https://$ip/sysmgmt/2012/server/memory"
 type DellBladeMemory struct {
 	Capacity       int `json:"capacity"`
 	ErrCorrection  int `json:"err_correction"`
@@ -113,10 +114,31 @@ type DellBladeMemory struct {
 	SlotsUsed      int `json:"slots_used"`
 }
 
+// DellBladeProcessorEndpoint is the struct used to collect data from "https://$ip/sysmgmt/2012/server/processor" when passing the header X_SYSMGMT_OPTIMIZE:true
+type DellBladeProcessorEndpoint struct {
+	Proccessors map[string]*DellBladeProcessor `json:"Processor"`
+}
+
+// DellBladeProcessor contains the processor data information
+type DellBladeProcessor struct {
+	Brand             string                     `json:"brand"`
+	CoreCount         int                        `json:"core_count"`
+	CurrentSpeed      int                        `json:"current_speed"`
+	DeviceDescription string                     `json:"device_description"`
+	HyperThreading    []*DellBladeHyperThreading `json:"hyperThreading"`
+}
+
+// DellBladeHyperThreading contains the hyperthread information
+type DellBladeHyperThreading struct {
+	Capable int `json:"capable"`
+	Enabled int `json:"enabled"`
+}
+
+// IDracAuth is the struct used to verify the iDrac authentication
 type IDracAuth struct {
 	Status     string `xml:"status"`
 	AuthResult int    `xml:"authResult"`
-	ForwardUrl string `xml:"forwardUrl"`
+	ForwardURL string `xml:"forwardUrl"`
 	ErrorMsg   string `xml:"errorMsg"`
 }
 
@@ -192,7 +214,7 @@ func (i *IDracReader) Login() (err error) {
 		return ErrLoginFailed
 	}
 
-	stTemp := strings.Split(iDracAuth.ForwardUrl, ",")
+	stTemp := strings.Split(iDracAuth.ForwardURL, ",")
 	i.st1 = strings.TrimLeft(stTemp[0], "index.html?ST1=")
 	i.st2 = strings.TrimLeft(stTemp[1], "ST2=")
 
@@ -251,6 +273,36 @@ func (i *IDracReader) Memory() (mem int, err error) {
 	}
 
 	return dellBladeMemory.Memory.Capacity / 1024, err
+}
+
+// CPU return the cpu, cores and hyperthreads the server
+func (i *IDracReader) CPU() (cpu string, coreCount int, hyperthreadCount int, err error) {
+	extraHeaders := &map[string]string{
+		"X_SYSMGMT_OPTIMIZE": "true",
+	}
+
+	result, err := i.get("/sysmgmt/2012/server/processor", extraHeaders)
+	if err != nil {
+		return cpu, coreCount, hyperthreadCount, err
+	}
+
+	dellBladeProc := &DellBladeProcessorEndpoint{}
+	err = json.Unmarshal(result, dellBladeProc)
+	if err != nil {
+		return cpu, coreCount, hyperthreadCount, err
+	}
+
+	for _, proc := range dellBladeProc.Proccessors {
+		hasHT := 0
+		for _, ht := range proc.HyperThreading {
+			if ht.Capable == 1 {
+				hasHT = 2
+			}
+		}
+		return fmt.Sprintf("%d x %s", len(dellBladeProc.Proccessors), strings.TrimSpace(proc.Brand)), proc.CoreCount, proc.CoreCount * hasHT, err
+	}
+
+	return cpu, coreCount, hyperthreadCount, err
 }
 
 // Logout logs out and close the iLo connection
