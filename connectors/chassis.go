@@ -157,6 +157,11 @@ func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) 
 					if err != nil {
 						log.WithFields(log.Fields{"operation": "read memory data", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
 					}
+
+					_, b.ProcessorCoresCount, b.ProcessorThreadCount, err = iDrac.CPU()
+					if err != nil {
+						log.WithFields(log.Fields{"operation": "read cpu data", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+					}
 				}
 			}
 
@@ -280,7 +285,7 @@ func (c *ChassisConnection) Hp(ip *string) (chassis model.Chassis, err error) {
 							log.WithFields(log.Fields{"operation": "read bios version", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
 						}
 
-						b.Processor, err = ilo.CPU()
+						b.Processor, b.ProcessorCoresCount, b.ProcessorThreadCount, err = ilo.CPU()
 						if err != nil {
 							log.WithFields(log.Fields{"operation": "read cpu data", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
 						}
