@@ -139,7 +139,9 @@ type HpFirmware struct {
 // HpProcs is the struct used to render the data from https://$ip/json/proc_info, it contains the processor data
 type HpProcs struct {
 	Processors []struct {
-		ProcName string `json:"proc_name"`
+		ProcName       string `json:"proc_name"`
+		ProcNumCores   int    `json:"proc_num_cores"`
+		ProcNumThreads int    `json:"proc_num_threads"`
 	} `json:"processors"`
 }
 
