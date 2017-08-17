@@ -10,6 +10,12 @@ import (
 	"github.com/manyminds/api2go/jsonapi"
 )
 
+/* READ THIS BEFORE CHANGING THE SCHEMA
+
+To make the magic of dinamic filter work, we need to define the json fields matching the database collumn name
+
+*/
+
 // Nic contains the network information of the cards attached to blades or chassis
 type Nic struct {
 	MacAddress  string    `json:"mac_address" gorm:"primary_key"`
@@ -48,29 +54,31 @@ func (n Nic) GetReferencedIDs() []jsonapi.ReferenceID {
 
 // Blade contains all the blade information we will expose across diferent vendors
 type Blade struct {
-	Serial         string    `json:"serial" gorm:"primary_key"`
-	Name           string    `json:"name"`
-	BiosVersion    string    `json:"bios_version"`
-	BmcAddress     string    `json:"bmc_address"`
-	BmcVersion     string    `json:"bmc_version"`
-	BmcSSH         bool      `json:"bmc_ssh_status"`
-	BmcWEB         bool      `json:"bmc_web_status"`
-	BmcIPMI        bool      `json:"bmc_ipmi_status"`
-	BmcAuth        bool      `json:"bmc_auth"`
-	Nics           []*Nic    `json:"-" gorm:"ForeignKey:BladeSerial"`
-	NicsIDs        []int64   `json:"-" sql:"-"`
-	BladePosition  int       `json:"blade_position"`
-	Model          string    `json:"model"`
-	Temp           int       `json:"temp_c"`
-	Power          float64   `json:"power_kw"`
-	Status         string    `json:"status"`
-	IsStorageBlade bool      `json:"is_storage_blade"`
-	Vendor         string    `json:"vendor"`
-	ChassisSerial  string    `json:"-"`
-	Processor      string    `json:"proc"`
-	Memory         int       `json:"memory_in_gb"`
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
+	Serial               string    `json:"serial" gorm:"primary_key"`
+	Name                 string    `json:"name"`
+	BiosVersion          string    `json:"bios_version"`
+	BmcAddress           string    `json:"bmc_address"`
+	BmcVersion           string    `json:"bmc_version"`
+	BmcSSHReacheable     bool      `json:"bmc_ssh_recheable"`
+	BmcWEBReacheable     bool      `json:"bmc_web_recheable"`
+	BmcIpmiReacheable    bool      `json:"bmc_ipmi_recheable"`
+	BmcAuth              bool      `json:"bmc_auth"`
+	Nics                 []*Nic    `json:"-" gorm:"ForeignKey:BladeSerial"`
+	NicsIDs              []int64   `json:"-" sql:"-"`
+	BladePosition        int       `json:"blade_position"`
+	Model                string    `json:"model"`
+	Temp                 int       `json:"temp_c"`
+	Power                float64   `json:"power_kw"`
+	Status               string    `json:"status"`
+	IsStorageBlade       bool      `json:"is_storage_blade"`
+	Vendor               string    `json:"vendor"`
+	ChassisSerial        string    `json:"-"`
+	Processor            string    `json:"proc"`
+	ProcessorCoresCount  int       `json:"proc_cores"`
+	ProcessorThreadCount int       `json:"proc_thread_count"`
+	Memory               int       `json:"memory_in_gb"`
+	CreatedAt            time.Time `json:"created_at"`
+	UpdatedAt            time.Time `json:"updated_at"`
 }
 
 // TestConnections as the name says, test connections from the bkbuild machines to the bmcs and update the struct data
@@ -83,7 +91,7 @@ func (b *Blade) TestConnections() {
 	if err != nil {
 		log.WithFields(log.Fields{"operation": "test http connection", "ip": b.BmcAddress, "serial": b.Serial, "type": "blade", "error": err, "blade": b.Name, "vendor": b.Vendor}).Error("Auditing blade")
 	} else {
-		b.BmcWEB = true
+		b.BmcWEBReacheable = true
 		conn.Close()
 	}
 
@@ -91,7 +99,7 @@ func (b *Blade) TestConnections() {
 	if err != nil {
 		log.WithFields(log.Fields{"operation": "test ssh connection", "ip": b.BmcAddress, "serial": b.Serial, "type": "blade", "error": err, "blade": b.Name, "vendor": b.Vendor}).Error("Auditing blade")
 	} else {
-		b.BmcSSH = true
+		b.BmcSSHReacheable = true
 		conn.Close()
 	}
 
@@ -99,7 +107,7 @@ func (b *Blade) TestConnections() {
 	if err != nil {
 		log.WithFields(log.Fields{"operation": "test ipmi connection", "ip": b.BmcAddress, "serial": b.Serial, "type": "blade", "error": err, "blade": b.Name, "vendor": b.Vendor}).Error("Auditing blade")
 	} else {
-		b.BmcIPMI = true
+		b.BmcIpmiReacheable = true
 		conn.Close()
 	}
 }
@@ -149,25 +157,25 @@ func (b Blade) GetReferencedIDs() []jsonapi.ReferenceID {
 
 // Chassis contains all the chassis the information we will expose across diferent vendors
 type Chassis struct {
-	Serial           string    `json:"serial" gorm:"primary_key"`
-	Name             string    `json:"name"`
-	Rack             string    `json:"rack"`
-	BmcAddress       string    `json:"bmc_address"`
-	BmcSSH           bool      `json:"bmc_ssh_status"`
-	BmcWEB           bool      `json:"bmc_web_status"`
-	BmcIPMI          bool      `json:"bmc_ipmi_status"`
-	Blades           []*Blade  `json:"-" gorm:"ForeignKey:ChassisSerial"`
-	BladesIDS        []int64   `json:"-" sql:"-"`
-	Temp             int       `json:"temp_c"`
-	PowerSupplyCount int       `json:"power_supply_count"`
-	PassThru         string    `json:"pass_thru"`
-	Status           string    `json:"status"`
-	Power            float64   `json:"power_kw"`
-	Model            string    `json:"model"`
-	Vendor           string    `json:"vendor"`
-	FwVersion        string    `json:"fw_version"`
-	CreatedAt        time.Time `json:"created_at"`
-	UpdatedAt        time.Time `json:"updated_at"`
+	Serial            string    `json:"serial" gorm:"primary_key"`
+	Name              string    `json:"name"`
+	BmcAddress        string    `json:"bmc_address"`
+	BmcSSHReacheable  bool      `json:"bmc_ssh_recheable"`
+	BmcWEBReacheable  bool      `json:"bmc_web_recheable"`
+	BmcIpmiReacheable bool      `json:"bmc_ipmi_recheable"`
+	BmcAuth           bool      `json:"bmc_auth"`
+	Blades            []*Blade  `json:"-" gorm:"ForeignKey:ChassisSerial"`
+	BladesIDS         []int64   `json:"-" sql:"-"`
+	Temp              int       `json:"temp_c"`
+	PowerSupplyCount  int       `json:"power_supply_count"`
+	PassThru          string    `json:"pass_thru"`
+	Status            string    `json:"status"`
+	Power             float64   `json:"power_kw"`
+	Model             string    `json:"model"`
+	Vendor            string    `json:"vendor"`
+	FwVersion         string    `json:"fw_version"`
+	CreatedAt         time.Time `json:"created_at"`
+	UpdatedAt         time.Time `json:"updated_at"`
 }
 
 // TestConnections as the name says, test connections from the bkbuild machines to the bmcs and update the struct data
@@ -176,7 +184,7 @@ func (c *Chassis) TestConnections() {
 	if err != nil {
 		log.WithFields(log.Fields{"operation": "test http connection", "ip": c.BmcAddress, "serial": c.Serial, "type": "blade", "error": err, "chassis": c.Name, "vendor": c.Vendor}).Error("Auditing chassis")
 	} else {
-		c.BmcWEB = true
+		c.BmcWEBReacheable = true
 		conn.Close()
 	}
 
@@ -184,7 +192,7 @@ func (c *Chassis) TestConnections() {
 	if err != nil {
 		log.WithFields(log.Fields{"operation": "test ssh connection", "ip": c.BmcAddress, "serial": c.Serial, "type": "blade", "error": err, "chassis": c.Name, "vendor": c.Vendor}).Error("Auditing chassis")
 	} else {
-		c.BmcSSH = true
+		c.BmcSSHReacheable = true
 		conn.Close()
 	}
 
@@ -192,7 +200,7 @@ func (c *Chassis) TestConnections() {
 	if err != nil {
 		log.WithFields(log.Fields{"operation": "test ipmi connection", "ip": c.BmcAddress, "serial": c.Serial, "type": "blade", "error": err, "chassis": c.Name, "vendor": c.Vendor}).Error("Auditing chassis")
 	} else {
-		c.BmcIPMI = true
+		c.BmcIpmiReacheable = true
 		conn.Close()
 	}
 }
