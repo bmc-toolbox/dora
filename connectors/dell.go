@@ -281,7 +281,7 @@ func (i *IDracReader) CPU() (cpu string, coreCount int, hyperthreadCount int, er
 		"X_SYSMGMT_OPTIMIZE": "true",
 	}
 
-	result, err := i.get("/sysmgmt/2012/server/processor", extraHeaders)
+	result, err := i.get("sysmgmt/2012/server/processor", extraHeaders)
 	if err != nil {
 		return cpu, coreCount, hyperthreadCount, err
 	}
