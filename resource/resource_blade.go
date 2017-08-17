@@ -39,6 +39,7 @@ func (b BladeResource) FindAll(r api2go.Request) (api2go.Responder, error) {
 
 	if hasFilters {
 		blades, err = b.BladeStorage.GetAllByFilters(filters.Get())
+		filters.Clean()
 		if err != nil {
 			return &Response{Res: blades}, err
 		}
@@ -83,12 +84,6 @@ func (b BladeResource) FindAll(r api2go.Request) (api2go.Responder, error) {
 
 	return &Response{Res: blades}, nil
 }
-
-type byInt64Slice []int
-
-func (b byInt64Slice) Len() int           { return len(b) }
-func (b byInt64Slice) Swap(x, y int)      { b[x], b[y] = b[y], b[x] }
-func (b byInt64Slice) Less(x, y int) bool { return b[x] < b[y] }
 
 // PaginatedFindAll can be used to load blades in chunks
 func (b BladeResource) PaginatedFindAll(r api2go.Request) (uint, api2go.Responder, error) {
