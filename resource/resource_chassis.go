@@ -2,6 +2,7 @@ package resource
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/jinzhu/gorm"
 	"github.com/manyminds/api2go"
@@ -19,9 +20,25 @@ type ChassisResource struct {
 func (c ChassisResource) FindAll(r api2go.Request) (api2go.Responder, error) {
 	var chassis []model.Chassis
 	var err error
-	_, hasFilters := r.QueryParams["filter[serial]"]
+	hasFilters := false
+	filters := NewFilter()
 	include, hasInclude := r.QueryParams["include"]
 	bladesID, hasBlade := r.QueryParams["bladesID"]
+
+	for key, values := range r.QueryParams {
+		if strings.HasPrefix(key, "filter") {
+			hasFilters = true
+			filter := strings.TrimRight(strings.TrimLeft(key, "filter["), "]")
+			filters.Add(filter, values)
+		}
+	}
+
+	if hasFilters {
+		chassis, err = c.ChassisStorage.GetAllByFilters(filters.Get())
+		if err != nil {
+			return &Response{Res: chassis}, err
+		}
+	}
 
 	if hasInclude && include[0] == "blades" {
 		if len(chassis) == 0 {

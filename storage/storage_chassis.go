@@ -1,6 +1,10 @@
 package storage
 
 import (
+	"fmt"
+	"reflect"
+	"strings"
+
 	"github.com/jinzhu/gorm"
 	"gitlab.booking.com/infra/dora/model"
 )
@@ -35,6 +39,58 @@ func (c ChassisStorage) GetAllWithAssociations() (chassis []model.Chassis, err e
 func (c ChassisStorage) GetOne(serial string) (chassis model.Chassis, err error) {
 	chassis, err = c.getOneWithAssociations(serial)
 	return chassis, err
+}
+
+// GetAllByFilters get all chassis detecting the struct members dinamically
+func (c ChassisStorage) GetAllByFilters(filters map[string][]string) (chassis []model.Chassis, err error) {
+	query := ""
+	for key, values := range filters {
+		if len(values) == 1 && values[0] == "" {
+			continue
+		}
+		ch := model.Chassis{}
+		rfct := reflect.ValueOf(ch)
+		rfctType := rfct.Type()
+
+		var structMemberName string
+		var structJSONMemberName string
+		for i := 0; i < rfctType.NumField(); i++ {
+			jsondName := rfctType.Field(i).Tag.Get("json")
+			if key == jsondName {
+				structMemberName = rfctType.Field(i).Name
+				structJSONMemberName = jsondName
+				break
+			}
+		}
+
+		if structJSONMemberName == "" || structJSONMemberName == "-" {
+			return chassis, err
+		}
+
+		ftype := reflect.Indirect(rfct).FieldByName(structMemberName)
+		switch ftype.Kind() {
+		case reflect.String:
+			if query == "" {
+				query = fmt.Sprintf("%s in ('%s')", structJSONMemberName, strings.Join(values, "', '"))
+			} else {
+				query = fmt.Sprintf("%s and %s in ('%s')", query, structJSONMemberName, strings.Join(values, "', '"))
+			}
+		case reflect.Bool:
+			if query == "" {
+				query = fmt.Sprintf("%s in (%s)", structJSONMemberName, strings.Join(values, ", "))
+			} else {
+				query = fmt.Sprintf("%s and %s in (%s)", query, structJSONMemberName, strings.Join(values, ", "))
+			}
+		case reflect.Int:
+			if query == "" {
+				query = fmt.Sprintf("%s in (%s)", structJSONMemberName, strings.Join(values, ", "))
+			} else {
+				query = fmt.Sprintf("%s and %s in (%s)", query, structJSONMemberName, strings.Join(values, ", "))
+			}
+		}
+	}
+	c.db.Where(query).Find(&chassis)
+	return chassis, nil
 }
 
 // GetAllByBladesID Chassis
