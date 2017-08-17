@@ -1,6 +1,10 @@
 package storage
 
 import (
+	"fmt"
+	"reflect"
+	"strings"
+
 	"github.com/jinzhu/gorm"
 	"gitlab.booking.com/infra/dora/model"
 )
@@ -30,6 +34,58 @@ func (b BladeStorage) GetAllWithAssociations() (blades []model.Blade, err error)
 		return blades, err
 	}
 	return blades, err
+}
+
+// GetAllByFilters of the Blades by chassisID
+func (b BladeStorage) GetAllByFilters(filters map[string][]string) (blades []model.Blade, err error) {
+	query := ""
+	for key, values := range filters {
+		if len(values) == 1 && values[0] == "" {
+			continue
+		}
+		blade := model.Blade{}
+		rfct := reflect.ValueOf(blade)
+		rfctType := rfct.Type()
+
+		var structMemberName string
+		var structJSONMemberName string
+		for i := 0; i < rfctType.NumField(); i++ {
+			jsondName := rfctType.Field(i).Tag.Get("json")
+			if key == jsondName {
+				structMemberName = rfctType.Field(i).Name
+				structJSONMemberName = jsondName
+				break
+			}
+		}
+
+		if structJSONMemberName == "" || structJSONMemberName == "-" {
+			return blades, err
+		}
+
+		ftype := reflect.Indirect(rfct).FieldByName(structMemberName)
+		switch ftype.Kind() {
+		case reflect.String:
+			if query == "" {
+				query = fmt.Sprintf("%s in ('%s')", structJSONMemberName, strings.Join(values, "', '"))
+			} else {
+				query = fmt.Sprintf("%s and %s in ('%s')", query, structJSONMemberName, strings.Join(values, "', '"))
+			}
+		case reflect.Bool:
+			if query == "" {
+				query = fmt.Sprintf("%s in (%s)", structJSONMemberName, strings.Join(values, ", "))
+			} else {
+				query = fmt.Sprintf("%s and %s in (%s)", query, structJSONMemberName, strings.Join(values, ", "))
+			}
+		case reflect.Int:
+			if query == "" {
+				query = fmt.Sprintf("%s in (%s)", structJSONMemberName, strings.Join(values, ", "))
+			} else {
+				query = fmt.Sprintf("%s and %s in (%s)", query, structJSONMemberName, strings.Join(values, ", "))
+			}
+		}
+	}
+	b.db.Where(query).Find(&blades)
+	return blades, nil
 }
 
 // GetAllByChassisID of the Blades by chassisID
