@@ -231,7 +231,6 @@ func (i *IDracReader) get(endpoint string, extraHeaders *map[string]string) (pay
 	if err != nil {
 		return nil, err
 	}
-	//req.Header.Add("Referer", fmt.Sprintf("https://%s/index.htm", *i.ip))
 	req.Header.Add("ST2", i.st2)
 	for key, value := range *extraHeaders {
 		req.Header.Add(key, value)
