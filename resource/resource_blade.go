@@ -1,8 +1,8 @@
 package resource
 
 import (
-	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/jinzhu/gorm"
 	"github.com/manyminds/api2go"
@@ -21,13 +21,25 @@ type BladeResource struct {
 func (b BladeResource) FindAll(r api2go.Request) (api2go.Responder, error) {
 	var blades []model.Blade
 	var err error
-	_, hasFilters := r.QueryParams["filter[serial]"]
+	filters := NewFilter()
+	hasFilters := false
 	include, hasInclude := r.QueryParams["include"]
 	chassisID, hasChassis := r.QueryParams["chassisID"]
 	nicsID, hasNIC := r.QueryParams["nicsID"]
 
 	for key, values := range r.QueryParams {
-		fmt.Println(key, values)
+		if strings.HasPrefix(key, "filter") {
+			hasFilters = true
+			filter := strings.TrimRight(strings.TrimLeft(key, "filter["), "]")
+			filters.Add(filter, values)
+		}
+	}
+
+	if hasFilters {
+		blades, err = b.BladeStorage.GetAllByFilters(filters.Get())
+		if err != nil {
+			return &Response{Res: blades}, err
+		}
 	}
 
 	if hasInclude && include[0] == "nics" {
@@ -48,10 +60,16 @@ func (b BladeResource) FindAll(r api2go.Request) (api2go.Responder, error) {
 
 	if hasChassis {
 		blades, err = b.BladeStorage.GetAllByChassisID(chassisID)
+		if err != nil {
+			return &Response{Res: blades}, err
+		}
 	}
 
 	if hasNIC {
 		blades, err = b.BladeStorage.GetAllByNicsID(nicsID)
+		if err != nil {
+			return &Response{Res: blades}, err
+		}
 	}
 
 	if !hasFilters && !hasChassis && !hasInclude && !hasNIC {
