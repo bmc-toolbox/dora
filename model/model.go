@@ -67,8 +67,8 @@ type Blade struct {
 	NicsIDs              []int64   `json:"-" sql:"-"`
 	BladePosition        int       `json:"blade_position"`
 	Model                string    `json:"model"`
-	Temp                 int       `json:"temp_c"`
-	Power                float64   `json:"power_kw"`
+	TempC                int       `json:"temp_c"`
+	PowerKw              float64   `json:"power_kw"`
 	Status               string    `json:"status"`
 	IsStorageBlade       bool      `json:"is_storage_blade"`
 	Vendor               string    `json:"vendor"`
@@ -166,11 +166,11 @@ type Chassis struct {
 	BmcAuth           bool      `json:"bmc_auth"`
 	Blades            []*Blade  `json:"-" gorm:"ForeignKey:ChassisSerial"`
 	BladesIDS         []int64   `json:"-" sql:"-"`
-	Temp              int       `json:"temp_c"`
+	TempC             int       `json:"temp_c"`
 	PowerSupplyCount  int       `json:"power_supply_count"`
 	PassThru          string    `json:"pass_thru"`
 	Status            string    `json:"status"`
-	Power             float64   `json:"power_kw"`
+	PowerKw           float64   `json:"power_kw"`
 	Model             string    `json:"model"`
 	Vendor            string    `json:"vendor"`
 	FwVersion         string    `json:"fw_version"`
