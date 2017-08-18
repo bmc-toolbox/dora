@@ -64,6 +64,7 @@ func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) 
 	chassis.Model = strings.TrimSpace(dellCMC.DellChassis.DellChassisGroupMemberHealthBlob.DellChassisStatus.ROChassisProductname)
 	chassis.FwVersion = dellCMC.DellChassis.DellChassisGroupMemberHealthBlob.DellChassisStatus.ROCmcFwVersionString
 	chassis.PowerSupplyCount = dellCMC.DellChassis.DellChassisGroupMemberHealthBlob.DellPsuStatus.PsuCount
+	chassis.BmcAddress = *ip
 	if dellCMC.DellChassis.DellChassisGroupMemberHealthBlob.DellCMCStatus.CMCActiveError == "No Errors" {
 		chassis.Status = "OK"
 	} else {
@@ -206,6 +207,7 @@ func (c *ChassisConnection) Hp(ip *string) (chassis model.Chassis, err error) {
 		chassis.Vendor = HP
 		chassis.FwVersion = iloXML.HpMP.Fwri
 		chassis.PowerSupplyCount = len(iloXML.HpInfra2.HpChassisPower.HpPowersupply)
+		chassis.BmcAddress = *ip
 
 		for _, hpswitch := range iloXML.HpInfra2.HpSwitches.HpSwitch {
 			if strings.Contains(hpswitch.Spn, "10G") {
@@ -272,13 +274,13 @@ func (c *ChassisConnection) Hp(ip *string) (chassis model.Chassis, err error) {
 					if err != nil {
 						log.WithFields(log.Fields{"operation": "create ilo connection", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
 					}
-					b.BmcAuth = true
 
 					err = ilo.Login()
 					if err != nil {
 						log.WithFields(log.Fields{"operation": "opening ilo connection", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
 					} else {
 						defer ilo.Logout()
+						b.BmcAuth = true
 
 						b.BiosVersion, err = ilo.BiosVersion()
 						if err != nil {
