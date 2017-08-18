@@ -61,6 +61,10 @@ func RunGin(port int, debug bool) {
 		c.HTML(200, "doc.tmpl", gin.H{})
 	})
 
+	r.GET("/doc", func(c *gin.Context) {
+		c.HTML(200, "doc.tmpl", gin.H{})
+	})
+
 	r.GET("/ping", func(c *gin.Context) {
 		c.String(200, "pong")
 	})
