@@ -145,7 +145,7 @@ func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) 
 			}
 
 			b.TestConnections()
-			if b.BmcWEBReacheable {
+			if b.BmcWEBReachable {
 				iDrac := NewIDracReader(&b.BmcAddress, &c.username, &c.password)
 				err := iDrac.Login()
 				if err != nil {
@@ -269,7 +269,7 @@ func (c *ChassisConnection) Hp(ip *string) (chassis model.Chassis, err error) {
 				}
 				b.TestConnections()
 
-				if b.BmcWEBReacheable {
+				if b.BmcWEBReachable {
 					ilo, err := NewIloReader(&b.BmcAddress, &c.username, &c.password)
 					if err != nil {
 						log.WithFields(log.Fields{"operation": "create ilo connection", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
