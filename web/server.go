@@ -37,8 +37,8 @@ func RunGin(port int, debug bool) {
 	}
 
 	r := gin.Default()
-	r.StaticFS("/staic", staticBox.HTTPBox())
 	r.SetHTMLTemplate(doc)
+	r.StaticFS("/static", staticBox.HTTPBox())
 	api := api2go.NewAPIWithRouting(
 		"v1",
 		api2go.NewStaticResolver("/"),
