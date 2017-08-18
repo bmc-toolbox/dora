@@ -19,7 +19,7 @@ func RunGin(port int, debug bool) {
 
 	r := gin.Default()
 	api := api2go.NewAPIWithRouting(
-		"v0",
+		"v1",
 		api2go.NewStaticResolver("/"),
 		gingonic.New(r),
 	)
@@ -35,6 +35,16 @@ func RunGin(port int, debug bool) {
 	api.AddResource(model.Chassis{}, resource.ChassisResource{BladeStorage: bladeStorage, ChassisStorage: chassisStorage})
 	api.AddResource(model.Blade{}, resource.BladeResource{BladeStorage: bladeStorage, ChassisStorage: chassisStorage, NicStorage: nicStorage})
 	api.AddResource(model.Nic{}, resource.NicResource{BladeStorage: bladeStorage, NicStorage: nicStorage})
+
+	r.StaticFile("/favicon.ico", "web/static/favicon.ico")
+	r.StaticFile("/bootstrap.min.css", "web/static/bootstrap.min.css")
+	r.StaticFile("/ie10-viewport-bug-workaround.js", "web/static/ie10-viewport-bug-workaround.js")
+	r.StaticFile("/narrow-jumbotron.css", "web/static/narrow-jumbotron.css")
+	r.LoadHTMLFiles("web/templates/doc.tmpl")
+
+	r.GET("/", func(c *gin.Context) {
+		c.HTML(200, "doc.tmpl", gin.H{})
+	})
 
 	r.GET("/ping", func(c *gin.Context) {
 		c.String(200, "pong")
