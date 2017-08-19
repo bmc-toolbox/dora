@@ -25,9 +25,3 @@ func (f *Filter) Get() map[string][]string {
 func (f *Filter) Clean() {
 	f.filters = make(map[string][]string)
 }
-
-type byInt64Slice []int
-
-func (b byInt64Slice) Len() int           { return len(b) }
-func (b byInt64Slice) Swap(x, y int)      { b[x], b[y] = b[y], b[x] }
-func (b byInt64Slice) Less(x, y int) bool { return b[x] < b[y] }
