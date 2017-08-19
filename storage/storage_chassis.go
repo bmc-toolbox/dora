@@ -20,29 +20,45 @@ type ChassisStorage struct {
 }
 
 // GetAll returns all chassis
-func (c ChassisStorage) GetAll() (chassis []model.Chassis, err error) {
-	if err = c.db.Find(&chassis).Error; err != nil {
-		return chassis, err
+func (c ChassisStorage) GetAll(offset string, limit string) (count int, chassis []model.Chassis, err error) {
+	if offset != "" && limit != "" {
+		if err = c.db.Order("serial").Find(&chassis).Error; err != nil {
+			return count, chassis, err
+		}
+		c.db.Order("serial").Find(&model.Chassis{}).Count(&count)
+	} else {
+		if err = c.db.Order("serial").Find(&chassis).Error; err != nil {
+			return count, chassis, err
+		}
 	}
-	return chassis, err
+	return count, chassis, err
 }
 
 // GetAllWithAssociations returns all chassis with their relationships
-func (c ChassisStorage) GetAllWithAssociations() (chassis []model.Chassis, err error) {
-	if err = c.db.Preload("Blades").Find(&chassis).Error; err != nil {
-		return chassis, err
+func (c ChassisStorage) GetAllWithAssociations(offset string, limit string) (count int, chassis []model.Chassis, err error) {
+	if offset != "" && limit != "" {
+		if err = c.db.Order("serial").Preload("Blades").Find(&chassis).Error; err != nil {
+			return count, chassis, err
+		}
+		c.db.Order("serial").Find(&model.Chassis{}).Count(&count)
+	} else {
+		if err = c.db.Order("serial").Preload("Blades").Find(&chassis).Error; err != nil {
+			return count, chassis, err
+		}
 	}
-	return chassis, err
+	return count, chassis, err
 }
 
 // GetOne Chassis
 func (c ChassisStorage) GetOne(serial string) (chassis model.Chassis, err error) {
-	chassis, err = c.getOneWithAssociations(serial)
+	if err = c.db.Where("serial = ?", serial).Preload("Blades").First(&chassis).Error; err != nil {
+		return chassis, err
+	}
 	return chassis, err
 }
 
 // GetAllByFilters get all chassis detecting the struct members dinamically
-func (c ChassisStorage) GetAllByFilters(filters map[string][]string) (chassis []model.Chassis, err error) {
+func (c ChassisStorage) GetAllByFilters(offset string, limit string, filters map[string][]string) (count int, chassis []model.Chassis, err error) {
 	query := ""
 	for key, values := range filters {
 		if len(values) == 1 && values[0] == "" {
@@ -64,7 +80,7 @@ func (c ChassisStorage) GetAllByFilters(filters map[string][]string) (chassis []
 		}
 
 		if structJSONMemberName == "" || structJSONMemberName == "-" {
-			return chassis, err
+			return count, chassis, err
 		}
 
 		ftype := reflect.Indirect(rfct).FieldByName(structMemberName)
@@ -89,36 +105,34 @@ func (c ChassisStorage) GetAllByFilters(filters map[string][]string) (chassis []
 			}
 		}
 	}
-	c.db.Where(query).Find(&chassis)
-	return chassis, nil
+
+	if offset != "" && limit != "" {
+		if err = c.db.Limit(limit).Offset(offset).Where(query).Find(&chassis).Error; err != nil {
+			return count, chassis, err
+		}
+		c.db.Model(&model.Chassis{}).Where(query).Count(&count)
+	} else {
+		if err = c.db.Where(query).Find(&chassis).Error; err != nil {
+			return count, chassis, err
+		}
+	}
+
+	return count, chassis, err
 }
 
 // GetAllByBladesID Chassis
-func (c ChassisStorage) GetAllByBladesID(serials []string) (chassis []model.Chassis, err error) {
-	for _, serial := range serials {
-		ch, err := c.getByBladeID(serial)
-		if err == gorm.ErrRecordNotFound {
-			continue
-		} else if err != nil {
-			return chassis, err
+func (c ChassisStorage) GetAllByBladesID(offset string, limit string, serials []string) (count int, chassis []model.Chassis, err error) {
+	if offset != "" && limit != "" {
+		if err = c.db.Limit(limit).Offset(offset).Joins("INNER JOIN blade ON blade.chassis_serial = chassis.serial").Where("blade.serial in (?)", serials).Find(&chassis).Error; err != nil {
+			return count, chassis, err
 		}
-		chassis = append(chassis, ch)
+		c.db.Model(&model.Chassis{}).Joins("INNER JOIN blade ON blade.chassis_serial = chassis.serial").Where("blade.serial in (?)", serials).Count(&count)
+	} else {
+		if err = c.db.Joins("INNER JOIN blade ON blade.chassis_serial = chassis.serial").Where("blade.serial in (?)", serials).Find(&chassis).Error; err != nil {
+			return count, chassis, err
+		}
 	}
-	return chassis, nil
-}
-
-func (c ChassisStorage) getByBladeID(serial string) (chassis model.Chassis, err error) {
-	if err = c.db.Joins("INNER JOIN blade ON blade.chassis_serial = chassis.serial").Where("blade.serial = ?", serial).Find(&chassis).Error; err != nil {
-		return chassis, err
-	}
-	return chassis, err
-}
-
-func (c ChassisStorage) getOneWithAssociations(id string) (chassis model.Chassis, err error) {
-	if err = c.db.Where("serial = ?", id).Preload("Blades").First(&chassis).Error; err != nil {
-		return chassis, err
-	}
-	return chassis, err
+	return count, chassis, err
 }
 
 // UpdateOrCreate
