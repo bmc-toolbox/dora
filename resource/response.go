@@ -1,12 +1,5 @@
 package resource
 
-import "errors"
-
-var (
-	// ErrInvalidID is returned when the endpoint is called with something other than integers
-	ErrInvalidID = errors.New("IDs must be integer")
-)
-
 // The Response struct implements api2go.Responder
 type Response struct {
 	Res  interface{}
