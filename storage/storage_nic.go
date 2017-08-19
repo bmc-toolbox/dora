@@ -16,32 +16,33 @@ type NicStorage struct {
 }
 
 // GetAll of the Nic
-func (n NicStorage) GetAll() (nics []model.Nic, err error) {
-	if err = n.db.Order("mac_address").Find(&nics).Error; err != nil {
-		return nics, err
+func (n NicStorage) GetAll(offset string, limit string) (count int, nics []model.Nic, err error) {
+	if offset != "" && limit != "" {
+		if err = n.db.Limit(limit).Offset(offset).Order("mac_address").Find(&nics).Error; err != nil {
+			return count, nics, err
+		}
+		n.db.Model(&model.Nic{}).Order("mac_address").Count(&count)
+	} else {
+		if err = n.db.Order("mac_address").Find(&nics).Error; err != nil {
+			return count, nics, err
+		}
 	}
-	return nics, err
+	return count, nics, err
 }
 
 // GetAllByBladeID of the Blades by BladeID
-func (n NicStorage) GetAllByBladeID(serials []string) (nics []model.Nic, err error) {
-	for _, serial := range serials {
-		nc, err := n.getByBladeID(serial)
-		if err == gorm.ErrRecordNotFound {
-			continue
-		} else if err != nil {
-			return nics, err
+func (n NicStorage) GetAllByBladeID(offset string, limit string, serials []string) (count int, nics []model.Nic, err error) {
+	if offset != "" && limit != "" {
+		if err = n.db.Limit(limit).Offset(offset).Where("blade_serial in (?)", serials).Find(&nics).Error; err != nil {
+			return count, nics, err
 		}
-		nics = append(nics, nc)
+		n.db.Model(&model.Nic{}).Where("blade_serial in (?)", serials).Count(&count)
+	} else {
+		if err = n.db.Where("blade_serial in (?)", serials).Find(&nics).Error; err != nil {
+			return count, nics, err
+		}
 	}
-	return nics, nil
-}
-
-func (n NicStorage) getByBladeID(serial string) (nic model.Nic, err error) {
-	if err = n.db.Where("blade_serial = ?", serial).First(&nic).Error; err != nil {
-		return nic, err
-	}
-	return nic, err
+	return count, nics, err
 }
 
 // GetOne  Blade

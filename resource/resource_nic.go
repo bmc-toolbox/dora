@@ -1,9 +1,8 @@
 package resource
 
 import (
+	"errors"
 	"net/http"
-	"sort"
-	"strconv"
 
 	"github.com/jinzhu/gorm"
 	"github.com/manyminds/api2go"
@@ -11,7 +10,12 @@ import (
 	"gitlab.booking.com/infra/dora/storage"
 )
 
-// BladeResource for api2go routes
+var (
+	// ErrPageSizeAndNumber is returned when page[number] and page[size] are sent on the http request
+	ErrPageSizeAndNumber = errors.New("Filters page[number] and page[size] are not supported, please stick to page[offset] and page[limit]")
+)
+
+// NicResource for api2go routes
 type NicResource struct {
 	BladeStorage *storage.BladeStorage
 	NicStorage   *storage.NicStorage
@@ -19,109 +23,8 @@ type NicResource struct {
 
 // FindAll Nics
 func (n NicResource) FindAll(r api2go.Request) (api2go.Responder, error) {
-	var nics []model.Nic
-	var err error
-	_, hasFilters := r.QueryParams["filter[mac]"]
-	bladeID, hasBlade := r.QueryParams["bladeID"]
-
-	if hasBlade {
-		nics, err = n.NicStorage.GetAllByBladeID(bladeID)
-	}
-
-	if !hasFilters && !hasBlade {
-		nics, err = n.NicStorage.GetAll()
-		if err != nil {
-			return &Response{Res: nics}, err
-		}
-	}
-
-	return &Response{Res: nics}, nil
-}
-
-// PaginatedFindAll can be used to load nics in chunks
-func (n NicResource) PaginatedFindAll(r api2go.Request) (uint, api2go.Responder, error) {
-	var (
-		result                      []model.Nic
-		number, size, offset, limit string
-		keys                        []int
-	)
-
-	var nics []model.Nic
-	var err error
-	_, hasFilters := r.QueryParams["filter[mac]"]
-	bladeID, hasBlade := r.QueryParams["bladeID"]
-
-	if hasBlade {
-		nics, err = n.NicStorage.GetAllByBladeID(bladeID)
-	}
-
-	if !hasFilters && !hasBlade {
-		nics, err = n.NicStorage.GetAll()
-		if err != nil {
-			return 0, &Response{Res: nics}, err
-		}
-	}
-
-	for k := range nics {
-		keys = append(keys, k)
-	}
-	sort.Sort(byInt64Slice(keys))
-
-	numberQuery, ok := r.QueryParams["page[number]"]
-	if ok {
-		number = numberQuery[0]
-	}
-	sizeQuery, ok := r.QueryParams["page[size]"]
-	if ok {
-		size = sizeQuery[0]
-	}
-	offsetQuery, ok := r.QueryParams["page[offset]"]
-	if ok {
-		offset = offsetQuery[0]
-	}
-	limitQuery, ok := r.QueryParams["page[limit]"]
-	if ok {
-		limit = limitQuery[0]
-	}
-
-	if size != "" {
-		sizeI, err := strconv.ParseUint(size, 10, 64)
-		if err != nil {
-			return 0, &Response{}, err
-		}
-
-		numberI, err := strconv.ParseUint(number, 10, 64)
-		if err != nil {
-			return 0, &Response{}, err
-		}
-
-		start := sizeI * (numberI - 1)
-		for i := start; i < start+sizeI; i++ {
-			if i >= uint64(len(nics)) {
-				break
-			}
-			result = append(result, nics[keys[i]])
-		}
-	} else {
-		limitI, err := strconv.ParseUint(limit, 10, 64)
-		if err != nil {
-			return 0, &Response{}, err
-		}
-
-		offsetI, err := strconv.ParseUint(offset, 10, 64)
-		if err != nil {
-			return 0, &Response{}, err
-		}
-
-		for i := offsetI; i < offsetI+limitI; i++ {
-			if i >= uint64(len(nics)) {
-				break
-			}
-			result = append(result, nics[keys[i]])
-		}
-	}
-
-	return uint(len(nics)), &Response{Res: result}, nil
+	_, nics, err := n.queryAndCountAllWrapper(r)
+	return &Response{Res: nics}, err
 }
 
 // FindOne Nics
@@ -131,4 +34,48 @@ func (n NicResource) FindOne(ID string, r api2go.Request) (api2go.Responder, err
 		return &Response{}, api2go.NewHTTPError(err, err.Error(), http.StatusNotFound)
 	}
 	return &Response{Res: res}, err
+}
+
+// PaginatedFindAll can be used to load nics in chunks
+func (n NicResource) PaginatedFindAll(r api2go.Request) (uint, api2go.Responder, error) {
+	count, nics, err := n.queryAndCountAllWrapper(r)
+	return uint(count), &Response{Res: nics}, err
+}
+
+// queryAndCountAllWrapper retrieve the data to be used for FindAll and PaginatedFindAll in a stardard way
+func (n NicResource) queryAndCountAllWrapper(r api2go.Request) (count int, nics []model.Nic, err error) {
+	for _, invalidQuery := range []string{"page[number]", "page[size]"} {
+		_, invalid := r.QueryParams[invalidQuery]
+		if invalid {
+			return count, nics, ErrPageSizeAndNumber
+		}
+	}
+
+	var offset string
+	var limit string
+
+	offsetQuery, hasOffset := r.QueryParams["page[offset]"]
+	if hasOffset {
+		offset = offsetQuery[0]
+	}
+
+	limitQuery, hasLimit := r.QueryParams["page[limit]"]
+	if hasLimit {
+		limit = limitQuery[0]
+	}
+
+	bladeID, hasBlade := r.QueryParams["bladeID"]
+	if hasBlade {
+		count, nics, err = n.NicStorage.GetAllByBladeID(offset, limit, bladeID)
+		return
+	}
+
+	if !hasBlade {
+		count, nics, err = n.NicStorage.GetAll(offset, limit)
+		if err != nil {
+			return count, nics, err
+		}
+	}
+
+	return count, nics, err
 }
