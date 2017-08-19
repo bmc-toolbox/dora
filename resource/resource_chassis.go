@@ -37,21 +37,20 @@ func (c ChassisResource) PaginatedFindAll(r api2go.Request) (uint, api2go.Respon
 	return uint(count), &Response{Res: chassis}, err
 }
 
+// queryAndCountAllWrapper retrieve the data to be used for FindAll and PaginatedFindAll in a stardard way
 func (c ChassisResource) queryAndCountAllWrapper(r api2go.Request) (count int, chassis []model.Chassis, err error) {
-	for _, invalidQuery := range []string{"page[number]", "page[size]"} {
-		_, invalid := r.QueryParams[invalidQuery]
-		if invalid {
-			return count, chassis, ErrPageSizeAndNumber
-		}
-	}
+	// for _, invalidQuery := range []string{"page[number]", "page[size]"} {
+	// 	_, invalid := r.QueryParams[invalidQuery]
+	// 	if invalid {
+	// 		return count, chassis, ErrPageSizeAndNumber
+	// 	}
+	// }
 
 	filters := NewFilter()
 	hasFilters := false
 	var offset string
 	var limit string
 
-	include, hasInclude := r.QueryParams["include"]
-	bladesID, hasBlade := r.QueryParams["bladesID"]
 	offsetQuery, hasOffset := r.QueryParams["page[offset]"]
 	if hasOffset {
 		offset = offsetQuery[0]
@@ -78,6 +77,7 @@ func (c ChassisResource) queryAndCountAllWrapper(r api2go.Request) (count int, c
 		}
 	}
 
+	include, hasInclude := r.QueryParams["include"]
 	if hasInclude && include[0] == "blades" {
 		if len(chassis) == 0 {
 			count, chassis, err = c.ChassisStorage.GetAllWithAssociations(offset, limit)
@@ -94,6 +94,7 @@ func (c ChassisResource) queryAndCountAllWrapper(r api2go.Request) (count int, c
 		}
 	}
 
+	bladesID, hasBlade := r.QueryParams["bladesID"]
 	if hasBlade {
 		count, chassis, err = c.ChassisStorage.GetAllByBladesID(offset, limit, bladesID)
 	}

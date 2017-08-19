@@ -38,7 +38,7 @@ func (b BladeResource) PaginatedFindAll(r api2go.Request) (uint, api2go.Responde
 	return uint(count), &Response{Res: blades}, err
 }
 
-// queryAndCountAllWrapper retrieve the data to be used for FindAnd and PaginatedFindAll in a stardard way
+// queryAndCountAllWrapper retrieve the data to be used for FindAll and PaginatedFindAll in a stardard way
 func (b BladeResource) queryAndCountAllWrapper(r api2go.Request) (count int, blades []model.Blade, err error) {
 	for _, invalidQuery := range []string{"page[number]", "page[size]"} {
 		_, invalid := r.QueryParams[invalidQuery]
@@ -52,9 +52,6 @@ func (b BladeResource) queryAndCountAllWrapper(r api2go.Request) (count int, bla
 	var offset string
 	var limit string
 
-	include, hasInclude := r.QueryParams["include"]
-	chassisID, hasChassis := r.QueryParams["chassisID"]
-	nicsID, hasNIC := r.QueryParams["nicsID"]
 	offsetQuery, hasOffset := r.QueryParams["page[offset]"]
 	if hasOffset {
 		offset = offsetQuery[0]
@@ -81,6 +78,7 @@ func (b BladeResource) queryAndCountAllWrapper(r api2go.Request) (count int, bla
 		}
 	}
 
+	include, hasInclude := r.QueryParams["include"]
 	if hasInclude && include[0] == "nics" {
 		if len(blades) == 0 {
 			count, blades, err = b.BladeStorage.GetAllWithAssociations(offset, limit)
@@ -97,6 +95,7 @@ func (b BladeResource) queryAndCountAllWrapper(r api2go.Request) (count int, bla
 		}
 	}
 
+	chassisID, hasChassis := r.QueryParams["chassisID"]
 	if hasChassis {
 		count, blades, err = b.BladeStorage.GetAllByChassisID(offset, limit, chassisID)
 		if err != nil {
@@ -104,6 +103,7 @@ func (b BladeResource) queryAndCountAllWrapper(r api2go.Request) (count int, bla
 		}
 	}
 
+	nicsID, hasNIC := r.QueryParams["nicsID"]
 	if hasNIC {
 		count, blades, err = b.BladeStorage.GetAllByNicsID(offset, limit, nicsID)
 		if err != nil {
