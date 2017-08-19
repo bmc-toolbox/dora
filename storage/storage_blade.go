@@ -110,7 +110,6 @@ func (b BladeStorage) GetAllByFilters(offset string, limit string, filters map[s
 		}
 	}
 
-	// b.db.Where(query).Find(&blades)
 	return count, blades, nil
 }
 
@@ -130,7 +129,7 @@ func (b BladeStorage) GetAllByChassisID(offset string, limit string, serials []s
 }
 
 // GetAllByNicsID of the Blades by chassisID
-func (b BladeStorage) GetAllByNicsID(macAddresses []string) (count int, blades []model.Blade, err error) {
+func (b BladeStorage) GetAllByNicsID(offset string, limit string, macAddresses []string) (count int, blades []model.Blade, err error) {
 	if offset != "" && limit != "" {
 		if err = b.db.Limit(limit).Offset(offset).Joins("INNER JOIN nic ON nic.blade_serial = blade.serial").Where("nic.mac_address in (?)", macAddresses).Find(&blades).Error; err != nil {
 			return count, blades, err
