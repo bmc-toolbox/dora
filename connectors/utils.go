@@ -255,27 +255,31 @@ func httpGetHP(hostname *string, endpoint string, username *string, password *st
 
 // DumpInvalidPayload is here to help identify unknown or broken payload messages
 func DumpInvalidPayload(name string, payload []byte) (err error) {
-	if !viper.GetBool("dump_invalid_payload") {
-		return err
-	}
+	if viper.GetBool("dump_invalid_payloads") {
+		log.WithFields(log.Fields{"operation": "dump invalid payload", "name": name}).Info("Dump invalid payload")
 
-	t := time.Now()
-	timeStamp := t.Format("20060102150405")
+		t := time.Now()
+		timeStamp := t.Format("20060102150405")
 
-	dumpPath := viper.GetString("dump_invalid_payload_path")
-	err = os.MkdirAll(dumpPath, 0755)
-	if err != nil {
-		return err
-	}
+		dumpPath := viper.GetString("dump_invalid_payload_path")
+		err = os.MkdirAll(path.Join(dumpPath, name), 0755)
+		if err != nil {
+			return err
+		}
 
-	file, err := os.OpenFile(path.Join(dumpPath, name, timeStamp, ".txt"), os.O_RDWR|os.O_CREATE, 0755)
-	if err != nil {
-		return err
-	}
+		file, err := os.OpenFile(path.Join(dumpPath, name, timeStamp), os.O_RDWR|os.O_CREATE, 0755)
+		if err != nil {
+			log.WithFields(log.Fields{"operation": "dump invalid payload", "name": name, "error": err}).Error("Dump invalid payload")
+			return err
+		}
 
-	_, err = file.Write(payload)
-	if err != nil {
-		return err
+		_, err = file.Write(payload)
+		if err != nil {
+			log.WithFields(log.Fields{"operation": "dump invalid payload", "name": name, "error": err}).Error("Dump invalid payload")
+			return err
+		}
+		file.Sync()
+		file.Close()
 	}
 
 	return err
