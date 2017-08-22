@@ -84,7 +84,7 @@ type Blade struct {
 // TestConnections as the name says, test connections from the bkbuild machines to the bmcs and update the struct data
 func (b *Blade) TestConnections() {
 	if b.IsStorageBlade == true || b.BmcAddress == "0.0.0.0" || b.BmcAddress == "" || b.BmcAddress == "[]" {
-		b.BmcAddress = ""
+		b.BmcAddress = "unassigned"
 		return
 	}
 
@@ -181,6 +181,11 @@ type Chassis struct {
 
 // TestConnections as the name says, test connections from the bkbuild machines to the bmcs and update the struct data
 func (c *Chassis) TestConnections() {
+	if c.BmcAddress == "0.0.0.0" || c.BmcAddress == "" || c.BmcAddress == "[]" {
+		b.BmcAddress = "unassigned"
+		return
+	}
+
 	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", c.BmcAddress, 443), 15*time.Second)
 	if err != nil {
 		log.WithFields(log.Fields{"operation": "test http connection", "ip": c.BmcAddress, "serial": c.Serial, "type": "blade", "error": err, "chassis": c.Name, "vendor": c.Vendor}).Error("Auditing chassis")
