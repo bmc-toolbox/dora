@@ -12,10 +12,14 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
+	"os"
+	"path"
 	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
+
+	"github.com/spf13/viper"
 
 	"golang.org/x/net/publicsuffix"
 )
@@ -123,8 +127,16 @@ func httpGetDell(hostname *string, endpoint string, username *string, password *
 	if err != nil {
 		return payload, err
 	}
-	io.Copy(ioutil.Discard, resp.Body)
 	defer resp.Body.Close()
+
+	auth, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return payload, err
+	}
+
+	if strings.Contains(string(auth), "Try Again") {
+		return nil, ErrLoginFailed
+	}
 
 	if resp.StatusCode == 404 {
 		return payload, ErrPageNotFound
@@ -239,4 +251,32 @@ func httpGetHP(hostname *string, endpoint string, username *string, password *st
 	}
 
 	return payload, err
+}
+
+// DumpInvalidPayload is here to help identify unknown or broken payload messages
+func DumpInvalidPayload(name string, payload []byte) (err error) {
+	if !viper.GetBool("dump_invalid_payload") {
+		return err
+	}
+
+	t := time.Now()
+	timeStamp := t.Format("20060102150405")
+
+	dumpPath := viper.GetString("dump_invalid_payload_path")
+	err = os.MkdirAll(dumpPath, 0755)
+	if err != nil {
+		return err
+	}
+
+	file, err := os.OpenFile(path.Join(dumpPath, name, timeStamp, ".txt"), os.O_RDWR|os.O_CREATE, 0755)
+	if err != nil {
+		return err
+	}
+
+	_, err = file.Write(payload)
+	if err != nil {
+		return err
+	}
+
+	return err
 }
