@@ -211,7 +211,7 @@ func (i *IDracReader) Login() (err error) {
 		return err
 	}
 
-	if iDracAuth.Authpayload == 1 {
+	if iDracAuth.AuthResult == 1 {
 		return ErrLoginFailed
 	}
 
