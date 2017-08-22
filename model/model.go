@@ -83,7 +83,8 @@ type Blade struct {
 
 // TestConnections as the name says, test connections from the bkbuild machines to the bmcs and update the struct data
 func (b *Blade) TestConnections() {
-	if b.IsStorageBlade == true || b.BmcAddress == "0.0.0.0" {
+	if b.IsStorageBlade == true || b.BmcAddress == "0.0.0.0" || b.BmcAddress == "" || b.BmcAddress == "[]" {
+		b.BmcAddress == ""
 		return
 	}
 
