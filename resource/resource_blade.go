@@ -2,7 +2,6 @@ package resource
 
 import (
 	"net/http"
-	"strings"
 
 	"github.com/jinzhu/gorm"
 	"github.com/manyminds/api2go"
@@ -47,28 +46,8 @@ func (b BladeResource) queryAndCountAllWrapper(r api2go.Request) (count int, bla
 		}
 	}
 
-	filters := NewFilter()
-	hasFilters := false
-	var offset string
-	var limit string
-
-	offsetQuery, hasOffset := r.QueryParams["page[offset]"]
-	if hasOffset {
-		offset = offsetQuery[0]
-	}
-
-	limitQuery, hasLimit := r.QueryParams["page[limit]"]
-	if hasLimit {
-		limit = limitQuery[0]
-	}
-
-	for key, values := range r.QueryParams {
-		if strings.HasPrefix(key, "filter") {
-			hasFilters = true
-			filter := strings.TrimRight(strings.TrimLeft(key, "filter["), "]")
-			filters.Add(filter, values)
-		}
-	}
+	filters, hasFilters := NewFilter(&r)
+	offset, limit := offSetAndLimitParse(&r)
 
 	if hasFilters {
 		count, blades, err = b.BladeStorage.GetAllByFilters(offset, limit, filters.Get())

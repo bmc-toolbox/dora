@@ -2,7 +2,6 @@ package resource
 
 import (
 	"net/http"
-	"strings"
 
 	"github.com/jinzhu/gorm"
 	"github.com/manyminds/api2go"
@@ -39,35 +38,15 @@ func (c ChassisResource) PaginatedFindAll(r api2go.Request) (uint, api2go.Respon
 
 // queryAndCountAllWrapper retrieve the data to be used for FindAll and PaginatedFindAll in a stardard way
 func (c ChassisResource) queryAndCountAllWrapper(r api2go.Request) (count int, chassis []model.Chassis, err error) {
-	// for _, invalidQuery := range []string{"page[number]", "page[size]"} {
-	// 	_, invalid := r.QueryParams[invalidQuery]
-	// 	if invalid {
-	// 		return count, chassis, ErrPageSizeAndNumber
-	// 	}
-	// }
-
-	filters := NewFilter()
-	hasFilters := false
-	var offset string
-	var limit string
-
-	offsetQuery, hasOffset := r.QueryParams["page[offset]"]
-	if hasOffset {
-		offset = offsetQuery[0]
-	}
-
-	limitQuery, hasLimit := r.QueryParams["page[limit]"]
-	if hasLimit {
-		limit = limitQuery[0]
-	}
-
-	for key, values := range r.QueryParams {
-		if strings.HasPrefix(key, "filter") {
-			hasFilters = true
-			filter := strings.TrimRight(strings.TrimLeft(key, "filter["), "]")
-			filters.Add(filter, values)
+	for _, invalidQuery := range []string{"page[number]", "page[size]"} {
+		_, invalid := r.QueryParams[invalidQuery]
+		if invalid {
+			return count, chassis, ErrPageSizeAndNumber
 		}
 	}
+
+	filters, hasFilters := NewFilter(&r)
+	offset, limit := offSetAndLimitParse(&r)
 
 	if hasFilters {
 		count, chassis, err = c.ChassisStorage.GetAllByFilters(offset, limit, filters.Get())

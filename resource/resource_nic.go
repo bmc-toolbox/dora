@@ -51,18 +51,7 @@ func (n NicResource) queryAndCountAllWrapper(r api2go.Request) (count int, nics 
 		}
 	}
 
-	var offset string
-	var limit string
-
-	offsetQuery, hasOffset := r.QueryParams["page[offset]"]
-	if hasOffset {
-		offset = offsetQuery[0]
-	}
-
-	limitQuery, hasLimit := r.QueryParams["page[limit]"]
-	if hasLimit {
-		limit = limitQuery[0]
-	}
+	offset, limit := offSetAndLimitParse(&r)
 
 	bladeID, hasBlade := r.QueryParams["bladeID"]
 	if hasBlade {
