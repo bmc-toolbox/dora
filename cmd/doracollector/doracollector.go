@@ -100,6 +100,8 @@ func main() {
 	viper.SetDefault("noop", false)
 	viper.SetDefault("disable_chassis", false)
 	viper.SetDefault("disable_discretes", false)
+	viper.SetDefault("dump_invalid_payloads", false)
+	viper.SetDefault("dump_invalid_payload_path", "/tmp/dora")
 
 	configItems := []string{
 		"bmc_pass",
