@@ -182,7 +182,7 @@ type Chassis struct {
 // TestConnections as the name says, test connections from the bkbuild machines to the bmcs and update the struct data
 func (c *Chassis) TestConnections() {
 	if c.BmcAddress == "0.0.0.0" || c.BmcAddress == "" || c.BmcAddress == "[]" {
-		b.BmcAddress = "unassigned"
+		c.BmcAddress = "unassigned"
 		return
 	}
 
