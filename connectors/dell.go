@@ -137,7 +137,7 @@ type DellBladeHyperThreading struct {
 // IDracAuth is the struct used to verify the iDrac authentication
 type IDracAuth struct {
 	Status     string `xml:"status"`
-	AuthResult int    `xml:"authResult"`
+	AuthResult int    `xml:"authresult"`
 	ForwardURL string `xml:"forwardUrl"`
 	ErrorMsg   string `xml:"errorMsg"`
 }
@@ -207,10 +207,11 @@ func (i *IDracReader) Login() (err error) {
 	iDracAuth := &IDracAuth{}
 	err = xml.Unmarshal(payload, iDracAuth)
 	if err != nil {
+		DumpInvalidPayload(*i.ip, payload)
 		return err
 	}
 
-	if iDracAuth.AuthResult == 1 {
+	if iDracAuth.Authpayload == 1 {
 		return ErrLoginFailed
 	}
 
@@ -260,14 +261,15 @@ func (i *IDracReader) Memory() (mem int, err error) {
 		"X_SYSMGMT_OPTIMIZE": "true",
 	}
 
-	result, err := i.get("sysmgmt/2012/server/memory", extraHeaders)
+	payload, err := i.get("sysmgmt/2012/server/memory", extraHeaders)
 	if err != nil {
 		return mem, err
 	}
 
 	dellBladeMemory := &DellBladeMemoryEndpoint{}
-	err = json.Unmarshal(result, dellBladeMemory)
+	err = json.Unmarshal(payload, dellBladeMemory)
 	if err != nil {
+		DumpInvalidPayload(*i.ip, payload)
 		return mem, err
 	}
 
@@ -280,14 +282,15 @@ func (i *IDracReader) CPU() (cpu string, coreCount int, hyperthreadCount int, er
 		"X_SYSMGMT_OPTIMIZE": "true",
 	}
 
-	result, err := i.get("sysmgmt/2012/server/processor", extraHeaders)
+	payload, err := i.get("sysmgmt/2012/server/processor", extraHeaders)
 	if err != nil {
 		return cpu, coreCount, hyperthreadCount, err
 	}
 
 	dellBladeProc := &DellBladeProcessorEndpoint{}
-	err = json.Unmarshal(result, dellBladeProc)
+	err = json.Unmarshal(payload, dellBladeProc)
 	if err != nil {
+		DumpInvalidPayload(*i.ip, payload)
 		return cpu, coreCount, hyperthreadCount, err
 	}
 

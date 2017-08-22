@@ -48,14 +48,15 @@ type ChassisConnection struct {
 }
 
 func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) {
-	result, err := httpGetDell(ip, "json?method=groupinfo", &c.username, &c.password)
+	payload, err := httpGetDell(ip, "json?method=groupinfo", &c.username, &c.password)
 	if err != nil {
 		return chassis, err
 	}
 	chassis.BmcAuth = true
 	dellCMC := &DellCMC{}
-	err = json.Unmarshal(result, dellCMC)
+	err = json.Unmarshal(payload, dellCMC)
 	if err != nil {
+		DumpInvalidPayload(*ip, payload)
 		return chassis, err
 	}
 
@@ -170,13 +171,14 @@ func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) 
 		}
 	}
 
-	result, err = httpGetDell(ip, "json?method=temp-sensors", &c.username, &c.password)
+	payload, err = httpGetDell(ip, "json?method=temp-sensors", &c.username, &c.password)
 	if err != nil {
 		return chassis, err
 	}
 	dellCMCTemp := &DellCMCTemp{}
-	err = json.Unmarshal(result, dellCMCTemp)
+	err = json.Unmarshal(payload, dellCMCTemp)
 	if err != nil {
+		DumpInvalidPayload(*ip, payload)
 		return chassis, err
 	}
 
@@ -187,13 +189,14 @@ func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) 
 }
 
 func (c *ChassisConnection) Hp(ip *string) (chassis model.Chassis, err error) {
-	result, err := httpGet(fmt.Sprintf("https://%s/xmldata?item=all", *ip), &c.username, &c.password)
+	payload, err := httpGet(fmt.Sprintf("https://%s/xmldata?item=all", *ip), &c.username, &c.password)
 	if err != nil {
 		return chassis, err
 	}
 	iloXML := &HpRimp{}
-	err = xml.Unmarshal(result, iloXML)
+	err = xml.Unmarshal(payload, iloXML)
 	if err != nil {
+		DumpInvalidPayload(*ip, payload)
 		return chassis, err
 	}
 
@@ -246,13 +249,14 @@ func (c *ChassisConnection) Hp(ip *string) (chassis model.Chassis, err error) {
 					b.BmcVersion = blade.MgmtVersion
 					b.Model = blade.Spn
 
-					result, err := httpGet(fmt.Sprintf("https://%s/xmldata?item=all", b.BmcAddress), &c.username, &c.password)
+					payload, err := httpGet(fmt.Sprintf("https://%s/xmldata?item=all", b.BmcAddress), &c.username, &c.password)
 					if err != nil {
 						log.WithFields(log.Fields{"operation": "connection", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Error("Auditing blade")
 					} else {
 						bladeIloXML := &HpRimpBlade{}
-						err = xml.Unmarshal(result, bladeIloXML)
+						err = xml.Unmarshal(payload, bladeIloXML)
 						if err != nil {
+							DumpInvalidPayload(*ip, payload)
 							log.WithFields(log.Fields{"operation": "connection", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Error("Auditing blade")
 						} else if bladeIloXML.HpHSI != nil && bladeIloXML.HpHSI.HpNICS != nil && bladeIloXML.HpHSI.HpNICS.HpNIC != nil {
 							for _, nic := range bladeIloXML.HpHSI.HpNICS.HpNIC {

@@ -249,14 +249,15 @@ func (i *IloReader) get(endpoint string) (payload []byte, err error) {
 
 // Memory return the total amount of memory of the server
 func (i *IloReader) Memory() (mem int, err error) {
-	result, err := i.get("json/mem_info")
+	payload, err := i.get("json/mem_info")
 	if err != nil {
 		return mem, err
 	}
 
 	hpMemData := &HpMem{}
-	err = json.Unmarshal(result, hpMemData)
+	err = json.Unmarshal(payload, hpMemData)
 	if err != nil {
+		DumpInvalidPayload(*i.ip, payload)
 		return mem, err
 	}
 
@@ -265,14 +266,15 @@ func (i *IloReader) Memory() (mem int, err error) {
 
 // CPU return the cpu, cores and hyperthreads the server
 func (i *IloReader) CPU() (cpu string, coreCount int, hyperthreadCount int, err error) {
-	result, err := i.get("json/proc_info")
+	payload, err := i.get("json/proc_info")
 	if err != nil {
 		return cpu, coreCount, hyperthreadCount, err
 	}
 
 	hpProcData := &HpProcs{}
-	err = json.Unmarshal(result, hpProcData)
+	err = json.Unmarshal(payload, hpProcData)
 	if err != nil {
+		DumpInvalidPayload(*i.ip, payload)
 		return cpu, coreCount, hyperthreadCount, err
 	}
 
@@ -285,14 +287,15 @@ func (i *IloReader) CPU() (cpu string, coreCount int, hyperthreadCount int, err 
 
 // BiosVersion return the current verion of the bios
 func (i *IloReader) BiosVersion() (version string, err error) {
-	result, err := i.get("json/fw_info")
+	payload, err := i.get("json/fw_info")
 	if err != nil {
 		return version, err
 	}
 
 	hpFwData := &HpFirmware{}
-	err = json.Unmarshal(result, hpFwData)
+	err = json.Unmarshal(payload, hpFwData)
 	if err != nil {
+		DumpInvalidPayload(*i.ip, payload)
 		return version, err
 	}
 
