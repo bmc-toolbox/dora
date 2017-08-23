@@ -167,6 +167,7 @@ func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) 
 				}
 			}
 
+			b.VerifyState(&chassis.Serial)
 			chassis.Blades = append(chassis.Blades, &b)
 		}
 	}
@@ -271,8 +272,8 @@ func (c *ChassisConnection) Hp(ip *string) (chassis model.Chassis, err error) {
 						}
 					}
 				}
-				b.TestConnections()
 
+				b.TestConnections()
 				if b.BmcWEBReachable {
 					ilo, err := NewIloReader(&b.BmcAddress, &c.username, &c.password)
 					if err != nil {
@@ -303,6 +304,7 @@ func (c *ChassisConnection) Hp(ip *string) (chassis model.Chassis, err error) {
 					}
 				}
 
+				b.VerifyState(&chassis.Serial)
 				chassis.Blades = append(chassis.Blades, &b)
 			}
 		}
