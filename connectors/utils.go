@@ -29,6 +29,8 @@ var (
 	ErrLoginFailed = errors.New("Failed to login")
 	// ErrBiosNotFound is returned when we are not able to find the server bios version
 	ErrBiosNotFound = errors.New("Bios version not found")
+	// ErrVendorUnknown is returned when we are unable to identify the redfish vendor
+	ErrVendorUnknown = errors.New("Unabled to identify the vendor")
 )
 
 // newUUID generates a random UUID according to RFC 4122
