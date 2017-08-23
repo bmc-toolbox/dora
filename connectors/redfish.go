@@ -1,268 +1,32 @@
 package connectors
 
 import (
+	"crypto/tls"
 	"errors"
+	"fmt"
+	"io/ioutil"
+	"net"
+	"net/http"
 	"regexp"
-
-	"gitlab.booking.com/infra/dora/model"
+	"strings"
+	"time"
 )
-
-// This is the minumun we required from the redfish connection to learn from a vendor
-// HP is easy since it identify its name
-// Supermicro and Dell are pretty similar, but Supermicro doesn't expose description and that's how we know
-type RedfishEntry struct {
-	OdataType      string `json:"@odata.type"`
-	Description    string `json:"Description"`
-	ID             string `json:"Id"`
-	Name           string `json:"Name"`
-	RedfishVersion string `json:"RedfishVersion"`
-}
-
-type HpRedfishFirmwareData struct {
-	ImageSizeBytes  int      `json:"ImageSizeBytes"`
-	Key             string   `json:"Key"`
-	Location        string   `json:"Location"`
-	Name            string   `json:"Name"`
-	UEFIDevicePaths []string `json:"UEFIDevicePaths"`
-	Updateable      bool     `json:"Updateable"`
-	VersionString   string   `json:"VersionString"`
-}
-
-type HpRedfishFirmware struct {
-	OdataContext string                           `json:"@odata.context"`
-	OdataID      string                           `json:"@odata.id"`
-	OdataType    string                           `json:"@odata.type"`
-	Current      map[string]HpRedfishFirmwareData `json:"Current"`
-	ID           string                           `json:"Id"`
-	Name         string                           `json:"Name"`
-	Type         string                           `json:"Type"`
-}
-
-/*
-
-HP RedFish Root
-
-{
-  "@odata.context": "/redfish/v1/$metadata#ServiceRoot",
-  "@odata.id": "/redfish/v1/",
-  "@odata.type": "#ServiceRoot.1.0.0.ServiceRoot",
-  "AccountService": {
-    "@odata.id": "/redfish/v1/AccountService/"
-  },
-  "Chassis": {
-    "@odata.id": "/redfish/v1/Chassis/"
-  },
-  "EventService": {
-    "@odata.id": "/redfish/v1/EventService/"
-  },
-  "Id": "v1",
-  "JsonSchemas": {
-    "@odata.id": "/redfish/v1/Schemas/"
-  },
-  "Managers": {
-    "@odata.id": "/redfish/v1/Managers/"
-  },
-  "Name": "HP RESTful Root Service",
-  "Oem": {
-    "Hp": {
-      "@odata.type": "#HpiLOServiceExt.1.0.0.HpiLOServiceExt",
-      "Manager": [
-        {
-          "Blade": {
-            "BayNumber": "Bay 12",
-            "EnclosureName": "spare-2sn70305f2",
-            "RackName": "UnnamedRack"
-          },
-          "DefaultLanguage": "en",
-          "FQDN": "bkbuild-901.las3.lom.booking.com",
-          "HostName": "bkbuild-901",
-          "Languages": [
-            {
-              "Language": "en",
-              "TranslationName": "English",
-              "Version": ""
-            }
-          ],
-          "ManagerFirmwareVersion": "2.54",
-          "ManagerType": "iLO 4"
-        }
-      ],
-      "Sessions": {
-        "CertCommonName": "bkbuild-901.las3.lom.booking.com",
-        "KerberosEnabled": false,
-        "LDAPAuthLicenced": true,
-        "LDAPEnabled": false,
-        "LocalLoginEnabled": true,
-        "LoginFailureDelay": 0,
-        "LoginHint": {
-          "Hint": "POST to /Sessions to login using the following JSON object:",
-          "HintPOSTData": {
-            "Password": "password",
-            "UserName": "username"
-          }
-        },
-        "SecurityOverride": false,
-        "ServerName": "bkbuild-901.las3.example.com"
-      },
-      "Type": "HpiLOServiceExt.1.0.0",
-      "links": {
-        "ResourceDirectory": {
-          "href": "/redfish/v1/ResourceDirectory/"
-        }
-      }
-    }
-  },
-  "RedfishVersion": "1.0.0",
-  "Registries": {
-    "@odata.id": "/redfish/v1/Registries/"
-  },
-  "ServiceVersion": "1.0.0",
-  "SessionService": {
-    "@odata.id": "/redfish/v1/SessionService/"
-  },
-  "Systems": {
-    "@odata.id": "/redfish/v1/Systems/"
-  },
-  "Time": "2017-08-09T16:23:37Z",
-  "Type": "ServiceRoot.1.0.0",
-  "UUID": "c2b6084b-1db5-584e-8bd6-5c7d9f18a699",
-  "links": {
-    "AccountService": {
-      "href": "/redfish/v1/AccountService/"
-    },
-    "Chassis": {
-      "href": "/redfish/v1/Chassis/"
-    },
-    "EventService": {
-      "href": "/redfish/v1/EventService/"
-    },
-    "Managers": {
-      "href": "/redfish/v1/Managers/"
-    },
-    "Registries": {
-      "href": "/redfish/v1/Registries/"
-    },
-    "Schemas": {
-      "href": "/redfish/v1/Schemas/"
-    },
-    "SessionService": {
-      "href": "/redfish/v1/SessionService/"
-    },
-    "Sessions": {
-      "href": "/redfish/v1/SessionService/Sessions/"
-    },
-    "Systems": {
-      "href": "/redfish/v1/Systems/"
-    },
-    "self": {
-      "href": "/redfish/v1/"
-    }
-  }
-}
-
-Dell RedFish Root
-
-{
-  "@odata.context": "/redfish/v1/$metadata#ServiceRoot.ServiceRoot",
-  "@odata.id": "/redfish/v1",
-  "@odata.type": "#ServiceRoot.v1_0_2.ServiceRoot",
-  "AccountService": {
-    "@odata.id": "/redfish/v1/Managers/iDRAC.Embedded.1/AccountService"
-  },
-  "Chassis": {
-    "@odata.id": "/redfish/v1/Chassis"
-  },
-  "Description": "Root Service",
-  "EventService": {
-    "@odata.id": "/redfish/v1/EventService"
-  },
-  "Id": "RootService",
-  "JsonSchemas": {
-    "@odata.id": "/redfish/v1/JSONSchemas"
-  },
-  "Links": {
-    "Sessions": {
-      "@odata.id": "/redfish/v1/Sessions"
-    }
-  },
-  "Managers": {
-    "@odata.id": "/redfish/v1/Managers"
-  },
-  "Name": "Root Service",
-  "RedfishVersion": "1.0.2",
-  "Registries": {
-    "@odata.id": "/redfish/v1/Registries"
-  },
-  "SessionService": {
-    "@odata.id": "/redfish/v1/SessionService"
-  },
-  "Systems": {
-    "@odata.id": "/redfish/v1/Systems"
-  },
-  "Tasks": {
-    "@odata.id": "/redfish/v1/TaskService"
-  }
-}
-
-Supermicro RedFish Root
-
-{
-  "@odata.context": "/redfish/v1/$metadata#ServiceRoot.ServiceRoot",
-  "@odata.type": "#ServiceRoot.ServiceRoot",
-  "@odata.id": "/redfish/v1",
-  "Id": "RootService",
-  "Name": "Root Service",
-  "RedfishVersion": "1.0.1",
-  "UUID": "00000000-0000-0000-0000-0CC47A6DD04E",
-  "Systems": {
-    "@odata.id": "/redfish/v1/Systems"
-  },
-  "Chassis": {
-    "@odata.id": "/redfish/v1/Chassis"
-  },
-  "Managers": {
-    "@odata.id": "/redfish/v1/Managers"
-  },
-  "SessionService": {
-    "@odata.id": "/redfish/v1/SessionService"
-  },
-  "AccountService": {
-    "@odata.id": "/redfish/v1/AccountService"
-  },
-  "EventService": {
-    "@odata.id": "/redfish/v1/EventService"
-  },
-  "Registries": {
-    "@odata.id": "/redfish/v1/Registries"
-  },
-  "JsonSchemas": {
-    "@odata.id": "/redfish/v1/JsonSchemas"
-  },
-  "Links": {
-    "Sessions": {
-      "@odata.id": "/redfish/v1/SessionService/Sessions"
-    }
-  },
-  "Oem": {}
-}
-
-*/
 
 var (
 	ErrRedFishNotSupported = errors.New("RedFish not supported")
 	redfishVendorEndPoints = map[string]map[string]string{
-		Common: map[string]string{
-			RFEntry: "redfish/v1",
-		},
 		Dell: map[string]string{
+			RFEntry:   "redfish/v1/Systems/System.Embedded.1/",
 			RFPower:   "redfish/v1/Chassis/System.Embedded.1/Power",
 			RFThermal: "redfish/v1/Chassis/System.Embedded.1/Thermal",
 		},
 		HP: map[string]string{
+			RFEntry:   "rest/v1/Systems/1",
 			RFPower:   "rest/v1/Chassis/1/Power",
 			RFThermal: "rest/v1/Chassis/1/Thermal",
 		},
 		Supermicro: map[string]string{
+			RFEntry:   "redfish/v1/Systems/1",
 			RFPower:   "redfish/v1/Chassis/1/Power",
 			RFThermal: "redfish/v1/Chassis/1/Thermal",
 		},
@@ -284,26 +48,122 @@ var (
 	bmcAddressBuild = regexp.MustCompile(".(prod|corp|dqs).")
 )
 
-type RedFishPower struct {
-	PowerControl []struct {
-		Name               string  `json:"Name"`
-		PowerConsumedWatts float64 `json:"PowerConsumedWatts"`
-	} `json:"PowerControl"`
+type RedFishEntry struct {
+	OdataContext     string                        `json:"@odata.context"`
+	OdataID          string                        `json:"@odata.id"`
+	OdataType        string                        `json:"@odata.type"`
+	BiosVersion      string                        `json:"BiosVersion"`
+	Description      string                        `json:"Description"`
+	HostName         string                        `json:"HostName"`
+	ID               string                        `json:"Id"`
+	Manufacturer     string                        `json:"Manufacturer"`
+	MemorySummary    *RedFishEntryMemorySummary    `json:"MemorySummary"`
+	Model            string                        `json:"Model"`
+	PowerState       string                        `json:"PowerState"`
+	ProcessorSummary *RedFishEntryProcessorSummary `json:"ProcessorSummary"`
+	SerialNumber     string                        `json:"SerialNumber"`
+	Status           *RedFishEntryStatus           `json:"Status"`
+	SystemType       string                        `json:"SystemType"`
 }
 
-type RedFishThermal struct {
-	Temperatures []struct {
-		Name           string `json:"Name"`
-		ReadingCelsius int    `json:"ReadingCelsius"`
-	} `json:"Temperatures"`
+type RedFishEntryMemorySummary struct {
+	Status               *RedFishEntryStatus `json:"Status"`
+	TotalSystemMemoryGiB float64             `json:"TotalSystemMemoryGiB"`
 }
 
-type RedFishConnection struct {
-	username string
-	password string
+type RedFishEntryProcessorSummary struct {
+	Count  int                 `json:"Count"`
+	Model  string              `json:"Model"`
+	Status *RedFishEntryStatus `json:"Status"`
 }
 
-func (c *RedFishConnection) Get(ip *string) (chassis model.Chassis, err error) {
+type RedFishEntryStatus struct {
+	HealthRollUp string `json:"HealthRollUp"`
+}
 
-	return
+// RedFishReader holds the status and properties of a connection to an iDrac device
+type RedFishReader struct {
+	ip       *string
+	username *string
+	password *string
+	vendor   string
+}
+
+// NewRedFishReader returns a new RedFishReader ready to be used
+func NewRedFishReader(ip *string, username *string, password *string) (r *RedFishReader, err error) {
+	r = &RedFishReader{ip: ip, username: username, password: password}
+	err = r.detectVendor()
+	return r, err
+}
+
+func (r *RedFishReader) detectVendor() (err error) {
+	payload, err := r.get("/redfish/v1/")
+	if err != nil {
+		return err
+	}
+
+	if strings.Contains(string(payload), "iLO") {
+		r.vendor = HP
+		return err
+	}
+
+	payload, err = r.get("/redfish/v1/odata/")
+	if err != nil {
+		return err
+	}
+
+	if strings.Contains(string(payload), "iDrac") {
+		r.vendor = HP
+		return err
+	}
+
+	if strings.Contains(string(payload), "/redfish/v1/JsonSchemas") {
+		r.vendor = Supermicro
+		return err
+	}
+
+	return ErrVendorUnknown
+}
+
+// get, so theoretically we should be able to use a session for the whole RedFish connection, but it doesn't seems to be properly supported by any vendors
+func (r *RedFishReader) get(endpoint string) (payload []byte, err error) {
+	req, err := http.NewRequest("GET", fmt.Sprintf("https://%s/%s", *r.ip, endpoint), nil)
+	if err != nil {
+		return payload, err
+	}
+	req.SetBasicAuth(*r.username, *r.password)
+	tr := &http.Transport{
+		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
+		DisableKeepAlives: true,
+		Dial: (&net.Dialer{
+			Timeout:   10 * time.Second,
+			KeepAlive: 10 * time.Second,
+		}).Dial,
+		TLSHandshakeTimeout: 10 * time.Second,
+	}
+	client := &http.Client{
+		Timeout:   time.Second * 20,
+		Transport: tr,
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return payload, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == 404 {
+		return payload, ErrPageNotFound
+	}
+
+	payload, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return payload, err
+	}
+
+	return payload, err
+}
+
+// Memory returns the current memory installed in a given server
+func (r *RedFishReader) Memory() (mem int, err error) {
+
 }
