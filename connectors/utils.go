@@ -31,6 +31,12 @@ var (
 	ErrBiosNotFound = errors.New("Bios version not found")
 	// ErrVendorUnknown is returned when we are unable to identify the redfish vendor
 	ErrVendorUnknown = errors.New("Unabled to identify the vendor")
+	// ErrPageNotFound is used to inform the http request that we couldn't find the expected page and/or endpoint
+	ErrPageNotFound = errors.New("Requested page couldn't be found in the server")
+	// ErrRedFishNotSupported is returned when redfish isn't supported by the vendor
+	ErrRedFishNotSupported = errors.New("RedFish not supported")
+	// ErrRedFishEndPoint500 is retured when we receive 500 in a redfish api call and the bmc dies with the request
+	ErrRedFishEndPoint500 = errors.New("We've received 500 calling this endpoint")
 )
 
 // newUUID generates a random UUID according to RFC 4122

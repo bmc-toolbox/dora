@@ -277,21 +277,21 @@ func (i *IDracReader) Memory() (mem int, err error) {
 }
 
 // CPU return the cpu, cores and hyperthreads the server
-func (i *IDracReader) CPU() (cpu string, coreCount int, hyperthreadCount int, err error) {
+func (i *IDracReader) CPU() (cpu string, cpuCount int, coreCount int, hyperthreadCount int, err error) {
 	extraHeaders := &map[string]string{
 		"X_SYSMGMT_OPTIMIZE": "true",
 	}
 
 	payload, err := i.get("sysmgmt/2012/server/processor", extraHeaders)
 	if err != nil {
-		return cpu, coreCount, hyperthreadCount, err
+		return cpu, cpuCount, coreCount, hyperthreadCount, err
 	}
 
 	dellBladeProc := &DellBladeProcessorEndpoint{}
 	err = json.Unmarshal(payload, dellBladeProc)
 	if err != nil {
 		DumpInvalidPayload(*i.ip, payload)
-		return cpu, coreCount, hyperthreadCount, err
+		return cpu, cpuCount, coreCount, hyperthreadCount, err
 	}
 
 	for _, proc := range dellBladeProc.Proccessors {
@@ -301,10 +301,10 @@ func (i *IDracReader) CPU() (cpu string, coreCount int, hyperthreadCount int, er
 				hasHT = 2
 			}
 		}
-		return fmt.Sprintf("%d x %s", len(dellBladeProc.Proccessors), strings.TrimSpace(proc.Brand)), proc.CoreCount, proc.CoreCount * hasHT, err
+		return strings.TrimSpace(proc.Brand), len(dellBladeProc.Proccessors), proc.CoreCount, proc.CoreCount * hasHT, err
 	}
 
-	return cpu, coreCount, hyperthreadCount, err
+	return cpu, cpuCount, coreCount, hyperthreadCount, err
 }
 
 // Logout logs out and close the iLo connection

@@ -73,9 +73,10 @@ type Blade struct {
 	IsStorageBlade       bool      `json:"is_storage_blade"`
 	Vendor               string    `json:"vendor"`
 	ChassisSerial        string    `json:"-"`
-	Processor            string    `json:"proc"`
-	ProcessorCoresCount  int       `json:"proc_core_count"`
-	ProcessorThreadCount int       `json:"proc_thread_count"`
+	Processor            string    `json:"processor"`
+	ProcessorCount       int       `json:"processor_count"`
+	ProcessorCoreCount   int       `json:"processor_core_count"`
+	ProcessorThreadCount int       `json:"processor_thread_count"`
 	Memory               int       `json:"memory_in_gb"`
 	CreatedAt            time.Time `json:"created_at"`
 	UpdatedAt            time.Time `json:"updated_at"`

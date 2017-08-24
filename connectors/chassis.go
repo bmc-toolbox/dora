@@ -3,7 +3,6 @@ package connectors
 import (
 	"encoding/json"
 	"encoding/xml"
-	"errors"
 	"fmt"
 	"strconv"
 
@@ -14,32 +13,11 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const (
-	// HP is the constant that defines the vendor HP
-	HP = "HP"
-	// Dell is the constant that defines the vendor Dell
-	Dell = "Dell"
-	// Supermicro is the constant that defines the vendor Supermicro
-	Supermicro = "Supermicro"
-	// Common is the constant of thinks we could use across multiple vendors
-	Common = "Common"
-	// Unknown is the constant that defines Unknowns vendors
-	Unknown = "Unknown"
-	// RFPower is the constant for power definition on RedFish
-	RFPower = "power"
-	// RFThermal is the constant for thermal definition on RedFish
-	RFThermal = "thermal"
-	// RFEntry is used to identify the vendor of the redfish we are using
-	RFEntry = "entry"
-)
-
-var (
-	bladeDevice        = "blade"
-	chassisDevice      = "chassis"
-	storageBladeDevice = "storageblade"
-	// ErrPageNotFound is used to inform the http request that we couldn't find the expected page and/or endpoint
-	ErrPageNotFound = errors.New("Requested page couldn't be found in the server")
-)
+// var (
+// 	bladeDevice        = "blade"
+// 	chassisDevice      = "chassis"
+// 	storageBladeDevice = "storageblade"
+// )
 
 // ChassisConnection is the basic
 type ChassisConnection struct {
@@ -147,22 +125,41 @@ func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) 
 
 			b.TestConnections()
 			if b.BmcWEBReachable {
-				iDrac := NewIDracReader(&b.BmcAddress, &c.username, &c.password)
-				err := iDrac.Login()
+				redFish, err := NewRedFishReader(&b.BmcAddress, &c.username, &c.password)
+				//
 				if err != nil {
-					log.WithFields(log.Fields{"operation": "opening ilo connection", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+					log.WithFields(log.Fields{"operation": "opening RedFish connection", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+					if err != ErrLoginFailed {
+						iDrac := NewIDracReader(&b.BmcAddress, &c.username, &c.password)
+						err := iDrac.Login()
+						if err != nil {
+							log.WithFields(log.Fields{"operation": "opening iDrac connection", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+						} else {
+							defer iDrac.Logout()
+							b.BmcAuth = true
+
+							b.Memory, err = iDrac.Memory()
+							if err != nil {
+								log.WithFields(log.Fields{"operation": "reading memory data", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+							}
+
+							b.Processor, b.ProcessorCount, b.ProcessorCoreCount, b.ProcessorThreadCount, err = iDrac.CPU()
+							if err != nil {
+								log.WithFields(log.Fields{"operation": "reading cpu data", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+							}
+						}
+					}
 				} else {
-					defer iDrac.Logout()
 					b.BmcAuth = true
 
-					b.Memory, err = iDrac.Memory()
+					b.Memory, err = redFish.Memory()
 					if err != nil {
-						log.WithFields(log.Fields{"operation": "read memory data", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+						log.WithFields(log.Fields{"operation": "reading memory data", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
 					}
 
-					_, b.ProcessorCoresCount, b.ProcessorThreadCount, err = iDrac.CPU()
+					b.Processor, b.ProcessorCount, b.ProcessorCoreCount, b.ProcessorThreadCount, err = redFish.CPU()
 					if err != nil {
-						log.WithFields(log.Fields{"operation": "read cpu data", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+						log.WithFields(log.Fields{"operation": "reading cpu data", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
 					}
 				}
 			}
@@ -289,17 +286,17 @@ func (c *ChassisConnection) Hp(ip *string) (chassis model.Chassis, err error) {
 
 						b.BiosVersion, err = ilo.BiosVersion()
 						if err != nil {
-							log.WithFields(log.Fields{"operation": "read bios version", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+							log.WithFields(log.Fields{"operation": "reading bios version", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
 						}
 
-						b.Processor, b.ProcessorCoresCount, b.ProcessorThreadCount, err = ilo.CPU()
+						b.Processor, b.ProcessorCount, b.ProcessorCoreCount, b.ProcessorThreadCount, err = ilo.CPU()
 						if err != nil {
-							log.WithFields(log.Fields{"operation": "read cpu data", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+							log.WithFields(log.Fields{"operation": "reading cpu data", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
 						}
 
 						b.Memory, err = ilo.Memory()
 						if err != nil {
-							log.WithFields(log.Fields{"operation": "read memory data", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+							log.WithFields(log.Fields{"operation": "reareadingd memory data", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
 						}
 					}
 				}

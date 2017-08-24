@@ -265,24 +265,24 @@ func (i *IloReader) Memory() (mem int, err error) {
 }
 
 // CPU return the cpu, cores and hyperthreads the server
-func (i *IloReader) CPU() (cpu string, coreCount int, hyperthreadCount int, err error) {
+func (i *IloReader) CPU() (cpu string, cpuCount int, coreCount int, hyperthreadCount int, err error) {
 	payload, err := i.get("json/proc_info")
 	if err != nil {
-		return cpu, coreCount, hyperthreadCount, err
+		return cpu, cpuCount, coreCount, hyperthreadCount, err
 	}
 
 	hpProcData := &HpProcs{}
 	err = json.Unmarshal(payload, hpProcData)
 	if err != nil {
 		DumpInvalidPayload(*i.ip, payload)
-		return cpu, coreCount, hyperthreadCount, err
+		return cpu, cpuCount, coreCount, hyperthreadCount, err
 	}
 
 	for _, proc := range hpProcData.Processors {
-		return fmt.Sprintf("%d x %s", len(hpProcData.Processors), strings.TrimSpace(proc.ProcName)), proc.ProcNumCores, proc.ProcNumThreads, err
+		return strings.TrimSpace(proc.ProcName), len(hpProcData.Processors), proc.ProcNumCores, proc.ProcNumThreads, err
 	}
 
-	return cpu, coreCount, hyperthreadCount, err
+	return cpu, cpuCount, coreCount, hyperthreadCount, err
 }
 
 // BiosVersion return the current verion of the bios

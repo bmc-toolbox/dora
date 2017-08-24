@@ -2,7 +2,7 @@ package connectors
 
 import (
 	"crypto/tls"
-	"errors"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -10,25 +10,50 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	log "github.com/sirupsen/logrus"
+)
+
+const (
+	// HP is the constant that defines the vendor HP
+	HP = "HP"
+	// Dell is the constant that defines the vendor Dell
+	Dell = "Dell"
+	// Supermicro is the constant that defines the vendor Supermicro
+	Supermicro = "Supermicro"
+	// Common is the constant of thinks we could use across multiple vendors
+	Common = "Common"
+	// Unknown is the constant that defines Unknowns vendors
+	Unknown = "Unknown"
+	// RFPower is the constant for power definition on RedFish
+	RFPower = "power"
+	// RFThermal is the constant for thermal definition on RedFish
+	RFThermal = "thermal"
+	// RFEntry is used to identify the vendor of the redfish we are using
+	RFEntry = "entry"
+	// RFCPU is the constant for CPU definition on RedFish
+	RFCPU = "cpu"
 )
 
 var (
-	ErrRedFishNotSupported = errors.New("RedFish not supported")
 	redfishVendorEndPoints = map[string]map[string]string{
 		Dell: map[string]string{
 			RFEntry:   "redfish/v1/Systems/System.Embedded.1/",
 			RFPower:   "redfish/v1/Chassis/System.Embedded.1/Power",
 			RFThermal: "redfish/v1/Chassis/System.Embedded.1/Thermal",
+			RFCPU:     "redfish/v1/Systems/System.Embedded.1/Processors/CPU.Socket.1",
 		},
 		HP: map[string]string{
 			RFEntry:   "rest/v1/Systems/1",
 			RFPower:   "rest/v1/Chassis/1/Power",
 			RFThermal: "rest/v1/Chassis/1/Thermal",
+			RFCPU:     "rest/v1/Systems/1/Processors/1",
 		},
 		Supermicro: map[string]string{
 			RFEntry:   "redfish/v1/Systems/1",
 			RFPower:   "redfish/v1/Chassis/1/Power",
 			RFThermal: "redfish/v1/Chassis/1/Thermal",
+			// Review	RFCPU:     "redfish/v1/Systems/1/Processors/1",
 		},
 	}
 	redfishVendorLabels = map[string]map[string]string{
@@ -49,13 +74,9 @@ var (
 )
 
 type RedFishEntry struct {
-	OdataContext     string                        `json:"@odata.context"`
-	OdataID          string                        `json:"@odata.id"`
-	OdataType        string                        `json:"@odata.type"`
 	BiosVersion      string                        `json:"BiosVersion"`
 	Description      string                        `json:"Description"`
 	HostName         string                        `json:"HostName"`
-	ID               string                        `json:"Id"`
 	Manufacturer     string                        `json:"Manufacturer"`
 	MemorySummary    *RedFishEntryMemorySummary    `json:"MemorySummary"`
 	Model            string                        `json:"Model"`
@@ -81,6 +102,18 @@ type RedFishEntryStatus struct {
 	HealthRollUp string `json:"HealthRollUp"`
 }
 
+type RedFishHealth struct {
+	Health string `json:"Health"`
+}
+
+type RedFishCPU struct {
+	Model        string         `json:"Model"`
+	Name         string         `json:"Name"`
+	Status       *RedFishHealth `json:"Status"`
+	TotalCores   int            `json:"TotalCores"`
+	TotalThreads int            `json:"TotalThreads"`
+}
+
 // RedFishReader holds the status and properties of a connection to an iDrac device
 type RedFishReader struct {
 	ip       *string
@@ -97,8 +130,10 @@ func NewRedFishReader(ip *string, username *string, password *string) (r *RedFis
 }
 
 func (r *RedFishReader) detectVendor() (err error) {
-	payload, err := r.get("/redfish/v1/")
-	if err != nil {
+	payload, err := r.get("redfish/v1/")
+	if err == ErrPageNotFound {
+		return ErrRedFishNotSupported
+	} else if err != nil {
 		return err
 	}
 
@@ -107,17 +142,17 @@ func (r *RedFishReader) detectVendor() (err error) {
 		return err
 	}
 
-	payload, err = r.get("/redfish/v1/odata/")
+	if strings.Contains(string(payload), "iDRAC") {
+		r.vendor = Dell
+		return err
+	}
+
+	payload, err = r.get("redfish/v1/Systems/1")
 	if err != nil {
 		return err
 	}
 
-	if strings.Contains(string(payload), "iDrac") {
-		r.vendor = HP
-		return err
-	}
-
-	if strings.Contains(string(payload), "/redfish/v1/JsonSchemas") {
+	if strings.Contains(string(payload), "Supermicro") {
 		r.vendor = Supermicro
 		return err
 	}
@@ -127,7 +162,14 @@ func (r *RedFishReader) detectVendor() (err error) {
 
 // get, so theoretically we should be able to use a session for the whole RedFish connection, but it doesn't seems to be properly supported by any vendors
 func (r *RedFishReader) get(endpoint string) (payload []byte, err error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("https://%s/%s", *r.ip, endpoint), nil)
+	url := fmt.Sprintf("https://%s/%s", *r.ip, endpoint)
+	if r.vendor == "" {
+		log.WithFields(log.Fields{"step": fmt.Sprintf("RedFish Connection"), "ip": *r.ip, "url": url}).Info("Retrieving data via RedFish")
+	} else {
+		log.WithFields(log.Fields{"step": fmt.Sprintf("RedFish Connection %s", r.vendor), "ip": *r.ip, "url": url}).Info("Retrieving data via RedFish")
+	}
+
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return payload, err
 	}
@@ -136,13 +178,13 @@ func (r *RedFishReader) get(endpoint string) (payload []byte, err error) {
 		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
 		DisableKeepAlives: true,
 		Dial: (&net.Dialer{
-			Timeout:   10 * time.Second,
-			KeepAlive: 10 * time.Second,
+			Timeout:   20 * time.Second,
+			KeepAlive: 20 * time.Second,
 		}).Dial,
-		TLSHandshakeTimeout: 10 * time.Second,
+		TLSHandshakeTimeout: 20 * time.Second,
 	}
 	client := &http.Client{
-		Timeout:   time.Second * 20,
+		Timeout:   time.Second * 30,
 		Transport: tr,
 	}
 	resp, err := client.Do(req)
@@ -151,9 +193,22 @@ func (r *RedFishReader) get(endpoint string) (payload []byte, err error) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode == 404 {
+	switch resp.StatusCode {
+	case 401:
+		return payload, ErrLoginFailed
+	case 404:
 		return payload, ErrPageNotFound
+	case 500:
+		return payload, ErrRedFishEndPoint500
 	}
+	// if resp.StatusCode == 401 {
+	// 	return payload, ErrLoginFailed
+	// }
+
+	// fmt.
+	// if resp.StatusCode == 404 {
+	// 	return payload, ErrPageNotFound
+	// }
 
 	payload, err = ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -165,5 +220,46 @@ func (r *RedFishReader) get(endpoint string) (payload []byte, err error) {
 
 // Memory returns the current memory installed in a given server
 func (r *RedFishReader) Memory() (mem int, err error) {
+	payload, err := r.get(redfishVendorEndPoints[r.vendor][RFEntry])
+	if err != nil {
+		return mem, err
+	}
 
+	redFishEntry := &RedFishEntry{}
+	err = json.Unmarshal(payload, redFishEntry)
+	if err != nil {
+		DumpInvalidPayload(*r.ip, payload)
+		return mem, err
+	}
+
+	return int(redFishEntry.MemorySummary.TotalSystemMemoryGiB), err
+}
+
+// CPU return the cpu, cores and hyperthreads the server
+func (r *RedFishReader) CPU() (cpu string, cpuCount int, coreCount int, hyperthreadCount int, err error) {
+	payload, err := r.get(redfishVendorEndPoints[r.vendor][RFEntry])
+	if err != nil {
+		return cpu, cpuCount, coreCount, hyperthreadCount, err
+	}
+
+	redFishEntry := &RedFishEntry{}
+	err = json.Unmarshal(payload, redFishEntry)
+	if err != nil {
+		DumpInvalidPayload(*r.ip, payload)
+		return cpu, cpuCount, coreCount, hyperthreadCount, err
+	}
+
+	payload, err = r.get(redfishVendorEndPoints[r.vendor][RFCPU])
+	if err != nil {
+		return cpu, cpuCount, coreCount, hyperthreadCount, err
+	}
+
+	redFishCPU := &RedFishCPU{}
+	err = json.Unmarshal(payload, redFishEntry)
+	if err != nil {
+		DumpInvalidPayload(*r.ip, payload)
+		return cpu, cpuCount, coreCount, hyperthreadCount, err
+	}
+
+	return redFishEntry.ProcessorSummary.Model, redFishEntry.ProcessorSummary.Count, redFishCPU.TotalCores, redFishCPU.TotalThreads, err
 }
