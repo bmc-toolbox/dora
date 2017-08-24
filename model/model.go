@@ -82,14 +82,6 @@ type Blade struct {
 	UpdatedAt            time.Time `json:"updated_at"`
 }
 
-// VerifyState the blade struct for possible errors and alert for those in the log
-func (b *Blade) VerifyState(chassis *string) {
-	if b.Serial == "" {
-		err := "Serial number not found, this blade will require a reseat"
-		log.WithFields(log.Fields{"operation": "verify blade status", "ip": b.BmcAddress, "type": "blade", "error": err, "blade": b.Name, "position": b.BladePosition, "chassis": *chassis}).Warn("Auditing blade")
-	}
-}
-
 // TestConnections as the name says, test connections from the bkbuild machines to the bmcs and update the struct data
 func (b *Blade) TestConnections() {
 	if b.IsStorageBlade == true || b.BmcAddress == "0.0.0.0" || b.BmcAddress == "" || b.BmcAddress == "[]" || b.BmcAddress == "unassigned" {

@@ -164,9 +164,9 @@ func (r *RedFishReader) detectVendor() (err error) {
 func (r *RedFishReader) get(endpoint string) (payload []byte, err error) {
 	url := fmt.Sprintf("https://%s/%s", *r.ip, endpoint)
 	if r.vendor == "" {
-		log.WithFields(log.Fields{"step": fmt.Sprintf("RedFish Connection"), "ip": *r.ip, "url": url}).Info("Retrieving data via RedFish")
+		log.WithFields(log.Fields{"step": fmt.Sprintf("RedFish Connection"), "ip": *r.ip, "url": url}).Debug("Retrieving data via RedFish")
 	} else {
-		log.WithFields(log.Fields{"step": fmt.Sprintf("RedFish Connection %s", r.vendor), "ip": *r.ip, "url": url}).Info("Retrieving data via RedFish")
+		log.WithFields(log.Fields{"step": fmt.Sprintf("RedFish Connection %s", r.vendor), "ip": *r.ip, "url": url}).Debug("Retrieving data via RedFish")
 	}
 
 	req, err := http.NewRequest("GET", url, nil)
@@ -201,14 +201,6 @@ func (r *RedFishReader) get(endpoint string) (payload []byte, err error) {
 	case 500:
 		return payload, ErrRedFishEndPoint500
 	}
-	// if resp.StatusCode == 401 {
-	// 	return payload, ErrLoginFailed
-	// }
-
-	// fmt.
-	// if resp.StatusCode == 404 {
-	// 	return payload, ErrPageNotFound
-	// }
 
 	payload, err = ioutil.ReadAll(resp.Body)
 	if err != nil {

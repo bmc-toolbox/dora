@@ -13,12 +13,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// var (
-// 	bladeDevice        = "blade"
-// 	chassisDevice      = "chassis"
-// 	storageBladeDevice = "storageblade"
-// )
-
 // ChassisConnection is the basic
 type ChassisConnection struct {
 	username string
@@ -66,8 +60,6 @@ func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) 
 
 			b.BladePosition = blade.BladeMasterSlot
 			b.Serial = strings.ToLower(blade.BladeSvcTag)
-			b.Processor = blade.BladeCPUInfo
-
 			if b.Serial == "" {
 				log.WithFields(log.Fields{"operation": "connection", "ip": *ip, "name": chassis.Name, "position": b.BladePosition, "type": "chassis", "error": "Review this blade. The chassis identifies it as connected, but we have no data"}).Error("Auditing blade")
 				continue
@@ -128,7 +120,7 @@ func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) 
 				redFish, err := NewRedFishReader(&b.BmcAddress, &c.username, &c.password)
 				//
 				if err != nil {
-					log.WithFields(log.Fields{"operation": "opening RedFish connection", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+					log.WithFields(log.Fields{"operation": "opening RedFish connection", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Info("Auditing blade")
 					if err != ErrLoginFailed {
 						iDrac := NewIDracReader(&b.BmcAddress, &c.username, &c.password)
 						err := iDrac.Login()
@@ -164,7 +156,6 @@ func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) 
 				}
 			}
 
-			b.VerifyState(&chassis.Serial)
 			chassis.Blades = append(chassis.Blades, &b)
 		}
 	}
@@ -201,6 +192,11 @@ func (c *ChassisConnection) Hp(ip *string) (chassis model.Chassis, err error) {
 	if iloXML.HpInfra2 != nil {
 		chassis.Name = iloXML.HpInfra2.Encl
 		chassis.Serial = strings.ToLower(iloXML.HpInfra2.EnclSn)
+		if b.Serial == "" {
+			log.WithFields(log.Fields{"operation": "connection", "ip": *ip, "name": chassis.Name, "position": b.BladePosition, "type": "chassis", "error": "Review this blade. The chassis identifies it as connected, but we have no data"}).Error("Auditing blade")
+			continue
+		}
+
 		chassis.Model = iloXML.HpInfra2.Pn
 		chassis.PowerKw = iloXML.HpInfra2.HpChassisPower.PowerConsumed / 1000.00
 		chassis.TempC = iloXML.HpInfra2.HpTemps.HpTemp.C
@@ -301,7 +297,6 @@ func (c *ChassisConnection) Hp(ip *string) (chassis model.Chassis, err error) {
 					}
 				}
 
-				b.VerifyState(&chassis.Serial)
 				chassis.Blades = append(chassis.Blades, &b)
 			}
 		}
