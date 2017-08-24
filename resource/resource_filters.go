@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/manyminds/api2go"
+	log "github.com/sirupsen/logrus"
 )
 
 // Filter is meant to store the filters of requested via api
@@ -17,8 +18,9 @@ func NewFilter(r *api2go.Request) (f *Filter, hasFilters bool) {
 	for key, values := range r.QueryParams {
 		if strings.HasPrefix(key, "filter") {
 			hasFilters = true
-			filter := strings.TrimRight(strings.TrimLeft(key, "filter["), "]")
+			filter := strings.TrimSuffix(strings.TrimPrefix(key, "filter["), "]")
 			f.Add(filter, values)
+			log.WithFields(log.Fields{"step": "request filter", "filter": filter, "values": values}).Debug("Retrieving data from iDrac")
 		}
 	}
 
