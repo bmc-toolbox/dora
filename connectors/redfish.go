@@ -247,7 +247,7 @@ func (r *RedFishReader) CPU() (cpu string, cpuCount int, coreCount int, hyperthr
 	}
 
 	redFishCPU := &RedFishCPU{}
-	err = json.Unmarshal(payload, redFishEntry)
+	err = json.Unmarshal(payload, redFishCPU)
 	if err != nil {
 		DumpInvalidPayload(*r.ip, payload)
 		return cpu, cpuCount, coreCount, hyperthreadCount, err

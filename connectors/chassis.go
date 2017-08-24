@@ -82,10 +82,13 @@ func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) 
 			b.BiosVersion = blade.BladeBIOSver
 
 			if chassis.PassThru == "" {
-				if strings.Contains(blade.Nics["0"].BladeNicName, "10G") {
-					chassis.PassThru = "10G"
-				} else {
-					chassis.PassThru = "1G"
+				for _, nic := range blade.Nics {
+					if strings.Contains(nic.BladeNicName, "10G") {
+						chassis.PassThru = "10G"
+					} else {
+						chassis.PassThru = "1G"
+					}
+					break
 				}
 			}
 
@@ -192,10 +195,6 @@ func (c *ChassisConnection) Hp(ip *string) (chassis model.Chassis, err error) {
 	if iloXML.HpInfra2 != nil {
 		chassis.Name = iloXML.HpInfra2.Encl
 		chassis.Serial = strings.ToLower(iloXML.HpInfra2.EnclSn)
-		if b.Serial == "" {
-			log.WithFields(log.Fields{"operation": "connection", "ip": *ip, "name": chassis.Name, "position": b.BladePosition, "type": "chassis", "error": "Review this blade. The chassis identifies it as connected, but we have no data"}).Error("Auditing blade")
-			continue
-		}
 
 		chassis.Model = iloXML.HpInfra2.Pn
 		chassis.PowerKw = iloXML.HpInfra2.HpChassisPower.PowerConsumed / 1000.00
@@ -225,13 +224,12 @@ func (c *ChassisConnection) Hp(ip *string) (chassis model.Chassis, err error) {
 				b.PowerKw = blade.HpPower.PowerConsumed / 1000.00
 				b.TempC = blade.HpTemps.HpTemp.C
 				b.Serial = strings.ToLower(strings.TrimSpace(blade.Bsn))
-				b.Status = blade.Status
-				b.Vendor = HP
-
-				if b.Serial == "[unknown]" {
+				if b.Serial == "" || b.Serial == "[unknown]" {
 					log.WithFields(log.Fields{"operation": "connection", "ip": *ip, "name": chassis.Name, "position": b.BladePosition, "type": "chassis", "error": "Review this blade. The chassis identifies it as connected, but we have no data"}).Error("Auditing blade")
 					continue
 				}
+				b.Status = blade.Status
+				b.Vendor = HP
 
 				if strings.Contains(blade.Spn, "Storage") {
 					b.Name = b.Serial
@@ -292,7 +290,7 @@ func (c *ChassisConnection) Hp(ip *string) (chassis model.Chassis, err error) {
 
 						b.Memory, err = ilo.Memory()
 						if err != nil {
-							log.WithFields(log.Fields{"operation": "reareadingd memory data", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+							log.WithFields(log.Fields{"operation": "reading memory data", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
 						}
 					}
 				}
