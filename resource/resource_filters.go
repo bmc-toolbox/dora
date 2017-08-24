@@ -20,7 +20,7 @@ func NewFilter(r *api2go.Request) (f *Filter, hasFilters bool) {
 			hasFilters = true
 			filter := strings.TrimSuffix(strings.TrimPrefix(key, "filter["), "]")
 			f.Add(filter, values)
-			log.WithFields(log.Fields{"step": "request filter", "filter": filter, "values": values}).Debug("Retrieving data from iDrac")
+			log.WithFields(log.Fields{"step": "request filter", "filter": filter, "values": values}).Debug("Dora web request with filters")
 		}
 	}
 
