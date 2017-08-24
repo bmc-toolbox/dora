@@ -56,7 +56,6 @@ func (c *Collector) collectChassis(chassis *simpleapi.Chassis, rack *simpleapi.R
 	conn := connectors.NewChassisConnection(c.username, c.password)
 	var chassisData model.Chassis
 	if strings.HasPrefix(chassis.Model, "BladeSystem") {
-		return
 		chassisData, err = conn.Hp(ip)
 		if err != nil {
 			return err
