@@ -5,6 +5,7 @@ import (
 
 	"github.com/jinzhu/gorm"
 	"github.com/manyminds/api2go"
+	"gitlab.booking.com/infra/dora/filter"
 	"gitlab.booking.com/infra/dora/model"
 	"gitlab.booking.com/infra/dora/storage"
 )
@@ -46,11 +47,11 @@ func (b BladeResource) queryAndCountAllWrapper(r api2go.Request) (count int, bla
 		}
 	}
 
-	filters, hasFilters := NewFilter(&r)
-	offset, limit := offSetAndLimitParse(&r)
+	filters, hasFilters := filter.NewFilterSet(&r)
+	offset, limit := filter.OffSetAndLimitParse(&r)
 
 	if hasFilters {
-		count, blades, err = b.BladeStorage.GetAllByFilters(offset, limit, filters.Get())
+		count, blades, err = b.BladeStorage.GetAllByFilters(offset, limit, filters)
 		filters.Clean()
 		if err != nil {
 			return count, blades, err

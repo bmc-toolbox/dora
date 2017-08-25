@@ -6,6 +6,7 @@ import (
 
 	"github.com/jinzhu/gorm"
 	"github.com/manyminds/api2go"
+	"gitlab.booking.com/infra/dora/filter"
 	"gitlab.booking.com/infra/dora/model"
 	"gitlab.booking.com/infra/dora/storage"
 )
@@ -51,7 +52,7 @@ func (n NicResource) queryAndCountAllWrapper(r api2go.Request) (count int, nics 
 		}
 	}
 
-	offset, limit := offSetAndLimitParse(&r)
+	offset, limit := filter.OffSetAndLimitParse(&r)
 
 	bladeID, hasBlade := r.QueryParams["bladeID"]
 	if hasBlade {
