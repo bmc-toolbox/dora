@@ -57,6 +57,7 @@ type Blade struct {
 	Serial               string    `json:"serial" gorm:"primary_key"`
 	Name                 string    `json:"name"`
 	BiosVersion          string    `json:"bios_version"`
+	BmcType              string    `json:"bmc_type"`
 	BmcAddress           string    `json:"bmc_address"`
 	BmcVersion           string    `json:"bmc_version"`
 	BmcSSHReachable      bool      `json:"bmc_ssh_reachable"`
