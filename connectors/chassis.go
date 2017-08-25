@@ -79,6 +79,7 @@ func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) 
 				chassis.Status = blade.BladeLogDescription
 			}
 			b.Vendor = Dell
+			b.BmcType = "iDRAC"
 			b.BiosVersion = blade.BladeBIOSver
 
 			if chassis.PassThru == "" {
@@ -230,6 +231,7 @@ func (c *ChassisConnection) Hp(ip *string) (chassis model.Chassis, err error) {
 				}
 				b.Status = blade.Status
 				b.Vendor = HP
+				b.BmcType = blade.MgmtType
 
 				if strings.Contains(blade.Spn, "Storage") {
 					b.Name = b.Serial
