@@ -175,7 +175,9 @@ func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) 
 		return chassis, err
 	}
 
-	chassis.TempC = dellCMCTemp.DellChassisTemp.TempCurrentValue
+	if dellCMCTemp.DellChassisTemp != nil {
+		chassis.TempC = dellCMCTemp.DellChassisTemp.TempCurrentValue
+	}
 	chassis.TestConnections()
 
 	return chassis, err

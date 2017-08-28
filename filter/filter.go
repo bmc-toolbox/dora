@@ -1,6 +1,8 @@
 package filter
 
 import (
+	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/manyminds/api2go"
@@ -51,6 +53,56 @@ func (f *Filters) Add(name string, values []string, exclusion bool) {
 // Get retrieve all filters
 func (f *Filters) Get() []*Filter {
 	return f.filters
+}
+
+// BuildQuery receive a model as an interface and builds a query out of it
+func (f *Filters) BuildQuery(m interface{}) (query string, err error) {
+	for _, filter := range f.Get() {
+		queryType := "in"
+		if filter.Exclusion {
+			queryType = "not in"
+		}
+
+		for key, values := range filter.Filter {
+			if len(values) == 1 && values[0] == "" {
+				continue
+			}
+			rfct := reflect.ValueOf(m)
+			rfctType := rfct.Type()
+
+			var structMemberName string
+			var structJSONMemberName string
+			for i := 0; i < rfctType.NumField(); i++ {
+				jsondName := rfctType.Field(i).Tag.Get("json")
+				if key == jsondName {
+					structMemberName = rfctType.Field(i).Name
+					structJSONMemberName = jsondName
+					break
+				}
+			}
+
+			if structJSONMemberName == "" || structJSONMemberName == "-" {
+				return query, err
+			}
+
+			ftype := reflect.Indirect(rfct).FieldByName(structMemberName)
+			switch ftype.Kind() {
+			case reflect.String:
+				if query == "" {
+					query = fmt.Sprintf("%s %s ('%s')", structJSONMemberName, queryType, strings.Join(values, "', '"))
+				} else {
+					query = fmt.Sprintf("%s and %s %s ('%s')", query, structJSONMemberName, queryType, strings.Join(values, "', '"))
+				}
+			case reflect.Bool, reflect.Int:
+				if query == "" {
+					query = fmt.Sprintf("%s %s (%s)", structJSONMemberName, queryType, strings.Join(values, ", "))
+				} else {
+					query = fmt.Sprintf("%s and %s %s (%s)", query, structJSONMemberName, queryType, strings.Join(values, ", "))
+				}
+			}
+		}
+	}
+	return query, err
 }
 
 // Clean cleanup the current filter list

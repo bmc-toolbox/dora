@@ -1,10 +1,6 @@
 package storage
 
 import (
-	"fmt"
-	"reflect"
-	"strings"
-
 	"github.com/jinzhu/gorm"
 	"gitlab.booking.com/infra/dora/filter"
 	"gitlab.booking.com/infra/dora/model"
@@ -53,58 +49,9 @@ func (b BladeStorage) GetAllWithAssociations(offset string, limit string) (count
 
 // GetAllByFilters get all blades detecting the struct members dinamically
 func (b BladeStorage) GetAllByFilters(offset string, limit string, filters *filter.Filters) (count int, blades []model.Blade, err error) {
-	query := ""
-	for _, filter := range filters.Get() {
-		queryType := "in"
-		if filter.Exclusion {
-			queryType = "not in"
-		}
-
-		for key, values := range filter.Filter {
-			if len(values) == 1 && values[0] == "" {
-				continue
-			}
-			blade := model.Blade{}
-			rfct := reflect.ValueOf(blade)
-			rfctType := rfct.Type()
-
-			var structMemberName string
-			var structJSONMemberName string
-			for i := 0; i < rfctType.NumField(); i++ {
-				jsondName := rfctType.Field(i).Tag.Get("json")
-				if key == jsondName {
-					structMemberName = rfctType.Field(i).Name
-					structJSONMemberName = jsondName
-					break
-				}
-			}
-
-			if structJSONMemberName == "" || structJSONMemberName == "-" {
-				return 0, blades, err
-			}
-
-			ftype := reflect.Indirect(rfct).FieldByName(structMemberName)
-			switch ftype.Kind() {
-			case reflect.String:
-				if query == "" {
-					query = fmt.Sprintf("%s %s ('%s')", structJSONMemberName, queryType, strings.Join(values, "', '"))
-				} else {
-					query = fmt.Sprintf("%s and %s %s ('%s')", query, structJSONMemberName, queryType, strings.Join(values, "', '"))
-				}
-			case reflect.Bool:
-				if query == "" {
-					query = fmt.Sprintf("%s %s (%s)", structJSONMemberName, queryType, strings.Join(values, ", "))
-				} else {
-					query = fmt.Sprintf("%s and %s %s (%s)", query, structJSONMemberName, queryType, strings.Join(values, ", "))
-				}
-			case reflect.Int:
-				if query == "" {
-					query = fmt.Sprintf("%s %s (%s)", structJSONMemberName, queryType, strings.Join(values, ", "))
-				} else {
-					query = fmt.Sprintf("%s and %s %s (%s)", query, structJSONMemberName, queryType, strings.Join(values, ", "))
-				}
-			}
-		}
+	query, err := filters.BuildQuery(model.Blade{})
+	if err != nil {
+		return count, blades, err
 	}
 
 	if offset != "" && limit != "" {
