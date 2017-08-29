@@ -21,9 +21,9 @@ type Filters struct {
 }
 
 // NewFilterSet returns an empty new filter structure
-func NewFilterSet(r *api2go.Request) (f *Filters, hasFilters bool) {
+func NewFilterSet(queryParams *map[string][]string) (f *Filters, hasFilters bool) {
 	f = &Filters{}
-	for key, values := range r.QueryParams {
+	for key, values := range *queryParams {
 		if strings.HasPrefix(key, "filter") {
 			hasFilters = true
 			exclusion := false

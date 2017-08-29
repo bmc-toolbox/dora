@@ -46,7 +46,7 @@ func (c ChassisResource) queryAndCountAllWrapper(r api2go.Request) (count int, c
 		}
 	}
 
-	filters, hasFilters := filter.NewFilterSet(&r)
+	filters, hasFilters := filter.NewFilterSet(&r.QueryParams)
 	offset, limit := filter.OffSetAndLimitParse(&r)
 
 	if hasFilters {
