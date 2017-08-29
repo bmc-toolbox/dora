@@ -45,11 +45,9 @@ func RunGin(port int, debug bool) {
 		gingonic.New(r),
 	)
 
-	db, err := storage.InitDB()
-	if err != nil {
-		panic(err)
-	}
+	db := storage.InitDB()
 	defer db.Close()
+
 	chassisStorage := storage.NewChassisStorage(db)
 	bladeStorage := storage.NewBladeStorage(db)
 	nicStorage := storage.NewNicStorage(db)

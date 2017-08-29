@@ -69,11 +69,7 @@ func (c *Collector) collectChassis(chassis *simpleapi.Chassis, rack *simpleapi.R
 		log.WithFields(log.Fields{"fqdn": chassis.Fqdn, "type": "chassis", "address": *ip, "interface": *iname, "level": "chasssis", "Error": "Vendor unknown"}).Error("Collecting data")
 	}
 
-	db, err := storage.InitDB()
-	if err != nil {
-		panic(err)
-	}
-	defer db.Close()
+	db := storage.InitDB()
 
 	chassisStorage := storage.NewChassisStorage(db)
 	_, err = chassisStorage.UpdateOrCreate(&chassisData)

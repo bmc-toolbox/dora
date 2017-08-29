@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"gitlab.booking.com/infra/dora/model"
+	"gitlab.booking.com/infra/dora/storage"
 
 	"strings"
 
@@ -224,14 +225,17 @@ func (c *ChassisConnection) Hp(ip *string) (chassis model.Chassis, err error) {
 				b := model.Blade{}
 
 				b.BladePosition = blade.HpBay.Connection
+				b.Status = blade.Status
+				if b.Serial == "" || b.Serial == "[unknown]" {
+					db := storage.InitDB()
+					db.Where("bmc_address = ? and blade_position = ?", blade.MgmtIPAddr, blade.HpBay.Connection).First(&b)
+
+					b.Status = "Require Reseat"
+					log.WithFields(log.Fields{"operation": "connection", "ip": *ip, "name": chassis.Name, "position": b.BladePosition, "type": "chassis", "error": "Review this blade. The chassis identifies it as connected, but we have no data"}).Error("Auditing blade")
+				}
 				b.PowerKw = blade.HpPower.PowerConsumed / 1000.00
 				b.TempC = blade.HpTemps.HpTemp.C
 				b.Serial = strings.ToLower(strings.TrimSpace(blade.Bsn))
-				if b.Serial == "" || b.Serial == "[unknown]" {
-					log.WithFields(log.Fields{"operation": "connection", "ip": *ip, "name": chassis.Name, "position": b.BladePosition, "type": "chassis", "error": "Review this blade. The chassis identifies it as connected, but we have no data"}).Error("Auditing blade")
-					continue
-				}
-				b.Status = blade.Status
 				b.Vendor = HP
 				b.BmcType = blade.MgmtType
 

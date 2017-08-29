@@ -10,16 +10,25 @@ import (
 	"gitlab.booking.com/infra/dora/model"
 )
 
+var (
+	db  *gorm.DB
+	err error
+)
+
 // InitDB creates and migrates the database
-func InitDB() (*gorm.DB, error) {
-	db, err := gorm.Open(viper.GetString("database_type"), viper.GetString("database_options"))
+func InitDB() *gorm.DB {
+	if db != nil && db.DB().Ping() == nil {
+		return db
+	}
+
+	db, err = gorm.Open(viper.GetString("database_type"), viper.GetString("database_options"))
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
 
 	db.LogMode(viper.GetBool("debug"))
 	db.SingularTable(true)
 	db.AutoMigrate(&model.Blade{}, &model.Chassis{}, &model.Nic{})
 
-	return db, nil
+	return db
 }

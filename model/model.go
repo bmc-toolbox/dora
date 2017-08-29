@@ -79,7 +79,6 @@ type Blade struct {
 	ProcessorCoreCount   int       `json:"processor_core_count"`
 	ProcessorThreadCount int       `json:"processor_thread_count"`
 	Memory               int       `json:"memory_in_gb"`
-	CreatedAt            time.Time `json:"created_at"`
 	UpdatedAt            time.Time `json:"updated_at"`
 }
 
@@ -182,7 +181,6 @@ type Chassis struct {
 	Model            string    `json:"model"`
 	Vendor           string    `json:"vendor"`
 	FwVersion        string    `json:"fw_version"`
-	CreatedAt        time.Time `json:"created_at"`
 	UpdatedAt        time.Time `json:"updated_at"`
 }
 
