@@ -106,12 +106,17 @@ func (b *Blade) TestConnections() {
 		conn.Close()
 	}
 
-	conn, err = net.DialTimeout("udp", fmt.Sprintf("%s:%d", b.BmcAddress, 161), 15*time.Second)
+	conn, err = net.DialTimeout("udp", fmt.Sprintf("%s:%d", b.BmcAddress, 623), 15*time.Second)
 	if err != nil {
 		log.WithFields(log.Fields{"operation": "test ipmi connection", "ip": b.BmcAddress, "serial": b.Serial, "type": "blade", "error": err, "blade": b.Name, "vendor": b.Vendor}).Error("Auditing blade")
 	} else {
-		b.BmcIpmiReachable = true
-		conn.Close()
+		_, err = conn.Write([]byte("something"))
+		if err != nil {
+			log.WithFields(log.Fields{"operation": "test ipmi connection", "ip": b.BmcAddress, "serial": b.Serial, "type": "blade", "error": err, "blade": b.Name, "vendor": b.Vendor}).Error("Auditing blade")
+		} else {
+			b.BmcIpmiReachable = true
+			conn.Close()
+		}
 	}
 }
 
@@ -204,12 +209,17 @@ func (c *Chassis) TestConnections() {
 		conn.Close()
 	}
 
-	conn, err = net.DialTimeout("udp", fmt.Sprintf("%s:%d", c.BmcAddress, 161), 15*time.Second)
+	conn, err = net.DialTimeout("udp", fmt.Sprintf("%s:%d", c.BmcAddress, 623), 15*time.Second)
 	if err != nil {
-		log.WithFields(log.Fields{"operation": "test ipmi connection", "ip": c.BmcAddress, "serial": c.Serial, "type": "blade", "error": err, "chassis": c.Name, "vendor": c.Vendor}).Error("Auditing chassis")
+		log.WithFields(log.Fields{"operation": "test ipmi connection", "ip": c.BmcAddress, "serial": c.Serial, "type": "blade", "error": err, "chassis": c.Name, "vendor": c.Vendor}).Error("Auditing blade")
 	} else {
-		c.BmcIpmiReachable = true
-		conn.Close()
+		_, err = conn.Write([]byte("something"))
+		if err != nil {
+			log.WithFields(log.Fields{"operation": "test ipmi connection", "ip": c.BmcAddress, "serial": c.Serial, "type": "blade", "error": err, "chassis": c.Name, "vendor": c.Vendor}).Error("Auditing blade")
+		} else {
+			c.BmcIpmiReachable = true
+			conn.Close()
+		}
 	}
 }
 
