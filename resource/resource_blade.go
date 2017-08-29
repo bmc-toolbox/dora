@@ -47,7 +47,7 @@ func (b BladeResource) queryAndCountAllWrapper(r api2go.Request) (count int, bla
 		}
 	}
 
-	filters, hasFilters := filter.NewFilterSet(&r.QueryParams)
+	filters, hasFilters := filter.NewFilterSet(&r)
 	offset, limit := filter.OffSetAndLimitParse(&r)
 
 	if hasFilters {

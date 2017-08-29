@@ -21,9 +21,9 @@ type Filters struct {
 }
 
 // NewFilterSet returns an empty new filter structure
-func NewFilterSet(queryParams *map[string][]string) (f *Filters, hasFilters bool) {
+func NewFilterSet(r *api2go.Request) (f *Filters, hasFilters bool) {
 	f = &Filters{}
-	for key, values := range *queryParams {
+	for key, values := range r.QueryParams {
 		if strings.HasPrefix(key, "filter") {
 			hasFilters = true
 			exclusion := false
@@ -113,20 +113,21 @@ func (f *Filters) Clean() {
 // OffSetAndLimitParse parsers the limit and offset of the requests
 func OffSetAndLimitParse(r *api2go.Request) (offset string, limit string) {
 	offsetQuery, hasOffset := r.QueryParams["page[offset]"]
+	limitQuery, hasLimit := r.QueryParams["page[limit]"]
+
 	if hasOffset {
 		offset = offsetQuery[0]
+	}
+
+	if hasLimit {
+		limit = limitQuery[0]
 	}
 
 	if hasOffset && offset == "" {
 		offset = "0"
 	}
 
-	limitQuery, hasLimit := r.QueryParams["page[limit]"]
-	if hasLimit {
-		limit = limitQuery[0]
-	}
-
-	if hasLimit && limit == "" {
+	if (hasLimit && limit == "") || (hasOffset && !hasLimit) {
 		limit = "100"
 	}
 
