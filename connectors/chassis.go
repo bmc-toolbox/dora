@@ -226,16 +226,22 @@ func (c *ChassisConnection) Hp(ip *string) (chassis model.Chassis, err error) {
 
 				b.BladePosition = blade.HpBay.Connection
 				b.Status = blade.Status
+				b.Serial = strings.ToLower(strings.TrimSpace(blade.Bsn))
 				if b.Serial == "" || b.Serial == "[unknown]" {
 					db := storage.InitDB()
-					db.Where("bmc_address = ? and blade_position = ?", blade.MgmtIPAddr, blade.HpBay.Connection).First(&b)
+					nb := model.Blade{}
+					db.Where("bmc_address = ? and blade_position = ?", blade.MgmtIPAddr, blade.HpBay.Connection).First(&nb)
+					log.WithFields(log.Fields{"operation": "connection", "ip": *ip, "name": chassis.Name, "position": b.BladePosition, "type": "chassis", "error": "Review this blade. The chassis identifies it as connected, but we have no data"}).Error("Auditing blade")
+
+					if nb.Serial == "" {
+						continue
+					}
 
 					b.Status = "Require Reseat"
-					log.WithFields(log.Fields{"operation": "connection", "ip": *ip, "name": chassis.Name, "position": b.BladePosition, "type": "chassis", "error": "Review this blade. The chassis identifies it as connected, but we have no data"}).Error("Auditing blade")
+					b.Serial = nb.Serial
 				}
 				b.PowerKw = blade.HpPower.PowerConsumed / 1000.00
 				b.TempC = blade.HpTemps.HpTemp.C
-				b.Serial = strings.ToLower(strings.TrimSpace(blade.Bsn))
 				b.Vendor = HP
 				b.BmcType = blade.MgmtType
 
