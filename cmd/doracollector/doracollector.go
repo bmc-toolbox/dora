@@ -102,6 +102,7 @@ func main() {
 	viper.SetDefault("disable_discretes", false)
 	viper.SetDefault("dump_invalid_payloads", false)
 	viper.SetDefault("dump_invalid_payload_path", "/tmp/dora")
+	viper.SetDefault("kea_config", "/etc/kea/kea.conf")
 
 	configItems := []string{
 		"bmc_pass",
