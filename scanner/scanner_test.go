@@ -6,9 +6,9 @@ import (
 
 func TestLoadConfig(t *testing.T) {
 	tt := []struct {
-		content     []byte
-		datacenters []string
-		networks    []string
+		content  []byte
+		site     []string
+		networks []string
 	}{
 		{
 			[]byte(`{"Dhcp4": { "subnet4": [{"option-data": [{"data": "hkg1.lom.booking.com","name": "domain-name" }], "subnet": "10.128.64.0/24"},
@@ -29,7 +29,7 @@ func TestLoadConfig(t *testing.T) {
 	}
 
 	for _, tc := range tt {
-		networks := loadSubnets(tc.content, tc.datacenters)
+		networks := loadSubnets(tc.content, tc.site)
 		found := false
 		for _, network := range networks {
 			for _, n := range tc.networks {

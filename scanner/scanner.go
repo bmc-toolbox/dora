@@ -3,10 +3,13 @@ package scanner
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net"
+	"os"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 )
 
 // Kea is the main entry for parsing the kea config file
@@ -31,17 +34,12 @@ type OptionData struct {
 	Name string `json:"name"`
 }
 
-/*
-	keaConfig := viper.GetString("kea_config")
+type ScannableSubnet struct {
+	Subnet4 *net.IPNet
+	Gateway *string
+}
 
-	content, err := ioutil.ReadFile(keaConfig)
-	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
-	}
-*/
-
-func loadSubnets(content []byte, datacenters []string) (subnets []*net.IPNet) {
+func loadSubnets(content []byte, site []string) (subnets []*net.IPNet) {
 	keaData := &Kea{}
 	err := json.Unmarshal(content, &keaData)
 	if err != nil {
@@ -52,9 +50,12 @@ func loadSubnets(content []byte, datacenters []string) (subnets []*net.IPNet) {
 		oob := false
 		for _, option := range subnet.OptionData {
 			if option.Name == "domain-name" && strings.HasSuffix(option.Data, ".lom.booking.com") {
-				for _, datacenter := range datacenters {
-					if strings.HasSuffix(option.Data, fmt.Sprintf("%s.lom.booking.com", datacenter)) {
+				for _, s := range site {
+					if strings.HasSuffix(option.Data, fmt.Sprintf("%s.lom.booking.com", s)) {
 						oob = true
+					} else if s == "all" {
+						oob = true
+						break
 					}
 				}
 			}
@@ -63,11 +64,30 @@ func loadSubnets(content []byte, datacenters []string) (subnets []*net.IPNet) {
 		if oob {
 			_, ipv4Net, err := net.ParseCIDR(subnet.Subnet)
 			if err != nil {
-				log.WithFields(log.Fields{"operation": "subnet parsing", "error": err}).Warn("Nertwork scanning")
+				log.WithFields(log.Fields{"operation": "subnet parsing", "error": err}).Warn("Scanning networks")
 			}
 			subnets = append(subnets, ipv4Net)
 		}
 	}
 
 	return subnets
+}
+
+// ScanNetworks scan all of our networks and try to find chassis, blades and servers
+func ScanNetworks() {
+	keaConfig := viper.GetString("kea_config")
+	site := strings.Split(viper.GetString("site"), " ")
+
+	content, err := ioutil.ReadFile(keaConfig)
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+
+	for _, subnet := range loadSubnets(content, site) {
+		err := scan(subnet.String(), "22,443", "tcp")
+		if err != nil {
+			log.WithFields(log.Fields{"operation": "subnet scan", "error": err}).Warn("Scanning network")
+		}
+	}
 }
