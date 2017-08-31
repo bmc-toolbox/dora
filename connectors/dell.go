@@ -2,21 +2,15 @@ package connectors
 
 import (
 	"bytes"
-	"crypto/tls"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net"
 	"net/http"
-	"net/http/cookiejar"
 	"strings"
-	"time"
 
 	log "github.com/sirupsen/logrus"
-
-	"golang.org/x/net/publicsuffix"
 )
 
 // DellCMC is the entry of the json exposed by dell
@@ -168,25 +162,9 @@ func (i *IDracReader) Login() (err error) {
 	}
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
-	tr := &http.Transport{
-		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
-		DisableKeepAlives: true,
-		Dial: (&net.Dialer{
-			Timeout:   10 * time.Second,
-			KeepAlive: 10 * time.Second,
-		}).Dial,
-		TLSHandshakeTimeout: 10 * time.Second,
-	}
-
-	jar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
+	client, err := buildClient()
 	if err != nil {
 		return err
-	}
-
-	client := &http.Client{
-		Timeout:   time.Second * 20,
-		Transport: tr,
-		Jar:       jar,
 	}
 
 	resp, err := client.Do(req)
@@ -194,15 +172,15 @@ func (i *IDracReader) Login() (err error) {
 		return err
 	}
 
+	if resp.StatusCode == 404 {
+		return ErrPageNotFound
+	}
+
 	payload, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
-
-	if resp.StatusCode == 404 {
-		return ErrPageNotFound
-	}
 
 	iDracAuth := &IDracAuth{}
 	err = xml.Unmarshal(payload, iDracAuth)

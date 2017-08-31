@@ -1,15 +1,12 @@
 package connectors
 
 import (
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"net"
 	"net/http"
 	"regexp"
 	"strings"
-	"time"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -33,6 +30,12 @@ const (
 	RFEntry = "entry"
 	// RFCPU is the constant for CPU definition on RedFish
 	RFCPU = "cpu"
+	// Blade is the constant defining the blade hw type
+	Blade = "blade"
+	// Descrete is the constant defining the descrete hw type
+	Descrete = "descrete"
+	// Chassis is the constant defining the chassis hw type
+	Chassis = "chassis"
 )
 
 var (
@@ -174,19 +177,12 @@ func (r *RedFishReader) get(endpoint string) (payload []byte, err error) {
 		return payload, err
 	}
 	req.SetBasicAuth(*r.username, *r.password)
-	tr := &http.Transport{
-		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
-		DisableKeepAlives: true,
-		Dial: (&net.Dialer{
-			Timeout:   20 * time.Second,
-			KeepAlive: 20 * time.Second,
-		}).Dial,
-		TLSHandshakeTimeout: 20 * time.Second,
+
+	client, err := buildClient()
+	if err != nil {
+		return payload, err
 	}
-	client := &http.Client{
-		Timeout:   time.Second * 30,
-		Transport: tr,
-	}
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return payload, err

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/rand"
 	"crypto/tls"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"io"
@@ -92,6 +93,31 @@ func httpGet(url string, username *string, password *string) (payload []byte, er
 	return payload, err
 }
 
+func buildClient() (client *http.Client, err error) {
+	tr := &http.Transport{
+		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
+		DisableKeepAlives: false,
+		Dial: (&net.Dialer{
+			Timeout:   10 * time.Second,
+			KeepAlive: 10 * time.Second,
+		}).Dial,
+		TLSHandshakeTimeout: 10 * time.Second,
+	}
+
+	jar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
+	if err != nil {
+		return client, err
+	}
+
+	client = &http.Client{
+		Timeout:   time.Second * 20,
+		Transport: tr,
+		Jar:       jar,
+	}
+
+	return client, err
+}
+
 func httpGetDell(hostname *string, endpoint string, username *string, password *string) (payload []byte, err error) {
 	log.WithFields(log.Fields{"step": "ChassisConnections Dell", "hostname": *hostname}).Debug("Requesting data from BMC")
 
@@ -110,25 +136,9 @@ func httpGetDell(hostname *string, endpoint string, username *string, password *
 	}
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
-	tr := &http.Transport{
-		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
-		DisableKeepAlives: true,
-		Dial: (&net.Dialer{
-			Timeout:   10 * time.Second,
-			KeepAlive: 10 * time.Second,
-		}).Dial,
-		TLSHandshakeTimeout: 10 * time.Second,
-	}
-
-	jar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
+	client, err := buildClient()
 	if err != nil {
 		return payload, err
-	}
-
-	client := &http.Client{
-		Timeout:   time.Second * 20,
-		Transport: tr,
-		Jar:       jar,
 	}
 
 	resp, err := client.Do(req)
@@ -195,25 +205,9 @@ func httpGetHP(hostname *string, endpoint string, username *string, password *st
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	tr := &http.Transport{
-		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
-		DisableKeepAlives: false,
-		Dial: (&net.Dialer{
-			Timeout:   10 * time.Second,
-			KeepAlive: 10 * time.Second,
-		}).Dial,
-		TLSHandshakeTimeout: 10 * time.Second,
-	}
-
-	jar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
+	client, err := buildClient()
 	if err != nil {
 		return payload, err
-	}
-
-	client := &http.Client{
-		Timeout:   time.Second * 20,
-		Transport: tr,
-		Jar:       jar,
 	}
 
 	resp, err := client.Do(req)
@@ -259,6 +253,39 @@ func httpGetHP(hostname *string, endpoint string, username *string, password *st
 	}
 
 	return payload, err
+}
+
+func detectVendorAndType(hostname *string) (vendor string, deviceType string, err error) {
+	log.WithFields(log.Fields{"step": "onnection", "hostname": *hostname}).Info("Detecting vendor")
+
+	client, err := buildClient()
+	if err != nil {
+		return vendor, deviceType, err
+	}
+
+	resp, err := client.Get(fmt.Sprintf("https://%s/xmldata?item=all", *hostname))
+	if err != nil {
+		return vendor, deviceType, err
+	}
+
+	if resp.StatusCode == 200 {
+		payload, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return vendor, deviceType, err
+		}
+
+		iloXML := &HpRimpBlade{}
+		err = xml.Unmarshal(payload, iloXML)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		if iloXML.HpBladeBlade != nil {
+			return HP, Blade, err
+		}
+	}
+
+	return vendor, deviceType, err
 }
 
 // DumpInvalidPayload is here to help identify unknown or broken payload messages

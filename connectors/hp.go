@@ -2,21 +2,15 @@ package connectors
 
 import (
 	"bytes"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net"
 	"net/http"
-	"net/http/cookiejar"
 	"net/url"
 	"strings"
-	"time"
 
 	log "github.com/sirupsen/logrus"
-
-	"golang.org/x/net/publicsuffix"
 )
 
 // HpBlade contains the unmarshalled data from the hp chassis
@@ -52,8 +46,9 @@ type HpInfra2 struct {
 	Rack           string          `xml:" RACK,omitempty"`
 }
 
-// HpMP contains the firmware version and the model of the chassis
+// HpMP contains the firmware version and the model of the chassis or blade
 type HpMP struct {
+	Pn   string `xml:" PN,omitempty"`
 	Sn   string `xml:" SN,omitempty"`
 	Fwri string `xml:" FWRI,omitempty"`
 }
@@ -108,7 +103,14 @@ type HpTemps struct {
 
 // HpRimpBlade is the entry data structure for the blade when queries directly
 type HpRimpBlade struct {
-	HpHSI *HpHSI `xml:" HSI,omitempty"`
+	HpMP         *HpMP         `xml:" MP,omitempty"`
+	HpHSI        *HpHSI        `xml:" HSI,omitempty"`
+	HpBladeBlade *HpBladeBlade `xml:" BLADESYSTEM,omitempty"`
+}
+
+// HpBladeBlade blade information from the hprimp of blades
+type HpBladeBlade struct {
+	Bay int `xml:" BAY,omitempty"`
 }
 
 // HpHSI contains the information about the components of the blade
@@ -180,25 +182,9 @@ func (i *IloReader) Login() (err error) {
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	tr := &http.Transport{
-		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
-		DisableKeepAlives: true,
-		Dial: (&net.Dialer{
-			Timeout:   10 * time.Second,
-			KeepAlive: 10 * time.Second,
-		}).Dial,
-		TLSHandshakeTimeout: 10 * time.Second,
-	}
-
-	jar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
+	client, err := buildClient()
 	if err != nil {
 		return err
-	}
-
-	client := &http.Client{
-		Timeout:   time.Second * 20,
-		Transport: tr,
-		Jar:       jar,
 	}
 
 	resp, err := client.Do(req)
@@ -206,15 +192,15 @@ func (i *IloReader) Login() (err error) {
 		return err
 	}
 
+	if resp.StatusCode == 404 {
+		return ErrPageNotFound
+	}
+
 	payload, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
-
-	if resp.StatusCode == 404 {
-		return ErrPageNotFound
-	}
 
 	if strings.Contains(string(payload), "Invalid login attempt") {
 		return ErrLoginFailed
