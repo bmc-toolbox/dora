@@ -12,7 +12,7 @@ import (
 
 /* READ THIS BEFORE CHANGING THE SCHEMA
 
-To make the magic of dinamic filter work, we need to define the json fields matching the database collumn name
+To make the magic of dynamic filtering work, we need to define each json field matching the database collumn name
 
 */
 
@@ -259,4 +259,20 @@ func (c Chassis) GetReferencedStructs() []jsonapi.MarshalIdentifier {
 	}
 
 	return result
+}
+
+// ScannedHost all ips and ports found by the scanner
+type ScannedHost struct {
+	IP    string `gorm:"primary_key"`
+	State string
+	Ports []ScannedPort
+}
+
+// ScannedPort all ports found by the scanner
+type ScannedPort struct {
+	ScannedHostIP string `gorm:"primary_key"`
+	Port          int    `gorm:"primary_key"`
+	Protocol      string `gorm:"primary_key"`
+	State         string
+	UpdatedAt     time.Time
 }
