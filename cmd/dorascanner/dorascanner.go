@@ -36,6 +36,7 @@ func main() {
 	viper.SetDefault("kea_config", "/etc/kea/kea.conf")
 	viper.SetDefault("nmap_xml_dir", "/tmp/dora/scans")
 	viper.SetDefault("nmap", "/bin/nmap")
+	viper.SetDefault("nmap_tcp_ports", "22,443")
 
 	err := viper.ReadInConfig()
 	if err != nil {
