@@ -19,7 +19,6 @@ func init() {
 	// log.SetFormatter(&log.JSONFormatter{})
 	log.SetOutput(os.Stdout)
 	log.SetLevel(log.InfoLevel)
-
 }
 
 func main() {
@@ -44,8 +43,4 @@ func main() {
 	}
 
 	scanner.ScanNetworks()
-
-	// if viper.GetBool("disable_discrete") == false {
-	// 	discreteStep()
-	// }
 }
