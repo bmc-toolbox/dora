@@ -26,6 +26,14 @@ func TestLoadConfig(t *testing.T) {
 			[]string{"hkg1"},
 			[]string{"10.128.64.0/24"},
 		},
+		{
+			[]byte(`{"Dhcp4": { "subnet4": [{"option-data": [{"data": "hkg1.lom.booking.com","name": "domain-name" }], "subnet": "10.128.64.0/24"},
+											{"option-data": [{"data": "ams4.corp.booking.com","name": "domain-name"}], "subnet": "10.196.68.0/24"},
+											{"option-data": [{"data": "example.com","name": "domain-name"}], "subnet": "10.196.17.0/24"},
+											{"option-data": [{"data": "lhr4.lom.booking.com","name": "domain-name"}], "subnet": "10.189.15.0/24"}]}}`),
+			[]string{"all"},
+			[]string{"10.128.64.0/24", "10.196.17.0/24", "10.189.15.0/24"},
+		},
 	}
 
 	for _, tc := range tt {
@@ -39,7 +47,7 @@ func TestLoadConfig(t *testing.T) {
 			}
 		}
 		if found == false || len(networks) != len(tc.networks) {
-			t.Errorf("The result of %v for the datacenters %v should be %v: found %v", string(tc.content), tc.datacenters, tc.networks, networks)
+			t.Errorf("The result of %v for the datacenters %v should be %v: found %v", string(tc.content), tc.site, tc.networks, networks)
 		}
 	}
 }
