@@ -5,12 +5,6 @@ package scanner
 import (
 	"encoding/xml"
 	"errors"
-	"fmt"
-	"os"
-	"os/exec"
-	"strings"
-
-	"github.com/spf13/viper"
 )
 
 var (
@@ -43,7 +37,7 @@ type Address struct {
 // Port contains all the information about a scanned port.
 type Port struct {
 	Protocol string `xml:"protocol,attr"`
-	PortId   int    `xml:"portid,attr"`
+	PortID   int    `xml:"portid,attr"`
 	State    State  `xml:"state"`
 }
 
@@ -53,41 +47,11 @@ type State struct {
 	State string `xml:"state,attr"`
 }
 
-// Parse takes a byte array of nmap xml data and unmarshals it into an
-// NmapRun struct. All elements are returned as strings, it is up to the caller
-// to check and cast them to the proper type.
-func Parse(content []byte) (*NmapRun, error) {
+func nmapParse(content []byte) (*NmapRun, error) {
 	r := &NmapRun{}
 	err := xml.Unmarshal(content, r)
 	if err != nil {
 		return r, err
 	}
 	return r, nil
-}
-
-func scan(subnet string, ports string, protocol string) (err error) {
-	xmlDir := viper.GetString("nmap_xml_dir")
-	err = os.MkdirAll(xmlDir, 0755)
-	if err != nil {
-		return err
-	}
-
-	scanType := ""
-	fileName := fmt.Sprintf("%s/%s-%s.xml", xmlDir, strings.Replace(subnet, "/", "_", -1), protocol)
-	switch protocol {
-	case "udp":
-		scanType = "-sU"
-	case "tcp":
-		scanType = "-sT"
-	default:
-		return ErrInvalidProtocol
-	}
-
-	cmd := exec.Command("nmap", "-oX", fileName, scanType, subnet, "-p", ports, "--open")
-	err = cmd.Run()
-	if err != nil {
-		return err
-	}
-
-	return err
 }
