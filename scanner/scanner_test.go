@@ -37,7 +37,7 @@ func TestLoadConfig(t *testing.T) {
 	}
 
 	for _, tc := range tt {
-		networks := loadSubnets(tc.content, tc.site)
+		networks := LoadSubnets(tc.content, tc.site)
 		found := false
 		for _, network := range networks {
 			for _, n := range tc.networks {

@@ -47,7 +47,8 @@ type toScan struct {
 	Protocol string
 }
 
-func loadSubnets(content []byte, site []string) (subnets []*net.IPNet) {
+// LoadSubnets from kea.cfg
+func LoadSubnets(content []byte, site []string) (subnets []*net.IPNet) {
 	keaData := &Kea{}
 	err := json.Unmarshal(content, &keaData)
 	if err != nil {
@@ -82,12 +83,6 @@ func loadSubnets(content []byte, site []string) (subnets []*net.IPNet) {
 }
 
 func scan(input <-chan toScan, db *gorm.DB) {
-	xmlDir := viper.GetString("nmap_xml_dir")
-	err := os.MkdirAll(xmlDir, 0755)
-	if err != nil {
-		panic(err)
-	}
-
 	for subnet := range input {
 		scanType := ""
 
@@ -101,6 +96,7 @@ func scan(input <-chan toScan, db *gorm.DB) {
 			continue
 		}
 
+		log.WithFields(log.Fields{"operation": "scanning ip", "subnet": subnet.Subnet, "protocol": subnet.Protocol}).Info("Scanning networks")
 		cmd := exec.Command("nmap", "-oX", "-", scanType, subnet.Subnet, "--max-parallelism=100", "-p", subnet.Ports, "--unprivileged")
 		content, err := cmd.Output()
 		if err != nil {
@@ -134,16 +130,26 @@ func scan(input <-chan toScan, db *gorm.DB) {
 	}
 }
 
-// ScanNetworks scan all of our networks and try to find chassis, blades and servers
-func ScanNetworks() {
+// ReadKeaConfig reads the config configuration file and returns its data
+func ReadKeaConfig() (content []byte, err error) {
 	keaConfig := viper.GetString("kea_config")
+	content, err = ioutil.ReadFile(keaConfig)
+	if err != nil {
+		return content, err
+	}
+
+	return content, err
+}
+
+// ScanNetworks scan specific or all networks and try to find chassis, blades and servers
+func ScanNetworks(subnets []string) {
 	site := strings.Split(viper.GetString("site"), " ")
 	tcpPorts := viper.GetString("nmap_tcp_ports")
 	concurrency := viper.GetInt("concurrency")
 
-	content, err := ioutil.ReadFile(keaConfig)
+	content, err := ReadKeaConfig()
 	if err != nil {
-		fmt.Println(err.Error())
+		log.WithFields(log.Fields{"operation": "scanning ip", "error": err}).Error("Scanning networks")
 		os.Exit(1)
 	}
 
@@ -159,13 +165,35 @@ func ScanNetworks() {
 		}(cc, db, &wg)
 	}
 
-	for _, subnet := range loadSubnets(content, site) {
-		t := toScan{
-			Subnet:   subnet.String(),
-			Ports:    tcpPorts,
-			Protocol: "tcp",
+	if subnets[0] == "all" {
+		for _, subnet := range LoadSubnets(content, site) {
+			t := toScan{
+				Subnet:   subnet.String(),
+				Ports:    tcpPorts,
+				Protocol: "tcp",
+			}
+			cc <- t
 		}
-		cc <- t
+	} else {
+		sbns := LoadSubnets(content, site)
+		for _, subnet := range subnets {
+			found := false
+			for _, n := range sbns {
+				if n.String() == subnet {
+					found = true
+				}
+			}
+			if !found {
+				log.WithFields(log.Fields{"operation": "scanning ip", "error": "Network doesn't exist in kea.cfg"}).Error("Scanning networks")
+				os.Exit(1)
+			}
+			t := toScan{
+				Subnet:   subnet,
+				Ports:    tcpPorts,
+				Protocol: "tcp",
+			}
+			cc <- t
+		}
 	}
 
 	close(cc)
