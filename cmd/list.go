@@ -32,8 +32,8 @@ var listCmd = &cobra.Command{
 config if a network is scannable based on the list of arguments passed
 to the command
 
-eg: dora scan list
-    dora scan list 192.168.0.1
+usage: dora scan list
+       dora scan list 192.168.0.1
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		site := strings.Split(viper.GetString("site"), " ")

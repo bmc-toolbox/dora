@@ -25,8 +25,12 @@ import (
 var configCmd = &cobra.Command{
 	Use:   "config",
 	Short: "Shows the path of the current config in use",
-	Long: `You can use the config command to create a same config file 
-with all possible flags`,
+	Long: `You can use the config command to create a sample config file 
+in your $HOME/.bmc-toolbox directory with all possible config flags.
+
+usage: dora config
+       dora config create
+`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("Current config in use: ", viper.ConfigFileUsed())
 	},

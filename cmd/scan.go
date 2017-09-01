@@ -26,13 +26,13 @@ import (
 // scanCmd represents the scan command
 var scanCmd = &cobra.Command{
 	Use:   "scan",
-	Short: "scan all networks found in kea config or a list of given networks",
-	Long: `scan the networks found in kea config or a list of given networks and search 
+	Short: "scan networks found in kea config or a list of given networks",
+	Long: `scan networks found in kea config or a list of given networks and search 
 for the required tcp and udp ports for the hardware discovery. It will build a list of 
 discoverable assets to be later used by dora collecor
 
-eg: dora scan  
-    dora scan 192.168.0.1/24
+usage: dora scan  
+       dora scan 192.168.0.1/24
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 0 && args[0] != "all" {
