@@ -152,7 +152,15 @@ type HpProcs struct {
 
 // HpMem is the struct used to render the data from https://$ip/json/mem_info, it contains the ram data
 type HpMem struct {
-	MemTotalMemSize int `json:"mem_total_mem_size"`
+	MemTotalMemSize int          `json:"mem_total_mem_size"`
+	Memory          []*HpMemSlot `json:"memory"`
+}
+
+// HpMemSlot is part of the payload returned from https://$ip/json/mem_info
+type HpMemSlot struct {
+	MemDevLoc string `json:"mem_dev_loc"`
+	MemSize   int    `json:"mem_size"`
+	MemSpeed  int    `json:"mem_speed"`
 }
 
 // HpOverview is the struct used to render the data from https://$ip/json/overview, it contains information about bios version, ilo license and a bit more
@@ -341,7 +349,15 @@ func (i *IloReader) Memory() (mem int, err error) {
 		return mem, err
 	}
 
-	return hpMemData.MemTotalMemSize / 1024, err
+	if hpMemData.MemTotalMemSize != 0 {
+		return hpMemData.MemTotalMemSize / 1024, err
+	}
+
+	for _, slot := range hpMemData.Memory {
+		mem = mem + slot.MemSize
+	}
+
+	return mem / 1024, err
 }
 
 // CPU returns the cpu, cores and hyperthreads of the server
