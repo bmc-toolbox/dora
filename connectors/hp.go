@@ -3,6 +3,7 @@ package connectors
 import (
 	"bytes"
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -116,6 +117,8 @@ type HpBladeBlade struct {
 // HpHSI contains the information about the components of the blade
 type HpHSI struct {
 	HpNICS *HpNICS `xml:" NICS,omitempty"`
+	Sbsn   string  `xml:" SBSN,omitempty" json:"SBSN,omitempty"`
+	Spn    string  `xml:" SPN,omitempty" json:"SPN,omitempty"`
 }
 
 // HpNICS contains the list of nics that a blade has
@@ -152,22 +155,62 @@ type HpMem struct {
 	MemTotalMemSize int `json:"mem_total_mem_size"`
 }
 
+// HpOverview is the struct used to render the data from https://$ip/json/overview, it contains information about bios version, ilo license and a bit more
+type HpOverview struct {
+	ServerName    string `json:"server_name"`
+	ProductName   string `json:"product_name"`
+	SerialNum     string `json:"serial_num"`
+	SystemRom     string `json:"system_rom"`
+	SystemRomDate string `json:"system_rom_date"`
+	BackupRomDate string `json:"backup_rom_date"`
+	License       string `json:"license"`
+	IloFwVersion  string `json:"ilo_fw_version"`
+	IPAddress     string `json:"ip_address"`
+	SystemHealth  string `json:"system_health"`
+	Power         string `json:"power"`
+}
+
 // IloReader holds the status and properties of a connection to an iLO device
 type IloReader struct {
-	ip       *string
-	username *string
-	password *string
-	client   *http.Client
-	loginURL *url.URL
+	ip          *string
+	username    *string
+	password    *string
+	client      *http.Client
+	loginURL    *url.URL
+	hpRimpBlade *HpRimpBlade
 }
 
 // NewIloReader returns a new IloReader ready to be used
 func NewIloReader(ip *string, username *string, password *string) (ilo *IloReader, err error) {
-	u, err := url.Parse(fmt.Sprintf("https://%s/json/login_session", *ip))
+	loginURL, err := url.Parse(fmt.Sprintf("https://%s/json/login_session", *ip))
 	if err != nil {
 		return nil, err
 	}
-	return &IloReader{ip: ip, username: username, password: password, loginURL: u}, err
+
+	client, err := buildClient()
+	if err != nil {
+		return ilo, err
+	}
+
+	resp, err := client.Get(fmt.Sprintf("https://%s/xmldata?item=all", *ip))
+	if err != nil {
+		return ilo, err
+	}
+
+	payload, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return ilo, err
+	}
+	defer resp.Body.Close()
+
+	hpRimpBlade := &HpRimpBlade{}
+	err = xml.Unmarshal(payload, hpRimpBlade)
+	if err != nil {
+		DumpInvalidPayload(*ip, payload)
+		return ilo, err
+	}
+
+	return &IloReader{ip: ip, username: username, password: password, loginURL: loginURL, hpRimpBlade: hpRimpBlade, client: client}, err
 }
 
 // Login initiates the connection to an iLO device
@@ -182,12 +225,7 @@ func (i *IloReader) Login() (err error) {
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	client, err := buildClient()
-	if err != nil {
-		return err
-	}
-
-	resp, err := client.Do(req)
+	resp, err := i.client.Do(req)
 	if err != nil {
 		return err
 	}
@@ -205,8 +243,6 @@ func (i *IloReader) Login() (err error) {
 	if strings.Contains(string(payload), "Invalid login attempt") {
 		return ErrLoginFailed
 	}
-
-	i.client = client
 
 	return err
 }
@@ -233,7 +269,65 @@ func (i *IloReader) get(endpoint string) (payload []byte, err error) {
 	return payload, err
 }
 
-// Memory return the total amount of memory of the server
+// Serial returns the device model
+func (i *IloReader) Serial() (serial string, err error) {
+	return i.hpRimpBlade.HpHSI.Sbsn, err
+}
+
+// Model returns the device model
+func (i *IloReader) Model() (model string, err error) {
+	return i.hpRimpBlade.HpHSI.Spn, err
+}
+
+// BmcType returns the device model
+func (i *IloReader) BmcType() (bmcType string, err error) {
+	return i.hpRimpBlade.HpMP.Pn, err
+}
+
+// BmcVersion returns the device model
+func (i *IloReader) BmcVersion() (bmcVersion string, err error) {
+	return i.hpRimpBlade.HpMP.Fwri, err
+}
+
+// Name returns the name of this server from the iLO point of view
+func (i *IloReader) Name() (name string, err error) {
+	payload, err := i.get("json/overview")
+	if err != nil {
+		return name, err
+	}
+
+	hpOverview := &HpOverview{}
+	err = json.Unmarshal(payload, hpOverview)
+	if err != nil {
+		DumpInvalidPayload(*i.ip, payload)
+		return name, err
+	}
+
+	return hpOverview.ServerName, err
+}
+
+// SystemHealth returns health string status from the bmc
+func (i *IloReader) SystemHealth() (health string, err error) {
+	payload, err := i.get("json/overview")
+	if err != nil {
+		return health, err
+	}
+
+	hpOverview := &HpOverview{}
+	err = json.Unmarshal(payload, hpOverview)
+	if err != nil {
+		DumpInvalidPayload(*i.ip, payload)
+		return health, err
+	}
+
+	if hpOverview.SystemHealth == "OP_STATUS_OK" {
+		return "OK", err
+	}
+
+	return hpOverview.SystemHealth, err
+}
+
+// Memory returns the total amount of memory of the server
 func (i *IloReader) Memory() (mem int, err error) {
 	payload, err := i.get("json/mem_info")
 	if err != nil {
@@ -250,7 +344,7 @@ func (i *IloReader) Memory() (mem int, err error) {
 	return hpMemData.MemTotalMemSize / 1024, err
 }
 
-// CPU return the cpu, cores and hyperthreads the server
+// CPU returns the cpu, cores and hyperthreads of the server
 func (i *IloReader) CPU() (cpu string, cpuCount int, coreCount int, hyperthreadCount int, err error) {
 	payload, err := i.get("json/proc_info")
 	if err != nil {
@@ -271,24 +365,22 @@ func (i *IloReader) CPU() (cpu string, cpuCount int, coreCount int, hyperthreadC
 	return cpu, cpuCount, coreCount, hyperthreadCount, err
 }
 
-// BiosVersion return the current verion of the bios
+// BiosVersion returns the current verion of the bios
 func (i *IloReader) BiosVersion() (version string, err error) {
-	payload, err := i.get("json/fw_info")
+	payload, err := i.get("json/overview")
 	if err != nil {
 		return version, err
 	}
 
-	hpFwData := &HpFirmware{}
-	err = json.Unmarshal(payload, hpFwData)
+	hpOverview := &HpOverview{}
+	err = json.Unmarshal(payload, hpOverview)
 	if err != nil {
 		DumpInvalidPayload(*i.ip, payload)
 		return version, err
 	}
 
-	for _, entry := range hpFwData.Firmware {
-		if entry.FwName == "System ROM" {
-			return entry.FwVersion, err
-		}
+	if hpOverview.SystemRom != "" {
+		return hpOverview.SystemRom, err
 	}
 
 	return version, ErrBiosNotFound
