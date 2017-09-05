@@ -202,6 +202,12 @@ type HpTemperature struct {
 	TempUnit       string `json:"temp_unit"`
 }
 
+// HpIloLicense is the struct used to render the data from https://$ip/json/license, it contains the license information of the ilo
+type HpIloLicense struct {
+	Name string `json:"name"`
+	Type string `json:"type"`
+}
+
 // IloReader holds the status and properties of a connection to an iLO device
 type IloReader struct {
 	ip          *string
@@ -487,6 +493,23 @@ func (i *IloReader) Nics() (nics []*model.Nic, err error) {
 	return nics, err
 }
 
+// License returns the iLO's license information
+func (i *IloReader) License() (name string, licType string, err error) {
+	payload, err := i.get("json/license")
+	if err != nil {
+		return name, licType, err
+	}
+
+	hpIloLicense := &HpIloLicense{}
+	err = json.Unmarshal(payload, hpIloLicense)
+	if err != nil {
+		DumpInvalidPayload(*i.ip, payload)
+		return name, licType, err
+	}
+
+	return hpIloLicense.Name, hpIloLicense.Type, err
+}
+
 // Logout logs out and close the iLo connection
 func (i *IloReader) Logout() (err error) {
 	log.WithFields(log.Fields{"step": "Ilo Connection HP", "ip": *i.ip}).Debug("Logout from iLO")
@@ -558,6 +581,11 @@ func (i *IloReader) Blade() (blade model.Blade, err error) {
 		blade.PowerKw, err = i.PowerKw()
 		if err != nil {
 			log.WithFields(log.Fields{"operation": "reading power usage data", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+		}
+
+		blade.BmcLicenceType, blade.BmcLicenceStatus, err = i.License()
+		if err != nil {
+			log.WithFields(log.Fields{"operation": "reading license data", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
 		}
 	}
 
@@ -757,6 +785,18 @@ func (h *HpChassisReader) Chassis() (chassis model.Chassis, err error) {
 	chassis.BmcAddress = *h.ip
 	chassis.PassThru, _ = h.PassThru()
 	chassis.Blades, _ = h.Blades()
+
+	db := storage.InitDB()
+
+	scans := []model.ScannedPort{}
+	db.Where("scanned_host_ip = ?", chassis.BmcAddress).Find(&scans)
+	for _, scan := range scans {
+		if scan.Port == 443 && scan.Protocol == "tcp" && scan.State == "open" {
+			chassis.BmcWEBReachable = true
+		} else if scan.Port == 22 && scan.Protocol == "tcp" && scan.State == "open" {
+			chassis.BmcSSHReachable = true
+		}
+	}
 
 	return chassis, err
 }

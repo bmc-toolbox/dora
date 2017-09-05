@@ -18,8 +18,8 @@ To make the magic of dynamic filtering work, we need to define each json field m
 
 // Nic contains the network information of the cards attached to blades or chassis
 type Nic struct {
+	Name        string    `json:"name"`
 	MacAddress  string    `json:"mac_address" gorm:"primary_key"`
-	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 	BladeSerial string    `json:"-"`
 }
@@ -63,6 +63,8 @@ type Blade struct {
 	BmcSSHReachable      bool      `json:"bmc_ssh_reachable"`
 	BmcWEBReachable      bool      `json:"bmc_web_reachable"`
 	BmcIpmiReachable     bool      `json:"bmc_ipmi_reachable"`
+	BmcLicenceType       string    `json:"bmc_licence_type"`
+	BmcLicenceStatus     string    `json:"bmc_licence_status"`
 	BmcAuth              bool      `json:"bmc_auth"`
 	Nics                 []*Nic    `json:"-" gorm:"ForeignKey:BladeSerial"`
 	NicsIDs              []int64   `json:"-" sql:"-"`
@@ -169,7 +171,6 @@ type Chassis struct {
 	BmcAddress       string    `json:"bmc_address"`
 	BmcSSHReachable  bool      `json:"bmc_ssh_reachable"`
 	BmcWEBReachable  bool      `json:"bmc_web_reachable"`
-	BmcIpmiReachable bool      `json:"bmc_ipmi_reachable"`
 	BmcAuth          bool      `json:"bmc_auth"`
 	Blades           []*Blade  `json:"-" gorm:"ForeignKey:ChassisSerial"`
 	BladesIDS        []int64   `json:"-" sql:"-"`
@@ -205,19 +206,6 @@ func (c *Chassis) TestConnections() {
 	} else {
 		c.BmcSSHReachable = true
 		conn.Close()
-	}
-
-	conn, err = net.DialTimeout("udp", fmt.Sprintf("%s:%d", c.BmcAddress, 623), 15*time.Second)
-	if err != nil {
-		log.WithFields(log.Fields{"operation": "test ipmi connection", "ip": c.BmcAddress, "serial": c.Serial, "type": "blade", "error": err, "chassis": c.Name, "vendor": c.Vendor}).Error("Auditing blade")
-	} else {
-		_, err = conn.Write([]byte("something"))
-		if err != nil {
-			log.WithFields(log.Fields{"operation": "test ipmi connection", "ip": c.BmcAddress, "serial": c.Serial, "type": "blade", "error": err, "chassis": c.Name, "vendor": c.Vendor}).Error("Auditing blade")
-		} else {
-			c.BmcIpmiReachable = true
-			conn.Close()
-		}
 	}
 }
 
