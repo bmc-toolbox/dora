@@ -253,7 +253,7 @@ func (c Chassis) GetReferencedStructs() []jsonapi.MarshalIdentifier {
 type ScannedHost struct {
 	IP    string `gorm:"primary_key"`
 	State string
-	Ports []ScannedPort
+	Ports []ScannedPort `gorm:"ForeignKey:ScannedHostIP"`
 }
 
 // ScannedPort contains all ports found by the scanner

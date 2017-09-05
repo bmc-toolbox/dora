@@ -16,8 +16,11 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+	"gitlab.booking.com/infra/dora/connectors"
 )
 
 // collectCmd represents the collect command
@@ -33,6 +36,34 @@ usage: dora collect
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("collect called")
+
+		configItems := []string{
+			"bmc_pass",
+			"bmc_user",
+			"site",
+			"database_type",
+			"database_options",
+		}
+
+		for _, item := range configItems {
+			if !viper.IsSet(item) {
+				fmt.Printf("Parameter %s is missing in the config file\n", item)
+				os.Exit(1)
+			}
+		}
+
+		c, err := connectors.NewConnection(viper.GetString("bmc_user"), viper.GetString("bmc_pass"), args[0])
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(c)
+		data, err := c.Collect()
+		fmt.Printf("%v\n%v", data, err)
+
+		// if viper.GetBool("disable_chassis") == false {
+		// 	chassisStep()
+		// }
+
 	},
 }
 

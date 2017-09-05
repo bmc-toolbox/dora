@@ -80,7 +80,6 @@ func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) 
 				chassis.Status = blade.BladeLogDescription
 			}
 			b.Vendor = Dell
-			b.BmcType = "iDRAC"
 			b.BiosVersion = blade.BladeBIOSver
 
 			if chassis.PassThru == "" {
@@ -98,6 +97,7 @@ func (c *ChassisConnection) Dell(ip *string) (chassis model.Chassis, err error) 
 				b.IsStorageBlade = true
 				b.Name = b.Serial
 			} else {
+				b.BmcType = "iDRAC"
 				b.IsStorageBlade = false
 				b.Name = blade.BladeName
 				idracURL := strings.TrimLeft(blade.IdracURL, "https://")

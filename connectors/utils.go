@@ -38,6 +38,8 @@ var (
 	ErrRedFishNotSupported = errors.New("RedFish not supported")
 	// ErrRedFishEndPoint500 is retured when we receive 500 in a redfish api call and the bmc dies with the request
 	ErrRedFishEndPoint500 = errors.New("We've received 500 calling this endpoint")
+	// ErrUnabletoReadData is returned when we fail to read data from a chassis or bmc
+	ErrUnabletoReadData = errors.New("Unable to read data from this device")
 )
 
 // newUUID generates a random UUID according to RFC 4122

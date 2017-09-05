@@ -4,8 +4,13 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io/ioutil"
+	"sync"
 
+	"github.com/jinzhu/gorm"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
+	"gitlab.booking.com/infra/dora/model"
+	"gitlab.booking.com/infra/dora/storage"
 )
 
 // Connection is used to connect and later dicover the hardware information we have for each vendor
@@ -17,9 +22,14 @@ type Connection struct {
 	hwtype   string
 }
 
-// VendorAndType returns the vendor and hwtype of the current connection
-func (c *Connection) VendorAndType() (vendor string, hwtype string) {
-	return c.vendor, c.hwtype
+// Vendor returns the vendor of the current connection
+func (c *Connection) Vendor() (vendor string) {
+	return c.vendor
+}
+
+// HwType returns hwtype of the current connection
+func (c *Connection) HwType() (hwtype string) {
+	return c.hwtype
 }
 
 func (c *Connection) detect() (err error) {
@@ -133,4 +143,52 @@ func (c *Connection) Collect() (i interface{}, err error) {
 	}
 
 	return i, err
+}
+
+func collect(input <-chan *Connection, db *gorm.DB) {
+	for hosts := range input {
+
+	}
+}
+
+// DataCollection collects the data of all given ips
+func DataCollection(ips []string) {
+	concurrency := viper.GetInt("concurrency")
+
+	cc := make(chan string, concurrency)
+	wg := sync.WaitGroup{}
+	db := storage.InitDB()
+	bmcUser := viper.GetString("bmc_user")
+	bmcPass := viper.GetString("bmc_pass")
+
+	wg.Add(concurrency)
+	for i := 0; i < concurrency; i++ {
+		go func(input <-chan *Connection, db *gorm.DB, wg *sync.WaitGroup) {
+			collect(input, db)
+			wg.Done()
+		}(cc, db, &wg)
+	}
+
+	if ips[0] == "all" {
+		hosts := []model.ScannedPort{}
+		db.Where("port = 443 and protocol = 'tcp' and state = 'open'").Find(&scans)
+		for _, host := range hosts {
+			c := NewConnection(bmcUser, bmcPass, host.ScannedHostIP)
+			if c.HwType != Blade {
+				cc <- c
+			}
+		}
+	} else {
+		for _, ip := range ips {
+			host := model.ScannedPort{}
+			db.Where("scanned_host_ip = ? and port = 443 and protocol = 'tcp' and state = 'open'", ip).First(&scans)
+			for _, host := range hosts {
+				c := NewConnection(bmcUser, bmcPass, host.ScannedHostIP)
+				cc <- c
+			}
+		}
+	}
+
+	close(cc)
+	wg.Wait()
 }

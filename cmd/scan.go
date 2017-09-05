@@ -17,7 +17,6 @@ package cmd
 import (
 	"fmt"
 	"net"
-	"os"
 
 	"github.com/spf13/cobra"
 	"gitlab.booking.com/infra/dora/scanner"
@@ -40,8 +39,9 @@ usage: dora scan
 				_, _, err := net.ParseCIDR(subnet)
 				if err != nil {
 					fmt.Println(err)
-					os.Exit(1)
+					continue
 				}
+				scanner.ScanNetworks(subnet)
 			}
 		} else {
 			scanner.ScanNetworks([]string{"all"})

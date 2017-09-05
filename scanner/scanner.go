@@ -45,6 +45,7 @@ type toScan struct {
 	Subnet   string
 	Ports    string
 	Protocol string
+	Site     string
 }
 
 // LoadSubnets from kea.cfg

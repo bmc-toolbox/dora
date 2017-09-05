@@ -32,8 +32,8 @@ const (
 	RFCPU = "cpu"
 	// Blade is the constant defining the blade hw type
 	Blade = "blade"
-	// Descrete is the constant defining the descrete hw type
-	Descrete = "descrete"
+	// Discrete is the constant defining the Discrete hw type
+	Discrete = "discrete"
 	// Chassis is the constant defining the chassis hw type
 	Chassis = "chassis"
 )

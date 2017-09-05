@@ -1,7 +1,6 @@
 package resource
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/jinzhu/gorm"
@@ -9,11 +8,6 @@ import (
 	"gitlab.booking.com/infra/dora/filter"
 	"gitlab.booking.com/infra/dora/model"
 	"gitlab.booking.com/infra/dora/storage"
-)
-
-var (
-	// ErrPageSizeAndNumber is returned when page[number] and page[size] are sent on the http request
-	ErrPageSizeAndNumber = errors.New("Filters page[number] and page[size] are not supported, please stick to page[offset] and page[limit]")
 )
 
 // NicResource for api2go routes
@@ -54,7 +48,7 @@ func (n NicResource) queryAndCountAllWrapper(r api2go.Request) (count int, nics 
 
 	offset, limit := filter.OffSetAndLimitParse(&r)
 
-	bladeID, hasBlade := r.QueryParams["bladeID"]
+	bladeID, hasBlade := r.QueryParams["bladesID"]
 	if hasBlade {
 		count, nics, err = n.NicStorage.GetAllByBladeID(offset, limit, bladeID)
 		return
