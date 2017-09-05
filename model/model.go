@@ -18,8 +18,8 @@ To make the magic of dynamic filtering work, we need to define each json field m
 
 // Nic contains the network information of the cards attached to blades or chassis
 type Nic struct {
-	Name        string    `json:"name"`
 	MacAddress  string    `json:"mac_address" gorm:"primary_key"`
+	Name        string    `json:"name"`
 	UpdatedAt   time.Time `json:"updated_at"`
 	BladeSerial string    `json:"-"`
 }

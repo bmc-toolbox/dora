@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"sync"
 
 	"github.com/jinzhu/gorm"
@@ -33,7 +34,7 @@ func (c *Connection) HwType() (hwtype string) {
 }
 
 func (c *Connection) detect() (err error) {
-	log.WithFields(log.Fields{"step": "onnection", "host": c.host}).Info("Detecting vendor")
+	log.WithFields(log.Fields{"step": "connection", "host": c.host}).Info("Detecting vendor")
 
 	client, err := buildClient()
 	if err != nil {
@@ -145,9 +146,29 @@ func (c *Connection) Collect() (i interface{}, err error) {
 	return i, err
 }
 
-func collect(input <-chan *Connection, db *gorm.DB) {
-	for hosts := range input {
+func collect(input <-chan string, db *gorm.DB) {
+	bmcUser := viper.GetString("bmc_user")
+	bmcPass := viper.GetString("bmc_pass")
 
+	for host := range input {
+		c, err := NewConnection(bmcUser, bmcPass, host)
+		if err != nil {
+			log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType(), "error": err}).Error(fmt.Sprintf("Connecting to host"))
+		}
+		if c.HwType() != Blade {
+			data, err := c.Collect()
+			if err != nil {
+				log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType(), "error": err}).Error(fmt.Sprintf("Collecting data"))
+			}
+			switch data.(type) {
+			case *model.Chassis:
+				chassisStorage := storage.NewChassisStorage(db)
+				_, err = chassisStorage.UpdateOrCreate(data.(*model.Chassis))
+			case *model.Blade:
+				bladeStorage := storage.NewBladeStorage(db)
+				_, err = bladeStorage.UpdateOrCreate(data.(*model.Blade))
+			}
+		}
 	}
 }
 
@@ -158,12 +179,10 @@ func DataCollection(ips []string) {
 	cc := make(chan string, concurrency)
 	wg := sync.WaitGroup{}
 	db := storage.InitDB()
-	bmcUser := viper.GetString("bmc_user")
-	bmcPass := viper.GetString("bmc_pass")
 
 	wg.Add(concurrency)
 	for i := 0; i < concurrency; i++ {
-		go func(input <-chan *Connection, db *gorm.DB, wg *sync.WaitGroup) {
+		go func(input <-chan string, db *gorm.DB, wg *sync.WaitGroup) {
 			collect(input, db)
 			wg.Done()
 		}(cc, db, &wg)
@@ -171,21 +190,31 @@ func DataCollection(ips []string) {
 
 	if ips[0] == "all" {
 		hosts := []model.ScannedPort{}
-		db.Where("port = 443 and protocol = 'tcp' and state = 'open'").Find(&scans)
-		for _, host := range hosts {
-			c := NewConnection(bmcUser, bmcPass, host.ScannedHostIP)
-			if c.HwType != Blade {
-				cc <- c
+		if err := db.Where("port = 443 and protocol = 'tcp' and state = 'open'").Find(&hosts).Error; err != nil {
+			log.WithFields(log.Fields{"operation": "connection", "ip": "all", "error": err}).Error(fmt.Sprintf("Retrieving scanned hosts"))
+		} else {
+			for _, host := range hosts {
+				cc <- host.ScannedHostIP
 			}
 		}
 	} else {
 		for _, ip := range ips {
 			host := model.ScannedPort{}
-			db.Where("scanned_host_ip = ? and port = 443 and protocol = 'tcp' and state = 'open'", ip).First(&scans)
-			for _, host := range hosts {
-				c := NewConnection(bmcUser, bmcPass, host.ScannedHostIP)
-				cc <- c
+			parsedIP := net.ParseIP(ip)
+			if parsedIP == nil {
+				lookup, err := net.LookupHost(ip)
+				if err != nil {
+					log.WithFields(log.Fields{"operation": "connection", "ip": ip, "error": err}).Error(fmt.Sprintf("Retrieving scanned hosts"))
+					continue
+				}
+				ip = lookup[0]
 			}
+
+			if err := db.Where("scanned_host_ip = ? and port = 443 and protocol = 'tcp' and state = 'open'", ip).Find(&host).Error; err != nil {
+				log.WithFields(log.Fields{"operation": "connection", "ip": ip, "error": err}).Error(fmt.Sprintf("Retrieving scanned hosts"))
+				continue
+			}
+			cc <- host.ScannedHostIP
 		}
 	}
 

@@ -35,14 +35,16 @@ usage: dora scan
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 0 && args[0] != "all" {
+			subnets := []string{}
 			for _, subnet := range args {
 				_, _, err := net.ParseCIDR(subnet)
 				if err != nil {
 					fmt.Println(err)
 					continue
 				}
-				scanner.ScanNetworks(subnet)
+				subnets = append(subnets, subnet)
 			}
+			scanner.ScanNetworks(subnets)
 		} else {
 			scanner.ScanNetworks([]string{"all"})
 		}

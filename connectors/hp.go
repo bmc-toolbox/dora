@@ -481,7 +481,11 @@ func (i *IloReader) TempC() (temp int, err error) {
 
 // Nics returns all found Nics in the device
 func (i *IloReader) Nics() (nics []*model.Nic, err error) {
-	if i.hpRimpBlade.HpHSI != nil && i.hpRimpBlade.HpHSI.HpNICS != nil && i.hpRimpBlade.HpHSI.HpNICS.HpNIC != nil {
+	nics = make([]*model.Nic, 0)
+
+	if i.hpRimpBlade.HpHSI != nil &&
+		i.hpRimpBlade.HpHSI.HpNICS != nil &&
+		i.hpRimpBlade.HpHSI.HpNICS.HpNIC != nil {
 		for _, nic := range i.hpRimpBlade.HpHSI.HpNICS.HpNIC {
 			n := &model.Nic{
 				Name:       nic.Description,
@@ -533,7 +537,9 @@ func (i *IloReader) Logout() (err error) {
 }
 
 // Blade return a populated blade object from collection
-func (i *IloReader) Blade() (blade model.Blade, err error) {
+func (i *IloReader) Blade() (blade *model.Blade, err error) {
+	blade = &model.Blade{}
+
 	blade.BmcAddress = *i.ip
 	blade.BmcType, _ = i.BmcType()
 	blade.BmcVersion, _ = i.BmcVersion()
@@ -735,39 +741,38 @@ func (h *HpChassisReader) Blades() (blades []*model.Blade, err error) {
 
 			if blade.BmcWEBReachable {
 				ilo, err := NewIloReader(&blade.BmcAddress, h.username, h.password)
-				if err != nil {
-					log.WithFields(log.Fields{"operation": "create ilo connection", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
-				}
-
-				blade.Nics, _ = ilo.Nics()
-
-				err = ilo.Login()
-				if err != nil {
-					log.WithFields(log.Fields{"operation": "opening ilo connection", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
-				} else {
-					defer ilo.Logout()
-					blade.BmcAuth = true
-
-					blade.BiosVersion, err = ilo.BiosVersion()
+				if err == nil {
+					blade.Nics, _ = ilo.Nics()
+					err = ilo.Login()
 					if err != nil {
-						log.WithFields(log.Fields{"operation": "reading bios version", "ip": blade.BmcAddress, "name": blade.Name, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
-					}
+						log.WithFields(log.Fields{"operation": "opening ilo connection", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+					} else {
+						defer ilo.Logout()
+						blade.BmcAuth = true
 
-					blade.Processor, blade.ProcessorCount, blade.ProcessorCoreCount, blade.ProcessorThreadCount, err = ilo.CPU()
-					if err != nil {
-						log.WithFields(log.Fields{"operation": "reading cpu data", "ip": blade.BmcAddress, "name": blade.Name, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
-					}
+						blade.BiosVersion, err = ilo.BiosVersion()
+						if err != nil {
+							log.WithFields(log.Fields{"operation": "reading bios version", "ip": blade.BmcAddress, "name": blade.Name, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+						}
 
-					blade.Memory, err = ilo.Memory()
-					if err != nil {
-						log.WithFields(log.Fields{"operation": "reading memory data", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
-					}
+						blade.Processor, blade.ProcessorCount, blade.ProcessorCoreCount, blade.ProcessorThreadCount, err = ilo.CPU()
+						if err != nil {
+							log.WithFields(log.Fields{"operation": "reading cpu data", "ip": blade.BmcAddress, "name": blade.Name, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+						}
 
-					blade.BmcLicenceType, blade.BmcLicenceStatus, err = ilo.License()
-					if err != nil {
-						log.WithFields(log.Fields{"operation": "reading license data", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+						blade.Memory, err = ilo.Memory()
+						if err != nil {
+							log.WithFields(log.Fields{"operation": "reading memory data", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+						}
+
+						blade.BmcLicenceType, blade.BmcLicenceStatus, err = ilo.License()
+						if err != nil {
+							log.WithFields(log.Fields{"operation": "reading license data", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+						}
 					}
 				}
+			} else {
+				log.WithFields(log.Fields{"operation": "create ilo connection", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
 			}
 
 			blades = append(blades, &blade)
@@ -777,7 +782,9 @@ func (h *HpChassisReader) Blades() (blades []*model.Blade, err error) {
 }
 
 // Chassis returns the full data collection of the chassis
-func (h *HpChassisReader) Chassis() (chassis model.Chassis, err error) {
+func (h *HpChassisReader) Chassis() (chassis *model.Chassis, err error) {
+	chassis = &model.Chassis{}
+
 	chassis.Name, _ = h.Name()
 	chassis.Serial, _ = h.Serial()
 	chassis.Model, _ = h.Model()

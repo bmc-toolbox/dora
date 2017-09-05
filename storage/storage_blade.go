@@ -105,3 +105,11 @@ func (b BladeStorage) GetOne(serial string) (blade model.Blade, err error) {
 	}
 	return blade, err
 }
+
+// UpdateOrCreate
+func (b *BladeStorage) UpdateOrCreate(blade *model.Blade) (serial string, err error) {
+	if err = b.db.Save(&blade).Error; err != nil {
+		return serial, err
+	}
+	return blade.Serial, nil
+}

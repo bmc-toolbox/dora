@@ -52,31 +52,14 @@ usage: dora collect
 			}
 		}
 
-		c, err := connectors.NewConnection(viper.GetString("bmc_user"), viper.GetString("bmc_pass"), args[0])
-		if err != nil {
-			fmt.Println(err)
+		if len(args) == 0 {
+			connectors.DataCollection([]string{"all"})
+		} else {
+			connectors.DataCollection(args)
 		}
-		fmt.Println(c)
-		data, err := c.Collect()
-		fmt.Printf("%v\n%v", data, err)
-
-		// if viper.GetBool("disable_chassis") == false {
-		// 	chassisStep()
-		// }
-
 	},
 }
 
 func init() {
 	RootCmd.AddCommand(collectCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// collectCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// collectCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
