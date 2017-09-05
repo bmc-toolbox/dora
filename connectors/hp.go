@@ -762,6 +762,11 @@ func (h *HpChassisReader) Blades() (blades []*model.Blade, err error) {
 					if err != nil {
 						log.WithFields(log.Fields{"operation": "reading memory data", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
 					}
+
+					blade.BmcLicenceType, blade.BmcLicenceStatus, err = i.License()
+					if err != nil {
+						log.WithFields(log.Fields{"operation": "reading license data", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+					}
 				}
 			}
 
