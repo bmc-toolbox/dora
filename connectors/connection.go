@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 
 	log "github.com/sirupsen/logrus"
-	"gitlab.booking.com/infra/dora/model"
 )
 
 // Connection is used to connect and later dicover the hardware information we have for each vendor
@@ -42,6 +41,18 @@ func (c *Connection) detect() (err error) {
 			return err
 		}
 
+		iloXMLC := &HpRimp{}
+		err = xml.Unmarshal(payload, iloXMLC)
+		if err != nil {
+			return err
+		}
+
+		if iloXMLC.HpInfra2 != nil {
+			c.vendor = HP
+			c.hwtype = Chassis
+			return err
+		}
+
 		iloXML := &HpRimpBlade{}
 		err = xml.Unmarshal(payload, iloXML)
 		if err != nil {
@@ -56,18 +67,6 @@ func (c *Connection) detect() (err error) {
 		} else if iloXML.HpMP != nil && iloXML.HpBladeBlade == nil {
 			c.vendor = HP
 			c.hwtype = Discrete
-			return err
-		}
-
-		iloXMLC := &HpRimp{}
-		err = xml.Unmarshal(payload, iloXMLC)
-		if err != nil {
-			return err
-		}
-
-		if iloXMLC.HpInfra2 != nil {
-			c.vendor = HP
-			c.hwtype = Chassis
 			return err
 		}
 
@@ -117,64 +116,20 @@ func NewConnection(username string, password string, host string) (c *Connection
 	return c, err
 }
 
-func (c *Connection) iLO() (b model.Blade, err error) {
-	ilo, err := NewIloReader(&c.host, &c.username, &c.password)
-	if err != nil {
-		log.WithFields(log.Fields{"operation": "create ilo connection", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
-	}
-
-	b.BmcAddress = c.host
-
-	b.BmcType, err = ilo.BmcType()
-	if err != nil {
-		return b, err
-	}
-
-	b.BmcVersion, err = ilo.BmcVersion()
-	if err != nil {
-		return b, err
-	}
-
-	b.Serial, err = ilo.Serial()
-	if err != nil {
-		return b, err
-	}
-
-	b.Model, err = ilo.Model()
-	if err != nil {
-		return b, err
-	}
-
-	err = ilo.Login()
-	if err != nil {
-		log.WithFields(log.Fields{"operation": "opening ilo connection", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
-	} else {
-		defer ilo.Logout()
-		b.BmcAuth = true
-
-		b.BiosVersion, err = ilo.BiosVersion()
-		if err != nil {
-			log.WithFields(log.Fields{"operation": "reading bios version", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
-		}
-
-		b.Processor, b.ProcessorCount, b.ProcessorCoreCount, b.ProcessorThreadCount, err = ilo.CPU()
-		if err != nil {
-			log.WithFields(log.Fields{"operation": "reading cpu data", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
-		}
-
-		b.Memory, err = ilo.Memory()
-		if err != nil {
-			log.WithFields(log.Fields{"operation": "reading memory data", "ip": b.BmcAddress, "name": b.Name, "serial": b.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
-		}
-
-	}
-	return b, err
-}
-
 // Collect collects all relevant data of the current hardwand and returns the populated object
 func (c *Connection) Collect() (i interface{}, err error) {
 	if c.vendor == HP && (c.hwtype == Blade || c.hwtype == Discrete) {
-		return c.iLO()
+		ilo, err := NewIloReader(&c.host, &c.username, &c.password)
+		if err != nil {
+			return i, err
+		}
+		return ilo.Blade()
+	} else if c.vendor == HP && c.hwtype == Chassis {
+		c7000, err := NewHpChassisReader(&c.host, &c.username, &c.password)
+		if err != nil {
+			return i, err
+		}
+		return c7000.Chassis()
 	}
 
 	return i, err

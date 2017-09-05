@@ -12,6 +12,8 @@ import (
 	"strings"
 
 	log "github.com/sirupsen/logrus"
+	"gitlab.booking.com/infra/dora/model"
+	"gitlab.booking.com/infra/dora/storage"
 )
 
 // HpBlade contains the unmarshalled data from the hp chassis
@@ -343,8 +345,8 @@ func (i *IloReader) Name() (name string, err error) {
 	return hpOverview.ServerName, err
 }
 
-// SystemHealth returns health string status from the bmc
-func (i *IloReader) SystemHealth() (health string, err error) {
+// Status returns health string status from the bmc
+func (i *IloReader) Status() (health string, err error) {
 	payload, err := i.get("json/overview")
 	if err != nil {
 		return health, err
@@ -471,6 +473,20 @@ func (i *IloReader) TempC() (temp int, err error) {
 	return temp, err
 }
 
+// Nics returns all found Nics in the device
+func (i *IloReader) Nics() (nics []*model.Nic, err error) {
+	if i.hpRimpBlade.HpHSI != nil && i.hpRimpBlade.HpHSI.HpNICS != nil && i.hpRimpBlade.HpHSI.HpNICS.HpNIC != nil {
+		for _, nic := range i.hpRimpBlade.HpHSI.HpNICS.HpNIC {
+			n := &model.Nic{
+				Name:       nic.Description,
+				MacAddress: strings.ToLower(nic.MacAddr),
+			}
+			nics = append(nics, n)
+		}
+	}
+	return nics, err
+}
+
 // Logout logs out and close the iLo connection
 func (i *IloReader) Logout() (err error) {
 	log.WithFields(log.Fields{"step": "Ilo Connection HP", "ip": *i.ip}).Debug("Logout from iLO")
@@ -493,8 +509,63 @@ func (i *IloReader) Logout() (err error) {
 	return err
 }
 
-// BladeSystemC7000Reader holds the status and properties of a connection to an BladeSystem device
-type BladeSystemC7000Reader struct {
+// Blade return a populated blade object from collection
+func (i *IloReader) Blade() (blade model.Blade, err error) {
+	blade.BmcAddress = *i.ip
+	blade.BmcType, _ = i.BmcType()
+	blade.BmcVersion, _ = i.BmcVersion()
+	blade.Serial, _ = i.Serial()
+	blade.Model, _ = i.Model()
+	blade.Nics, _ = i.Nics()
+
+	err = i.Login()
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "opening ilo connection", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "blade", "error": err}).Warning("Auditing blade")
+	} else {
+		defer i.Logout()
+		blade.BmcAuth = true
+
+		blade.BiosVersion, err = i.BiosVersion()
+		if err != nil {
+			log.WithFields(log.Fields{"operation": "reading bios version", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+		}
+
+		blade.Processor, blade.ProcessorCount, blade.ProcessorCoreCount, blade.ProcessorThreadCount, err = i.CPU()
+		if err != nil {
+			log.WithFields(log.Fields{"operation": "reading cpu data", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+		}
+
+		blade.Memory, err = i.Memory()
+		if err != nil {
+			log.WithFields(log.Fields{"operation": "reading memory data", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+		}
+
+		blade.Status, err = i.Status()
+		if err != nil {
+			log.WithFields(log.Fields{"operation": "reading status data", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+		}
+
+		blade.Name, err = i.Name()
+		if err != nil {
+			log.WithFields(log.Fields{"operation": "reading name data", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+		}
+
+		blade.TempC, err = i.TempC()
+		if err != nil {
+			log.WithFields(log.Fields{"operation": "reading thermal data", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+		}
+
+		blade.PowerKw, err = i.PowerKw()
+		if err != nil {
+			log.WithFields(log.Fields{"operation": "reading power usage data", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+		}
+	}
+
+	return blade, err
+}
+
+// HpChassisReader holds the status and properties of a connection to a BladeSystem device
+type HpChassisReader struct {
 	ip       *string
 	username *string
 	password *string
@@ -502,8 +573,8 @@ type BladeSystemC7000Reader struct {
 	hpRimp   *HpRimp
 }
 
-// NewBladeSystemC7000Reader returns a new IloReader ready to be used
-func NewBladeSystemC7000Reader(ip *string, username *string, password *string) (chassis *BladeSystemC7000Reader, err error) {
+// NewHpChassisReader returns a connection to HpChassisReader
+func NewHpChassisReader(ip *string, username *string, password *string) (chassis *HpChassisReader, err error) {
 	client, err := buildClient()
 	if err != nil {
 		return chassis, err
@@ -527,9 +598,165 @@ func NewBladeSystemC7000Reader(ip *string, username *string, password *string) (
 		return chassis, err
 	}
 
-	return &BladeSystemC7000Reader{ip: ip, username: username, password: password, hpRimp: hpRimp, client: client}, err
+	if hpRimp.HpInfra2 == nil {
+		return chassis, ErrUnabletoReadData
+	}
+
+	return &HpChassisReader{ip: ip, username: username, password: password, hpRimp: hpRimp, client: client}, err
 }
 
-func (c *BladeSystemC7000Reader) Chassis() (err error) {
-	return
+func (h *HpChassisReader) Name() (name string, err error) {
+	return h.hpRimp.HpInfra2.Encl, err
+}
+
+func (h *HpChassisReader) Model() (model string, err error) {
+	return h.hpRimp.HpMP.Pn, err
+}
+
+func (h *HpChassisReader) Serial() (serial string, err error) {
+	return strings.ToLower(h.hpRimp.HpInfra2.EnclSn), err
+}
+
+func (h *HpChassisReader) PowerKw() (power float64, err error) {
+	return h.hpRimp.HpInfra2.HpChassisPower.PowerConsumed / 1000.00, err
+}
+
+func (h *HpChassisReader) TempC() (temp int, err error) {
+	return h.hpRimp.HpInfra2.HpTemps.HpTemp.C, err
+}
+
+func (h *HpChassisReader) Status() (status string, err error) {
+	return h.hpRimp.HpInfra2.Status, err
+}
+
+func (h *HpChassisReader) FwVersion() (version string, err error) {
+	return h.hpRimp.HpMP.Fwri, err
+}
+
+func (h *HpChassisReader) PassThru() (passthru string, err error) {
+	passthru = "1G"
+	for _, hpswitch := range h.hpRimp.HpInfra2.HpSwitches.HpSwitch {
+		if strings.Contains(hpswitch.Spn, "10G") {
+			passthru = "10G"
+		}
+		break
+	}
+	return passthru, err
+}
+
+func (h *HpChassisReader) PowerSupplyCount() (count int, err error) {
+	return len(h.hpRimp.HpInfra2.HpChassisPower.HpPowersupply), err
+}
+
+func (h *HpChassisReader) Blades() (blades []*model.Blade, err error) {
+	name, _ := h.Name()
+	if h.hpRimp.HpInfra2.HpBlades != nil {
+		for _, hpBlade := range h.hpRimp.HpInfra2.HpBlades.HpBlade {
+			db := storage.InitDB()
+
+			blade := model.Blade{}
+			blade.BladePosition = hpBlade.HpBay.Connection
+			blade.Status = hpBlade.Status
+			blade.Serial = strings.ToLower(strings.TrimSpace(hpBlade.Bsn))
+
+			if blade.Serial == "" || blade.Serial == "[unknown]" {
+				nb := model.Blade{}
+				db.Where("bmc_address = ? and blade_position = ?", hpBlade.MgmtIPAddr, hpBlade.HpBay.Connection).First(&nb)
+				log.WithFields(log.Fields{"operation": "connection", "ip": *h.ip, "name": name, "position": blade.BladePosition, "type": "chassis", "error": "Review this blade. The chassis identifies it as connected, but we have no data"}).Error("Auditing blade")
+
+				if nb.Serial == "" {
+					continue
+				}
+
+				blade.Status = "Require Reseat"
+				blade.Serial = nb.Serial
+			}
+			blade.PowerKw = hpBlade.HpPower.PowerConsumed / 1000.00
+			blade.TempC = hpBlade.HpTemps.HpTemp.C
+			blade.Vendor = HP
+			blade.BmcType = hpBlade.MgmtType
+
+			if strings.Contains(hpBlade.Spn, "Storage") {
+				blade.Name = blade.Serial
+				blade.IsStorageBlade = true
+			} else {
+				blade.Name = hpBlade.Name
+				blade.IsStorageBlade = false
+				blade.BmcAddress = hpBlade.MgmtIPAddr
+				blade.BmcVersion = hpBlade.MgmtVersion
+				blade.Model = hpBlade.Spn
+			}
+
+			if blade.BmcAddress == "0.0.0.0" || blade.BmcAddress == "" || blade.BmcAddress == "[]" {
+				blade.BmcAddress = "unassigned"
+			} else if blade.IsStorageBlade == true {
+				blade.BmcAddress = "-"
+			} else {
+				scans := []model.ScannedPort{}
+				db.Where("scanned_host_ip = ?", blade.BmcAddress).Find(&scans)
+				for _, scan := range scans {
+					if scan.Port == 443 && scan.Protocol == "tcp" && scan.State == "open" {
+						blade.BmcWEBReachable = true
+					} else if scan.Port == 22 && scan.Protocol == "tcp" && scan.State == "open" {
+						blade.BmcSSHReachable = true
+					} else if scan.Port == 623 && scan.Protocol == "udp" && scan.State == "open" {
+						blade.BmcIpmiReachable = true
+					}
+				}
+			}
+
+			if blade.BmcWEBReachable {
+				ilo, err := NewIloReader(&blade.BmcAddress, h.username, h.password)
+				if err != nil {
+					log.WithFields(log.Fields{"operation": "create ilo connection", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+				}
+
+				blade.Nics, _ = ilo.Nics()
+
+				err = ilo.Login()
+				if err != nil {
+					log.WithFields(log.Fields{"operation": "opening ilo connection", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+				} else {
+					defer ilo.Logout()
+					blade.BmcAuth = true
+
+					blade.BiosVersion, err = ilo.BiosVersion()
+					if err != nil {
+						log.WithFields(log.Fields{"operation": "reading bios version", "ip": blade.BmcAddress, "name": blade.Name, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+					}
+
+					blade.Processor, blade.ProcessorCount, blade.ProcessorCoreCount, blade.ProcessorThreadCount, err = ilo.CPU()
+					if err != nil {
+						log.WithFields(log.Fields{"operation": "reading cpu data", "ip": blade.BmcAddress, "name": blade.Name, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+					}
+
+					blade.Memory, err = ilo.Memory()
+					if err != nil {
+						log.WithFields(log.Fields{"operation": "reading memory data", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+					}
+				}
+			}
+
+			blades = append(blades, &blade)
+		}
+	}
+	return blades, err
+}
+
+// Chassis returns the full data collection of the chassis
+func (h *HpChassisReader) Chassis() (chassis model.Chassis, err error) {
+	chassis.Name, _ = h.Name()
+	chassis.Serial, _ = h.Serial()
+	chassis.Model, _ = h.Model()
+	chassis.PowerKw, _ = h.PowerKw()
+	chassis.TempC, _ = h.TempC()
+	chassis.Status, _ = h.Status()
+	chassis.Vendor = HP
+	chassis.FwVersion, _ = h.FwVersion()
+	chassis.PowerSupplyCount, _ = h.PowerSupplyCount()
+	chassis.BmcAddress = *h.ip
+	chassis.PassThru, _ = h.PassThru()
+	chassis.Blades, _ = h.Blades()
+
+	return chassis, err
 }
