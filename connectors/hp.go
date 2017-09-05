@@ -178,6 +178,28 @@ type HpOverview struct {
 	Power         string `json:"power"`
 }
 
+// HpPowerSummary is the struct used to render the data from https://$ip/json/power_summary, it contains the basic information about the power usage of the machine
+type HpPowerSummary struct {
+	HostpwrState          string `json:"hostpwr_state"`
+	PowerSupplyInputPower int    `json:"power_supply_input_power"`
+}
+
+// HpHelthTemperature is the struct used to render the data from https://$ip/json/health_temperature, it contains the information about the thermal status of the machine
+type HpHelthTemperature struct {
+	HostpwrState string           `json:"hostpwr_state"`
+	InPost       int              `json:"in_post"`
+	Temperature  []*HpTemperature `json:"temperature"`
+}
+
+// HpTemperature is part of the data rendered from https://$ip/json/health_temperature, it contains the names of each component and their current temp
+type HpTemperature struct {
+	Label          string `json:"label"`
+	Location       string `json:"location"`
+	Status         string `json:"status"`
+	Currentreading int    `json:"currentreading"`
+	TempUnit       string `json:"temp_unit"`
+}
+
 // IloReader holds the status and properties of a connection to an iLO device
 type IloReader struct {
 	ip          *string
@@ -289,7 +311,14 @@ func (i *IloReader) Model() (model string, err error) {
 
 // BmcType returns the device model
 func (i *IloReader) BmcType() (bmcType string, err error) {
-	return i.hpRimpBlade.HpMP.Pn, err
+	switch i.hpRimpBlade.HpMP.Pn {
+	case "Integrated Lights-Out 4 (iLO 4)":
+		return "iLO4", err
+	case "Integrated Lights-Out 3 (iLO 3)":
+		return "iLO3", err
+	default:
+		return i.hpRimpBlade.HpMP.Pn, err
+	}
 }
 
 // BmcVersion returns the device model
@@ -381,7 +410,7 @@ func (i *IloReader) CPU() (cpu string, cpuCount int, coreCount int, hyperthreadC
 	return cpu, cpuCount, coreCount, hyperthreadCount, err
 }
 
-// BiosVersion returns the current verion of the bios
+// BiosVersion returns the current version of the bios
 func (i *IloReader) BiosVersion() (version string, err error) {
 	payload, err := i.get("json/overview")
 	if err != nil {
@@ -400,6 +429,46 @@ func (i *IloReader) BiosVersion() (version string, err error) {
 	}
 
 	return version, ErrBiosNotFound
+}
+
+// PowerKw returns the current power usage in Kw
+func (i *IloReader) PowerKw() (power float64, err error) {
+	payload, err := i.get("json/power_summary")
+	if err != nil {
+		return power, err
+	}
+
+	hpPowerSummary := &HpPowerSummary{}
+	err = json.Unmarshal(payload, hpPowerSummary)
+	if err != nil {
+		DumpInvalidPayload(*i.ip, payload)
+		return power, err
+	}
+
+	return float64(hpPowerSummary.PowerSupplyInputPower) / 1024, err
+}
+
+// TempC returns the current verion of the bios
+func (i *IloReader) TempC() (temp int, err error) {
+	payload, err := i.get("json/health_temperature")
+	if err != nil {
+		return temp, err
+	}
+
+	hpHelthTemperature := &HpHelthTemperature{}
+	err = json.Unmarshal(payload, hpHelthTemperature)
+	if err != nil {
+		DumpInvalidPayload(*i.ip, payload)
+		return temp, err
+	}
+
+	for _, item := range hpHelthTemperature.Temperature {
+		if item.Location == "Ambient" {
+			return item.Currentreading, err
+		}
+	}
+
+	return temp, err
 }
 
 // Logout logs out and close the iLo connection
@@ -422,4 +491,45 @@ func (i *IloReader) Logout() (err error) {
 	defer resp.Body.Close()
 
 	return err
+}
+
+// BladeSystemC7000Reader holds the status and properties of a connection to an BladeSystem device
+type BladeSystemC7000Reader struct {
+	ip       *string
+	username *string
+	password *string
+	client   *http.Client
+	hpRimp   *HpRimp
+}
+
+// NewBladeSystemC7000Reader returns a new IloReader ready to be used
+func NewBladeSystemC7000Reader(ip *string, username *string, password *string) (chassis *BladeSystemC7000Reader, err error) {
+	client, err := buildClient()
+	if err != nil {
+		return chassis, err
+	}
+
+	resp, err := client.Get(fmt.Sprintf("https://%s/xmldata?item=all", *ip))
+	if err != nil {
+		return chassis, err
+	}
+
+	payload, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return chassis, err
+	}
+	defer resp.Body.Close()
+
+	hpRimp := &HpRimp{}
+	err = xml.Unmarshal(payload, hpRimp)
+	if err != nil {
+		DumpInvalidPayload(*ip, payload)
+		return chassis, err
+	}
+
+	return &BladeSystemC7000Reader{ip: ip, username: username, password: password, hpRimp: hpRimp, client: client}, err
+}
+
+func (c *BladeSystemC7000Reader) Chassis() (err error) {
+	return
 }
