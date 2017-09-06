@@ -12,16 +12,7 @@ import (
 )
 
 const (
-	// HP is the constant that defines the vendor HP
-	HP = "HP"
-	// Dell is the constant that defines the vendor Dell
-	Dell = "Dell"
-	// Supermicro is the constant that defines the vendor Supermicro
-	Supermicro = "Supermicro"
-	// Common is the constant of thinks we could use across multiple vendors
-	Common = "Common"
-	// Unknown is the constant that defines Unknowns vendors
-	Unknown = "Unknown"
+
 	// RFPower is the constant for power definition on RedFish
 	RFPower = "power"
 	// RFThermal is the constant for thermal definition on RedFish
@@ -30,33 +21,37 @@ const (
 	RFEntry = "entry"
 	// RFCPU is the constant for CPU definition on RedFish
 	RFCPU = "cpu"
-	// Blade is the constant defining the blade hw type
-	Blade = "blade"
-	// Discrete is the constant defining the Discrete hw type
-	Discrete = "discrete"
-	// Chassis is the constant defining the chassis hw type
-	Chassis = "chassis"
+	// RFBMC is the constant for BMC definition on RedFish
+	RFBMC = "bmc"
+	// RFBMCNetwork is the constant for BMC Network definition on RedFish
+	RFBMCNetwork = "bmcNetwork"
 )
 
 var (
 	redfishVendorEndPoints = map[string]map[string]string{
 		Dell: map[string]string{
-			RFEntry:   "redfish/v1/Systems/System.Embedded.1/",
-			RFPower:   "redfish/v1/Chassis/System.Embedded.1/Power",
-			RFThermal: "redfish/v1/Chassis/System.Embedded.1/Thermal",
-			RFCPU:     "redfish/v1/Systems/System.Embedded.1/Processors/CPU.Socket.1",
+			RFEntry:      "redfish/v1/Systems/System.Embedded.1/",
+			RFPower:      "redfish/v1/Chassis/System.Embedded.1/Power",
+			RFThermal:    "redfish/v1/Chassis/System.Embedded.1/Thermal",
+			RFCPU:        "redfish/v1/Systems/System.Embedded.1/Processors/CPU.Socket.1",
+			RFBMC:        "redfish/v1/Managers/iDRAC.Embedded.1/",
+			RFBMCNetwork: "redfish/v1/Managers/iDRAC.Embedded.1/EthernetInterfaces/iDRAC.Embedded.1%23NIC.1",
 		},
 		HP: map[string]string{
-			RFEntry:   "rest/v1/Systems/1",
-			RFPower:   "rest/v1/Chassis/1/Power",
-			RFThermal: "rest/v1/Chassis/1/Thermal",
-			RFCPU:     "rest/v1/Systems/1/Processors/1",
+			RFEntry:      "redfish/v1/Systems/1/",
+			RFPower:      "redfish/v1/Chassis/1/Power/",
+			RFThermal:    "redfish/v1/Chassis/1/Thermal/",
+			RFCPU:        "redfish/v1/Systems/1/Processors/1/",
+			RFBMC:        "redfish/v1/Managers/1/",
+			RFBMCNetwork: "redfish/v1/Managers/1/EthernetInterfaces/1/",
 		},
 		Supermicro: map[string]string{
-			RFEntry:   "redfish/v1/Systems/1",
-			RFPower:   "redfish/v1/Chassis/1/Power",
-			RFThermal: "redfish/v1/Chassis/1/Thermal",
-			// Review	RFCPU:     "redfish/v1/Systems/1/Processors/1",
+			RFEntry:      "redfish/v1/Systems/1/",
+			RFPower:      "redfish/v1/Chassis/1/Power/",
+			RFThermal:    "redfish/v1/Chassis/1/Thermal/",
+			RFCPU:        "redfish/v1/Systems/1/Processors/1/",
+			RFBMC:        "redfish/v1/Managers/1/",
+			RFBMCNetwork: "redfish/v1/Managers/1/EthernetInterfaces/1/",
 		},
 	}
 	redfishVendorLabels = map[string]map[string]string{
@@ -123,6 +118,23 @@ type RedFishReader struct {
 	username *string
 	password *string
 	vendor   string
+}
+
+// RedFishManager holds the information related to the bmc itself
+type RedFishManager struct {
+	Description        string `json:"Description"`
+	EthernetInterfaces struct {
+		OdataID string `json:"@odata.id"`
+	} `json:"EthernetInterfaces"`
+	FirmwareVersion string         `json:"FirmwareVersion"`
+	Status          *RedFishStatus `json:"Status"`
+}
+
+// RedFishEthernetInterfaces holds the information related to network interfaces of the bmc
+
+// RedFishStatus contains the default RedFish status structure
+type RedFishStatus struct {
+	State string `json:"State"`
 }
 
 // NewRedFishReader returns a new RedFishReader ready to be used
@@ -250,4 +262,59 @@ func (r *RedFishReader) CPU() (cpu string, cpuCount int, coreCount int, hyperthr
 	}
 
 	return redFishEntry.ProcessorSummary.Model, redFishEntry.ProcessorSummary.Count, redFishCPU.TotalCores, redFishCPU.TotalThreads, err
+}
+
+// BiosVersion returns the current version of the bios
+func (r *RedFishReader) BiosVersion() (version string, err error) {
+	payload, err := r.get(redfishVendorEndPoints[r.vendor][RFEntry])
+	if err != nil {
+		return version, err
+	}
+
+	redFishEntry := &RedFishEntry{}
+	err = json.Unmarshal(payload, redFishEntry)
+	if err != nil {
+		DumpInvalidPayload(*r.ip, payload)
+		return version, err
+	}
+
+	return redFishEntry.BiosVersion, err
+}
+
+// BmcType returns the device model
+func (r *RedFishReader) BmcType() (bmcType string, err error) {
+	if r.vendor == Dell {
+		return "iDRAC", err
+	} else if r.vendor == HP {
+		// Since we know that only ilo4 and ilo5 have redfish, if we don't find ilo5 in the fw string it's ilo4
+		bmcversion, err := r.BmcVersion()
+		if err != nil {
+			return bmcType, err
+		} else if strings.Contains(bmcversion, "iLO5") {
+			return "iLO5", err
+		} else {
+			return "iLO4", err
+		}
+	} else if r.vendor == Supermicro {
+		return "Supermicro", err
+	}
+
+	return bmcType, err
+}
+
+// BmcVersion returns the device model
+func (r *RedFishReader) BmcVersion() (bmcVersion string, err error) {
+	payload, err := r.get(redfishVendorEndPoints[r.vendor][RFBMC])
+	if err != nil {
+		return bmcVersion, err
+	}
+
+	redFishManager := &RedFishManager{}
+	err = json.Unmarshal(payload, redFishManager)
+	if err != nil {
+		DumpInvalidPayload(*r.ip, payload)
+		return bmcVersion, err
+	}
+
+	return redFishManager.FirmwareVersion, err
 }
