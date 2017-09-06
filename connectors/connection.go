@@ -14,6 +14,25 @@ import (
 	"gitlab.booking.com/infra/dora/storage"
 )
 
+const (
+	// Blade is the constant defining the blade hw type
+	Blade = "blade"
+	// Discrete is the constant defining the Discrete hw type
+	Discrete = "discrete"
+	// Chassis is the constant defining the chassis hw type
+	Chassis = "chassis"
+	// HP is the constant that defines the vendor HP
+	HP = "HP"
+	// Dell is the constant that defines the vendor Dell
+	Dell = "Dell"
+	// Supermicro is the constant that defines the vendor Supermicro
+	Supermicro = "Supermicro"
+	// Common is the constant of thinks we could use across multiple vendors
+	Common = "Common"
+	// Unknown is the constant that defines Unknowns vendors
+	Unknown = "Unknown"
+)
+
 // Connection is used to connect and later dicover the hardware information we have for each vendor
 type Connection struct {
 	username string
@@ -127,6 +146,160 @@ func NewConnection(username string, password string, host string) (c *Connection
 	return c, err
 }
 
+func (c *Connection) blade(bmc Bmc) (blade *model.Blade) {
+	blade = &model.Blade{}
+	var err error
+
+	blade.BmcAddress = c.host
+	blade.Vendor = c.Vendor()
+
+	blade.BmcType, err = bmc.BmcType()
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "reading bmc type", "ip": blade.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
+	}
+
+	blade.BmcVersion, err = bmc.BmcVersion()
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "reading bmc version", "ip": blade.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
+	}
+
+	blade.Serial, err = bmc.Serial()
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "reading serial", "ip": blade.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
+	}
+
+	blade.Model, err = bmc.Model()
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "reading model", "ip": blade.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
+	}
+
+	blade.Nics, err = bmc.Nics()
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "reading nics", "ip": blade.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
+	}
+
+	err = bmc.Login()
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "bmc auth", "ip": blade.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
+	} else {
+		defer bmc.Logout()
+		blade.BmcAuth = true
+
+		blade.BiosVersion, err = bmc.BiosVersion()
+		if err != nil {
+			log.WithFields(log.Fields{"operation": "reading bios version", "ip": blade.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
+		}
+
+		blade.Processor, blade.ProcessorCount, blade.ProcessorCoreCount, blade.ProcessorThreadCount, err = bmc.CPU()
+		if err != nil {
+			log.WithFields(log.Fields{"operation": "reading cpu", "ip": blade.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
+		}
+
+		blade.Memory, err = bmc.Memory()
+		if err != nil {
+			log.WithFields(log.Fields{"operation": "reading memory", "ip": blade.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
+		}
+
+		blade.Status, err = bmc.Status()
+		if err != nil {
+			log.WithFields(log.Fields{"operation": "reading status", "ip": blade.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
+		}
+
+		blade.Name, err = bmc.Name()
+		if err != nil {
+			log.WithFields(log.Fields{"operation": "reading name", "ip": blade.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
+		}
+
+		blade.TempC, err = bmc.TempC()
+		if err != nil {
+			log.WithFields(log.Fields{"operation": "reading thermal data", "ip": blade.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
+		}
+
+		blade.PowerKw, err = bmc.PowerKw()
+		if err != nil {
+			log.WithFields(log.Fields{"operation": "reading power usage data", "ip": blade.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
+		}
+
+		blade.BmcLicenceType, blade.BmcLicenceStatus, err = bmc.License()
+		if err != nil {
+			log.WithFields(log.Fields{"operation": "reading license data", "ip": blade.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
+		}
+	}
+
+	return blade
+}
+
+func (c *Connection) chassis(ch BmcChassis) (chassis *model.Chassis) {
+	chassis = &model.Chassis{}
+	var err error
+
+	chassis.Vendor = c.Vendor()
+	chassis.BmcAddress = c.host
+	chassis.Name, err = ch.Name()
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "reading name", "ip": chassis.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
+	}
+
+	chassis.Serial, err = ch.Serial()
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "reading serial", "ip": chassis.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
+	}
+
+	chassis.Model, err = ch.Model()
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "reading model", "ip": chassis.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
+	}
+
+	chassis.PowerKw, err = ch.PowerKw()
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "reading power usage", "ip": chassis.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
+	}
+
+	chassis.TempC, err = ch.TempC()
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "reading thermal data", "ip": chassis.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
+	}
+
+	chassis.Status, err = ch.Status()
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "reading status", "ip": chassis.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
+	}
+
+	chassis.FwVersion, err = ch.FwVersion()
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "reading firmware version", "ip": chassis.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
+	}
+
+	chassis.PowerSupplyCount, err = ch.PowerSupplyCount()
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "reading psu count", "ip": chassis.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
+	}
+
+	chassis.PassThru, err = ch.PassThru()
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "reading passthru", "ip": chassis.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
+	}
+
+	chassis.Blades, err = ch.Blades()
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "reading blades", "ip": chassis.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
+	}
+
+	db := storage.InitDB()
+
+	scans := []model.ScannedPort{}
+	db.Where("scanned_host_ip = ?", chassis.BmcAddress).Find(&scans)
+	for _, scan := range scans {
+		if scan.Port == 443 && scan.Protocol == "tcp" && scan.State == "open" {
+			chassis.BmcWEBReachable = true
+		} else if scan.Port == 22 && scan.Protocol == "tcp" && scan.State == "open" {
+			chassis.BmcSSHReachable = true
+		}
+	}
+
+	return chassis
+}
+
 // Collect collects all relevant data of the current hardwand and returns the populated object
 func (c *Connection) Collect() (i interface{}, err error) {
 	if c.vendor == HP && (c.hwtype == Blade || c.hwtype == Discrete) {
@@ -134,14 +307,20 @@ func (c *Connection) Collect() (i interface{}, err error) {
 		if err != nil {
 			return i, err
 		}
-		return ilo.Blade()
+		return c.blade(ilo), err
 	} else if c.vendor == HP && c.hwtype == Chassis {
 		c7000, err := NewHpChassisReader(&c.host, &c.username, &c.password)
 		if err != nil {
 			return i, err
 		}
-		return c7000.Chassis()
-	}
+		return c.chassis(c7000), err
+	} /* else if c.vendor == Dell && (c.hwtype == Blade || c.hwtype == Discrete) {
+		redfish, err := NewRedFishReader(&c.host, &c.username, &c.password)
+		if err != nil {
+			return i, err
+		}
+		return c.blade(redfish), err
+	} */
 
 	return i, err
 }
@@ -183,8 +362,8 @@ func DataCollection(ips []string) {
 	wg.Add(concurrency)
 	for i := 0; i < concurrency; i++ {
 		go func(input <-chan string, db *gorm.DB, wg *sync.WaitGroup) {
+			defer wg.Done()
 			collect(input, db)
-			wg.Done()
 		}(cc, db, &wg)
 	}
 
