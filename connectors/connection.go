@@ -184,6 +184,7 @@ func (c *Connection) blade(bmc Bmc) (blade *model.Blade) {
 	} else {
 		defer bmc.Logout()
 		blade.BmcAuth = true
+		blade.BmcWEBReachable = true
 
 		blade.BiosVersion, err = bmc.BiosVersion()
 		if err != nil {
@@ -223,6 +224,17 @@ func (c *Connection) blade(bmc Bmc) (blade *model.Blade) {
 		blade.BmcLicenceType, blade.BmcLicenceStatus, err = bmc.License()
 		if err != nil {
 			log.WithFields(log.Fields{"operation": "reading license data", "ip": blade.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
+		}
+	}
+
+	db := storage.InitDB()
+	scans := []model.ScannedPort{}
+	db.Where("scanned_host_ip = ?", blade.BmcAddress).Find(&scans)
+	for _, scan := range scans {
+		if scan.Port == 22 && scan.Protocol == "tcp" && scan.State == "open" {
+			blade.BmcSSHReachable = true
+		} else if scan.Port == 623 && scan.Protocol == "udp" && scan.State == "open" {
+			blade.BmcIpmiReachable = true
 		}
 	}
 
@@ -286,7 +298,6 @@ func (c *Connection) chassis(ch BmcChassis) (chassis *model.Chassis) {
 	}
 
 	db := storage.InitDB()
-
 	scans := []model.ScannedPort{}
 	db.Where("scanned_host_ip = ?", chassis.BmcAddress).Find(&scans)
 	for _, scan := range scans {
