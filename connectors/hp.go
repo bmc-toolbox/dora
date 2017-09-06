@@ -309,7 +309,7 @@ func (i *IloReader) get(endpoint string) (payload []byte, err error) {
 
 // Serial returns the device model
 func (i *IloReader) Serial() (serial string, err error) {
-	return i.hpRimpBlade.HpHSI.Sbsn, err
+	return strings.ToLower(strings.TrimSpace(i.hpRimpBlade.HpHSI.Sbsn)), err
 }
 
 // Model returns the device model
@@ -648,7 +648,7 @@ func (h *HpChassisReader) Model() (model string, err error) {
 }
 
 func (h *HpChassisReader) Serial() (serial string, err error) {
-	return strings.ToLower(h.hpRimp.HpInfra2.EnclSn), err
+	return strings.ToLower(strings.TrimSpace(h.hpRimp.HpInfra2.EnclSn)), err
 }
 
 func (h *HpChassisReader) PowerKw() (power float64, err error) {
