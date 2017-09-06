@@ -35,8 +35,6 @@ usage: dora collect
        dora collect 192.168.0.1
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("collect called")
-
 		configItems := []string{
 			"bmc_pass",
 			"bmc_user",

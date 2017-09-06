@@ -350,10 +350,13 @@ func collect(input <-chan string, db *gorm.DB) {
 			data, err := c.Collect()
 			if err != nil {
 				log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType(), "error": err}).Error("Collecting data")
+				continue
 			}
+
 			switch data.(type) {
 			case *model.Chassis:
 				chassisStorage := storage.NewChassisStorage(db)
+
 				_, err = chassisStorage.UpdateOrCreate(data.(*model.Chassis))
 				if err != nil {
 					log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType(), "error": err}).Error("Collecting data")

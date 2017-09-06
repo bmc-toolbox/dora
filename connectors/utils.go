@@ -40,7 +40,6 @@ var (
 	ErrRedFishEndPoint500 = errors.New("We've received 500 calling this endpoint")
 	// ErrUnabletoReadData is returned when we fail to read data from a chassis or bmc
 	ErrUnabletoReadData = errors.New("Unable to read data from this device")
-	// ErrHasNo
 )
 
 // newUUID generates a random UUID according to RFC 4122
