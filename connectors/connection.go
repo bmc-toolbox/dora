@@ -233,7 +233,7 @@ func (c *Connection) blade(bmc Bmc) (blade *model.Blade) {
 	for _, scan := range scans {
 		if scan.Port == 22 && scan.Protocol == "tcp" && scan.State == "open" {
 			blade.BmcSSHReachable = true
-		} else if scan.Port == 623 && scan.Protocol == "udp" && scan.State == "open" {
+		} else if scan.Port == 623 && scan.Protocol == "udp" && (scan.State == "open|filtered" || scan.State == "open") {
 			blade.BmcIpmiReachable = true
 		}
 	}
