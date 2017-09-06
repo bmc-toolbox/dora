@@ -65,7 +65,11 @@ func (c *Connection) detect() (err error) {
 		return err
 	}
 
+	fmt.Println(1)
+
 	if resp.StatusCode == 200 {
+		log.WithFields(log.Fields{"step": "connection", "host": c.host, "data": "It seems to be HP"}).Debug("Detecting vendor")
+
 		payload, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			return err
@@ -78,6 +82,7 @@ func (c *Connection) detect() (err error) {
 		}
 
 		if iloXMLC.HpInfra2 != nil {
+			log.WithFields(log.Fields{"step": "connection", "host": c.host, "data": "It's a chassis"}).Debug("Detecting vendor")
 			c.vendor = HP
 			c.hwtype = Chassis
 			return err
@@ -91,10 +96,12 @@ func (c *Connection) detect() (err error) {
 		}
 
 		if iloXML.HpBladeBlade != nil {
+			log.WithFields(log.Fields{"step": "connection", "host": c.host, "data": "It's a blade"}).Debug("Detecting vendor")
 			c.vendor = HP
 			c.hwtype = Blade
 			return err
 		} else if iloXML.HpMP != nil && iloXML.HpBladeBlade == nil {
+			log.WithFields(log.Fields{"step": "connection", "host": c.host, "data": "It's a discrete"}).Debug("Detecting vendor")
 			c.vendor = HP
 			c.hwtype = Discrete
 			return err
@@ -333,7 +340,7 @@ func (c *Connection) Collect() (i interface{}, err error) {
 		return c.blade(redfish), err
 	} */
 
-	return i, err
+	return i, ErrVendorUnknown
 }
 
 func collect(input <-chan string, db *gorm.DB) {
@@ -346,27 +353,30 @@ func collect(input <-chan string, db *gorm.DB) {
 			log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType(), "error": err}).Error("Connecting to host")
 			continue
 		}
-		if c.HwType() != Blade {
-			data, err := c.Collect()
+
+		if c.HwType() == Blade {
+			log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType(), "data": "We don't want to scan blades directly since the chassis does it for us"}).Debug("Connecting to host")
+			continue
+		}
+
+		data, err := c.Collect()
+		if err != nil {
+			log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType(), "error": err}).Error("Collecting data")
+			continue
+		}
+
+		switch data.(type) {
+		case *model.Chassis:
+			chassisStorage := storage.NewChassisStorage(db)
+			_, err = chassisStorage.UpdateOrCreate(data.(*model.Chassis))
 			if err != nil {
 				log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType(), "error": err}).Error("Collecting data")
-				continue
 			}
-
-			switch data.(type) {
-			case *model.Chassis:
-				chassisStorage := storage.NewChassisStorage(db)
-
-				_, err = chassisStorage.UpdateOrCreate(data.(*model.Chassis))
-				if err != nil {
-					log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType(), "error": err}).Error("Collecting data")
-				}
-			case *model.Blade:
-				bladeStorage := storage.NewBladeStorage(db)
-				_, err = bladeStorage.UpdateOrCreate(data.(*model.Blade))
-				if err != nil {
-					log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType(), "error": err}).Error("Collecting data")
-				}
+		case *model.Blade:
+			bladeStorage := storage.NewBladeStorage(db)
+			_, err = bladeStorage.UpdateOrCreate(data.(*model.Blade))
+			if err != nil {
+				log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType(), "error": err}).Error("Collecting data")
 			}
 		}
 	}

@@ -100,10 +100,10 @@ func buildClient() (client *http.Client, err error) {
 		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
 		DisableKeepAlives: true,
 		Dial: (&net.Dialer{
-			Timeout:   10 * time.Second,
-			KeepAlive: 10 * time.Second,
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
 		}).Dial,
-		TLSHandshakeTimeout: 10 * time.Second,
+		TLSHandshakeTimeout: 30 * time.Second,
 	}
 
 	jar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
@@ -112,7 +112,7 @@ func buildClient() (client *http.Client, err error) {
 	}
 
 	client = &http.Client{
-		Timeout:   time.Second * 20,
+		Timeout:   time.Second * 60,
 		Transport: tr,
 		Jar:       jar,
 	}
