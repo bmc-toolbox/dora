@@ -17,7 +17,7 @@ var (
 
 // InitDB creates and migrates the database
 func InitDB() *gorm.DB {
-	if db != nil && db.DB().Ping() == nil {
+	if db != nil {
 		return db
 	}
 
