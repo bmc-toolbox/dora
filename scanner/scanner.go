@@ -130,7 +130,7 @@ func scan(input <-chan toScan, db *gorm.DB) {
 				sp.Protocol = port.Protocol
 				sp.ScannedHostIP = sh.IP
 				if err = db.Save(&sp).Error; err != nil {
-					log.WithFields(log.Fields{"operation": "scanning ip", "error": err, "hosts": sh.IP}).Error("Scanning networks")
+					log.WithFields(log.Fields{"operation": "scanning ip", "error": err, "hosts": sh.IP, "port": sp.Port}).Error("Scanning networks")
 				}
 			}
 		}
