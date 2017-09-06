@@ -118,20 +118,22 @@ func scan(input <-chan toScan, db *gorm.DB) {
 				sh.IP = address.Addr
 				break
 			}
-			sh.State = host.Status.State
-			if err = db.Save(&sh).Error; err != nil {
+
+			if err = db.FirstOrCreate(&sh, model.ScannedHost{Addresses: sh.IP}).Error; err != nil {
 				log.WithFields(log.Fields{"operation": "scanning ip", "error": err, "hosts": sh.IP}).Error("Scanning networks")
 			}
+			sh.State = host.Status.State
 
 			for _, port := range host.Ports {
 				sp := model.ScannedPort{}
 				sp.Port = port.PortID
 				sp.State = port.State.State
 				sp.Protocol = port.Protocol
-				sp.ScannedHostIP = sh.IP
-				if err = db.Save(&sp).Error; err != nil {
-					log.WithFields(log.Fields{"operation": "scanning ip", "error": err, "hosts": sh.IP, "port": sp.Port}).Error("Scanning networks")
-				}
+				sh.Ports = append(sh.Ports, sp)
+			}
+
+			if err = db.Save(&sh).Error; err != nil {
+				log.WithFields(log.Fields{"operation": "scanning ip", "error": err, "hosts": sh.IP}).Error("Scanning networks")
 			}
 		}
 	}
