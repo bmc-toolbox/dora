@@ -40,6 +40,7 @@ var (
 	ErrRedFishEndPoint500 = errors.New("We've received 500 calling this endpoint")
 	// ErrUnabletoReadData is returned when we fail to read data from a chassis or bmc
 	ErrUnabletoReadData = errors.New("Unable to read data from this device")
+	// ErrHasNo
 )
 
 // newUUID generates a random UUID according to RFC 4122
@@ -98,7 +99,7 @@ func httpGet(url string, username *string, password *string) (payload []byte, er
 func buildClient() (client *http.Client, err error) {
 	tr := &http.Transport{
 		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
-		DisableKeepAlives: false,
+		DisableKeepAlives: true,
 		Dial: (&net.Dialer{
 			Timeout:   10 * time.Second,
 			KeepAlive: 10 * time.Second,
