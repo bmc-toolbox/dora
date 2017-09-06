@@ -114,12 +114,13 @@ func scan(input <-chan toScan, db *gorm.DB) {
 		}
 		for _, host := range nmap.Hosts {
 			sh := model.ScannedHost{}
+			ip := ""
 			for _, address := range host.Addresses {
-				sh.IP = address.Addr
+				ip = address.Addr
 				break
 			}
 
-			if err = db.FirstOrCreate(&sh, model.ScannedHost{Addresses: sh.IP}).Error; err != nil {
+			if err = db.FirstOrCreate(&sh, model.ScannedHost{IP: ip}).Error; err != nil {
 				log.WithFields(log.Fields{"operation": "scanning ip", "error": err, "hosts": sh.IP}).Error("Scanning networks")
 			}
 			sh.State = host.Status.State
