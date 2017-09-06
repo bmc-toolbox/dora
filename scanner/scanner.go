@@ -17,7 +17,10 @@ import (
 	"gitlab.booking.com/infra/dora/storage"
 )
 
-var ()
+const (
+	nmapTCPPorts = "22,443"
+	nmapUDPPorts = "623"
+)
 
 // Kea is the main entry for parsing the kea config file
 type Kea struct {
@@ -98,7 +101,7 @@ func scan(input <-chan toScan, db *gorm.DB) {
 		}
 
 		log.WithFields(log.Fields{"operation": "scanning ip", "subnet": subnet.Subnet, "protocol": subnet.Protocol}).Info("Scanning networks")
-		cmd := exec.Command("nmap", "-oX", "-", scanType, subnet.Subnet, "--max-parallelism=100", "-p", subnet.Ports, "--unprivileged")
+		cmd := exec.Command("sudo", "nmap", "-oX", "-", scanType, subnet.Subnet, "--max-parallelism=100", "-p", subnet.Ports)
 		content, err := cmd.Output()
 		if err != nil {
 			log.WithFields(log.Fields{"operation": "subnet parsing", "error": err}).Error("Scanning networks")
@@ -145,7 +148,6 @@ func ReadKeaConfig() (content []byte, err error) {
 // ScanNetworks scan specific or all networks and try to find chassis, blades and servers
 func ScanNetworks(subnets []string) {
 	site := strings.Split(viper.GetString("site"), " ")
-	tcpPorts := viper.GetString("nmap_tcp_ports")
 	concurrency := viper.GetInt("concurrency")
 
 	content, err := ReadKeaConfig()
@@ -161,8 +163,8 @@ func ScanNetworks(subnets []string) {
 	wg.Add(concurrency)
 	for i := 0; i < concurrency; i++ {
 		go func(input <-chan toScan, db *gorm.DB, wg *sync.WaitGroup) {
+			defer wg.Done()
 			scan(input, db)
-			wg.Done()
 		}(cc, db, &wg)
 	}
 
@@ -170,7 +172,13 @@ func ScanNetworks(subnets []string) {
 		for _, subnet := range LoadSubnets(content, site) {
 			t := toScan{
 				Subnet:   subnet.String(),
-				Ports:    tcpPorts,
+				Ports:    nmapUDPPorts,
+				Protocol: "udp",
+			}
+			cc <- t
+			t = toScan{
+				Subnet:   subnet.String(),
+				Ports:    nmapTCPPorts,
 				Protocol: "tcp",
 			}
 			cc <- t
@@ -190,7 +198,13 @@ func ScanNetworks(subnets []string) {
 			}
 			t := toScan{
 				Subnet:   subnet,
-				Ports:    tcpPorts,
+				Ports:    nmapUDPPorts,
+				Protocol: "udp",
+			}
+			cc <- t
+			t = toScan{
+				Subnet:   subnet,
+				Ports:    nmapTCPPorts,
 				Protocol: "tcp",
 			}
 			cc <- t
