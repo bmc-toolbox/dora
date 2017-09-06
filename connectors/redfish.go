@@ -290,7 +290,7 @@ func (r *RedFishReader) BmcType() (bmcType string, err error) {
 		bmcversion, err := r.BmcVersion()
 		if err != nil {
 			return bmcType, err
-		} else if strings.Contains(bmcversion, "iLO5") {
+		} else if strings.Contains(bmcversion, "iLO 5") {
 			return "iLO5", err
 		} else {
 			return "iLO4", err
