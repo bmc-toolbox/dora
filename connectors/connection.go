@@ -146,12 +146,19 @@ func NewConnection(username string, password string, host string) (c *Connection
 	return c, err
 }
 
-func (c *Connection) blade(bmc Bmc) (blade *model.Blade) {
+func (c *Connection) blade(bmc Bmc) (blade *model.Blade, err error) {
+	db := storage.InitDB()
 	blade = &model.Blade{}
-	var err error
 
-	blade.BmcAddress = c.host
-	blade.Vendor = c.Vendor()
+	blade.Serial, err = bmc.Serial()
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "reading serial", "ip": blade.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
+	}
+
+	if blade.Serial == "" {
+		log.WithFields(log.Fields{"operation": "reading serial", "ip": blade.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": "The server has no serial"}).Warning("Auditing hardware")
+		return nil, ErrUnabletoReadData
+	}
 
 	blade.BmcType, err = bmc.BmcType()
 	if err != nil {
@@ -161,11 +168,6 @@ func (c *Connection) blade(bmc Bmc) (blade *model.Blade) {
 	blade.BmcVersion, err = bmc.BmcVersion()
 	if err != nil {
 		log.WithFields(log.Fields{"operation": "reading bmc version", "ip": blade.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
-	}
-
-	blade.Serial, err = bmc.Serial()
-	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading serial", "ip": blade.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
 	}
 
 	blade.Model, err = bmc.Model()
@@ -227,7 +229,6 @@ func (c *Connection) blade(bmc Bmc) (blade *model.Blade) {
 		}
 	}
 
-	db := storage.InitDB()
 	scans := []model.ScannedPort{}
 	db.Where("scanned_host_ip = ?", blade.BmcAddress).Find(&scans)
 	for _, scan := range scans {
@@ -238,12 +239,11 @@ func (c *Connection) blade(bmc Bmc) (blade *model.Blade) {
 		}
 	}
 
-	return blade
+	return blade, nil
 }
 
-func (c *Connection) chassis(ch BmcChassis) (chassis *model.Chassis) {
+func (c *Connection) chassis(ch BmcChassis) (chassis *model.Chassis, err error) {
 	chassis = &model.Chassis{}
-	var err error
 
 	chassis.Vendor = c.Vendor()
 	chassis.BmcAddress = c.host
@@ -308,7 +308,7 @@ func (c *Connection) chassis(ch BmcChassis) (chassis *model.Chassis) {
 		}
 	}
 
-	return chassis
+	return chassis, nil
 }
 
 // Collect collects all relevant data of the current hardwand and returns the populated object
@@ -318,13 +318,13 @@ func (c *Connection) Collect() (i interface{}, err error) {
 		if err != nil {
 			return i, err
 		}
-		return c.blade(ilo), err
+		return c.blade(ilo)
 	} else if c.vendor == HP && c.hwtype == Chassis {
 		c7000, err := NewHpChassisReader(&c.host, &c.username, &c.password)
 		if err != nil {
 			return i, err
 		}
-		return c.chassis(c7000), err
+		return c.chassis(c7000)
 	} /* else if c.vendor == Dell && (c.hwtype == Blade || c.hwtype == Discrete) {
 		redfish, err := NewRedFishReader(&c.host, &c.username, &c.password)
 		if err != nil {
@@ -343,20 +343,27 @@ func collect(input <-chan string, db *gorm.DB) {
 	for host := range input {
 		c, err := NewConnection(bmcUser, bmcPass, host)
 		if err != nil {
-			log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType(), "error": err}).Error(fmt.Sprintf("Connecting to host"))
+			log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType(), "error": err}).Error("Connecting to host")
+			continue
 		}
 		if c.HwType() != Blade {
 			data, err := c.Collect()
 			if err != nil {
-				log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType(), "error": err}).Error(fmt.Sprintf("Collecting data"))
+				log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType(), "error": err}).Error("Collecting data")
 			}
 			switch data.(type) {
 			case *model.Chassis:
 				chassisStorage := storage.NewChassisStorage(db)
 				_, err = chassisStorage.UpdateOrCreate(data.(*model.Chassis))
+				if err != nil {
+					log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType(), "error": err}).Error("Collecting data")
+				}
 			case *model.Blade:
 				bladeStorage := storage.NewBladeStorage(db)
 				_, err = bladeStorage.UpdateOrCreate(data.(*model.Blade))
+				if err != nil {
+					log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType(), "error": err}).Error("Collecting data")
+				}
 			}
 		}
 	}
