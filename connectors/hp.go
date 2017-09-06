@@ -631,7 +631,7 @@ func (h *HpChassisReader) Blades() (blades []*model.Blade, err error) {
 			blade.Status = hpBlade.Status
 			blade.Serial = strings.ToLower(strings.TrimSpace(hpBlade.Bsn))
 
-			if blade.Serial == "" || blade.Serial == "[unknown]" {
+			if blade.Serial == "" || blade.Serial == "[unknown]" || blade.Serial == "0000000000" {
 				nb := model.Blade{}
 				db.Where("bmc_address = ? and blade_position = ?", hpBlade.MgmtIPAddr, hpBlade.HpBay.Connection).First(&nb)
 				log.WithFields(log.Fields{"operation": "connection", "ip": *h.ip, "name": name, "position": blade.BladePosition, "type": "chassis", "error": "Review this blade. The chassis identifies it as connected, but we have no data"}).Error("Auditing blade")

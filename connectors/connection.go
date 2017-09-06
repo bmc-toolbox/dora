@@ -162,7 +162,7 @@ func (c *Connection) blade(bmc Bmc) (blade *model.Blade, err error) {
 		log.WithFields(log.Fields{"operation": "reading serial", "ip": blade.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
 	}
 
-	if blade.Serial == "" {
+	if blade.Serial == "" || blade.Serial == "[unknown]" || blade.Serial == "0000000000" {
 		log.WithFields(log.Fields{"operation": "reading serial", "ip": blade.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": "The server has no serial"}).Warning("Auditing hardware")
 		return nil, ErrUnabletoReadData
 	}
