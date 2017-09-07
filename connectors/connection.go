@@ -158,6 +158,8 @@ func (c *Connection) blade(bmc Bmc) (blade *model.Blade, err error) {
 	blade = &model.Blade{}
 
 	blade.BmcAddress = c.host
+	blade.Vendor = c.Vendor
+
 	blade.Serial, err = bmc.Serial()
 	if err != nil {
 		log.WithFields(log.Fields{"operation": "reading serial", "ip": blade.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
