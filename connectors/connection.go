@@ -65,8 +65,6 @@ func (c *Connection) detect() (err error) {
 		return err
 	}
 
-	fmt.Println(1)
-
 	if resp.StatusCode == 200 {
 		log.WithFields(log.Fields{"step": "connection", "host": c.host, "data": "It seems to be HP"}).Debug("Detecting vendor")
 

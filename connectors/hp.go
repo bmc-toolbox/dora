@@ -24,6 +24,7 @@ type HpBlade struct {
 	MgmtType    string   `xml:" MGMTPN,omitempty"`
 	MgmtVersion string   `xml:" MGMTFWVERSION,omitempty"`
 	Name        string   `xml:" NAME,omitempty"`
+	Type        string   `xml:" TYPE,omitempty"`
 	HpPower     *HpPower `xml:" POWER,omitempty"`
 	Status      string   `xml:" STATUS,omitempty"`
 	Spn         string   `xml:" SPN,omitempty"`
@@ -646,18 +647,19 @@ func (h *HpChassisReader) Blades() (blades []*model.Blade, err error) {
 			blade.PowerKw = hpBlade.HpPower.PowerConsumed / 1000.00
 			blade.TempC = hpBlade.HpTemps.HpTemp.C
 			blade.Vendor = HP
-			blade.BmcType = hpBlade.MgmtType
+			blade.Model = hpBlade.Spn
 
-			if strings.Contains(hpBlade.Spn, "Storage") {
+			if hpBlade.Type == "STORAGE" {
 				blade.Name = blade.Serial
 				blade.IsStorageBlade = true
 				blade.BmcAddress = "-"
+				blade.BmcType = "-"
 			} else {
 				blade.Name = hpBlade.Name
 				blade.IsStorageBlade = false
 				blade.BmcAddress = hpBlade.MgmtIPAddr
 				blade.BmcVersion = hpBlade.MgmtVersion
-				blade.Model = hpBlade.Spn
+				blade.BmcType = hpBlade.MgmtType
 
 				if blade.BmcAddress == "0.0.0.0" || blade.BmcAddress == "" || blade.BmcAddress == "[]" {
 					blade.BmcAddress = "unassigned"
