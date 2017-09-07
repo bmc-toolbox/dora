@@ -158,7 +158,7 @@ func (c *Connection) blade(bmc Bmc) (blade *model.Blade, err error) {
 	blade = &model.Blade{}
 
 	blade.BmcAddress = c.host
-	blade.Vendor = c.Vendor
+	blade.Vendor = c.Vendor()
 
 	blade.Serial, err = bmc.Serial()
 	if err != nil {
