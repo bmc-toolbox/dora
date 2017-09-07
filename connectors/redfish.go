@@ -21,6 +21,8 @@ const (
 	RFEntry = "entry"
 	// RFCPU is the constant for CPU definition on RedFish
 	RFCPU = "cpu"
+	// RFCPUEntry is the constant for CPU count on RedFish
+	RFCPUEntry = "cpuEntry"
 	// RFBMC is the constant for BMC definition on RedFish
 	RFBMC = "bmc"
 	// RFBMCNetwork is the constant for BMC Network definition on RedFish
@@ -34,6 +36,7 @@ var (
 			RFPower:      "redfish/v1/Chassis/System.Embedded.1/Power",
 			RFThermal:    "redfish/v1/Chassis/System.Embedded.1/Thermal",
 			RFCPU:        "redfish/v1/Systems/System.Embedded.1/Processors/CPU.Socket.1",
+			RFCPUEntry:   "redfish/v1/Systems/System.Embedded.1/Processors/",
 			RFBMC:        "redfish/v1/Managers/iDRAC.Embedded.1/",
 			RFBMCNetwork: "redfish/v1/Managers/iDRAC.Embedded.1/EthernetInterfaces/iDRAC.Embedded.1%23NIC.1",
 		},
@@ -42,6 +45,7 @@ var (
 			RFPower:      "redfish/v1/Chassis/1/Power/",
 			RFThermal:    "redfish/v1/Chassis/1/Thermal/",
 			RFCPU:        "redfish/v1/Systems/1/Processors/1/",
+			RFCPUEntry:   "redfish/v1/Systems/1/Processors/",
 			RFBMC:        "redfish/v1/Managers/1/",
 			RFBMCNetwork: "redfish/v1/Managers/1/EthernetInterfaces/1/",
 		},
@@ -50,6 +54,7 @@ var (
 			RFPower:      "redfish/v1/Chassis/1/Power/",
 			RFThermal:    "redfish/v1/Chassis/1/Thermal/",
 			RFCPU:        "redfish/v1/Systems/1/Processors/1/",
+			RFCPUEntry:   "redfish/v1/Systems/1/Processors/",
 			RFBMC:        "redfish/v1/Managers/1/",
 			RFBMCNetwork: "redfish/v1/Managers/1/EthernetInterfaces/1/",
 		},
@@ -71,6 +76,7 @@ var (
 	bmcAddressBuild = regexp.MustCompile(".(prod|corp|dqs).")
 )
 
+// RedFishEntry contains the basic information that all vendors should support for redfish
 type RedFishEntry struct {
 	BiosVersion      string                        `json:"BiosVersion"`
 	Description      string                        `json:"Description"`
@@ -85,25 +91,30 @@ type RedFishEntry struct {
 	SystemType       string                        `json:"SystemType"`
 }
 
+// RedFishEntryMemorySummary is part of RedFishEntry and contains the memory information of the server
 type RedFishEntryMemorySummary struct {
 	Status               *RedFishEntryStatus `json:"Status"`
 	TotalSystemMemoryGiB float64             `json:"TotalSystemMemoryGiB"`
 }
 
+// RedFishEntryProcessorSummary is part of RedFishEntry and contains the basic cpu related informaation
 type RedFishEntryProcessorSummary struct {
 	Count  int                 `json:"Count"`
 	Model  string              `json:"Model"`
 	Status *RedFishEntryStatus `json:"Status"`
 }
 
+// RedFishEntryStatus it's the status information for redfish items
 type RedFishEntryStatus struct {
 	HealthRollUp string `json:"HealthRollUp"`
 }
 
+// RedFishEntryStatus it's the health information for redfish items
 type RedFishHealth struct {
 	Health string `json:"Health"`
 }
 
+// RedFishCPU contains the cpu information eg: model, count and so on
 type RedFishCPU struct {
 	Model        string         `json:"Model"`
 	Name         string         `json:"Name"`
@@ -128,6 +139,11 @@ type RedFishManager struct {
 	} `json:"EthernetInterfaces"`
 	FirmwareVersion string         `json:"FirmwareVersion"`
 	Status          *RedFishStatus `json:"Status"`
+}
+
+// RedFishCPUEntry it countains a list with all cpus endpoints we have installed in a given server
+type RedFishCPUEntry struct {
+	MembersOdataCount int `json:"Members@odata.count"`
 }
 
 // RedFishEthernetInterfaces holds the information related to network interfaces of the bmc
@@ -259,6 +275,23 @@ func (r *RedFishReader) CPU() (cpu string, cpuCount int, coreCount int, hyperthr
 	if err != nil {
 		DumpInvalidPayload(*r.ip, payload)
 		return cpu, cpuCount, coreCount, hyperthreadCount, err
+	}
+
+	// Supermicro doesn't know how to count procs it seems. They are exposing threads
+	// over the total proc count, so we need to do one extra call for Supermicro boxes
+	if r.vendor == Supermicro {
+		payload, err = r.get(redfishVendorEndPoints[r.vendor][RFCPUEntry])
+		if err != nil {
+			return cpu, cpuCount, coreCount, hyperthreadCount, err
+		}
+
+		redFishCPUEntry := &RedFishCPUEntry{}
+		err = json.Unmarshal(payload, redFishCPUEntry)
+		if err != nil {
+			DumpInvalidPayload(*r.ip, payload)
+			return cpu, cpuCount, coreCount, hyperthreadCount, err
+		}
+		return redFishEntry.ProcessorSummary.Model, redFishCPUEntry.MembersOdataCount, redFishCPU.TotalCores, redFishCPU.TotalThreads, err
 	}
 
 	return redFishEntry.ProcessorSummary.Model, redFishEntry.ProcessorSummary.Count, redFishCPU.TotalCores, redFishCPU.TotalThreads, err
