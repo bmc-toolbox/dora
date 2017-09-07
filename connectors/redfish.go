@@ -162,7 +162,7 @@ func (r *RedFishReader) detectVendor() (err error) {
 		return err
 	}
 
-	payload, err = r.get("redfish/v1/Systems/1")
+	payload, err = r.get(redfishVendorEndPoints[Supermicro][RFEntry])
 	if err != nil {
 		return err
 	}
