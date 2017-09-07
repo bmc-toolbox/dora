@@ -61,7 +61,7 @@ var (
 			RFPower:      []byte(``),
 			RFThermal:    []byte(``),
 			RFCPU:        []byte(``),
-			RFBMC:        []byte(``),
+			RFBMC:        []byte(`{"@odata.context":"/redfish/v1/$metadata#Manager.Manager","@odata.id":"/redfish/v1/Managers/iDRAC.Embedded.1","@odata.type":"#Manager.v1_0_2.Manager","Actions":{"#Manager.Reset":{"ResetType@Redfish.AllowableValues":["GracefulRestart"],"target":"/redfish/v1/Managers/iDRAC.Embedded.1/Actions/Manager.Reset"},"Oem":{"OemManager.v1_0_0#OemManager.ExportSystemConfiguration":{"ExportFormat@Redfish.AllowableValues":["XML"],"ExportUse@Redfish.AllowableValues":["Default","Clone","Replace"],"IncludeInExport@Redfish.AllowableValues":["Default","IncludeReadOnly","IncludePasswordHashValues"],"ShareParameters":{"ShareParameters@Redfish.AllowableValues":["IPAddress","ShareName","FileName","UserName","Password","Workgroup"],"ShareType@Redfish.AllowableValues":["NFS","CIFS"],"Target@Redfish.AllowableValues":["ALL","IDRAC","BIOS","NIC","RAID"]},"target":"/redfish/v1/Managers/iDRAC.Embedded.1/Actions/Oem/EID_674_Manager.ExportSystemConfiguration"},"OemManager.v1_0_0#OemManager.ImportSystemConfiguration":{"HostPowerState@Redfish.AllowableValues":["On","Off"],"ImportSystemConfiguration@Redfish.AllowableValues":["TimeToWait","ImportBuffer"],"ShareParameters":{"ShareParameters@Redfish.AllowableValues":["IPAddress","ShareName","FileName","UserName","Password","Workgroup"],"ShareType@Redfish.AllowableValues":["NFS","CIFS"],"Target@Redfish.AllowableValues":["ALL","IDRAC","BIOS","NIC","RAID"]},"ShutdownType@Redfish.AllowableValues":["Graceful","Forced","NoReboot"],"target":"/redfish/v1/Managers/iDRAC.Embedded.1/Actions/Oem/EID_674_Manager.ImportSystemConfiguration"},"OemManager.v1_0_0#OemManager.ImportSystemConfigurationPreview":{"ImportSystemConfigurationPreview@Redfish.AllowableValues":["ImportBuffer"],"ShareParameters":{"ShareParameters@Redfish.AllowableValues":["IPAddress","ShareName","FileName","UserName","Password","Workgroup"],"ShareType@Redfish.AllowableValues":["NFS","CIFS"],"Target@Redfish.AllowableValues":["ALL"]},"target":"/redfish/v1/Managers/iDRAC.Embedded.1/Actions/Oem/EID_674_Manager.ImportSystemConfigurationPreview"}}},"CommandShell":{"ConnectTypesSupported":["SSH","Telnet","IPMI"],"ConnectTypesSupported@odata.count":3,"MaxConcurrentSessions":5,"ServiceEnabled":true},"DateTime":"2017-09-07T16:48:14-05:00","DateTimeLocalOffset":"-05:00","Description":"BMC","EthernetInterfaces":{"@odata.id":"/redfish/v1/Managers/iDRAC.Embedded.1/EthernetInterfaces"},"FirmwareVersion":"2.41.40.40","GraphicalConsole":{"ConnectTypesSupported":["KVMIP"],"ConnectTypesSupported@odata.count":1,"MaxConcurrentSessions":6,"ServiceEnabled":true},"Id":"iDRAC.Embedded.1","Links":{"ManagerForChassis":[{"@odata.id":"/redfish/v1/Chassis/System.Embedded.1"}],"ManagerForChassis@odata.count":1,"ManagerForServers":[{"@odata.id":"/redfish/v1/Systems/System.Embedded.1"}],"ManagerForServers@odata.count":1},"LogServices":{"@odata.id":"/redfish/v1/Managers/iDRAC.Embedded.1/LogServices"},"ManagerType":"BMC","Model":"13G Modular","Name":"Manager","NetworkProtocol":{"@odata.id":"/redfish/v1/Managers/iDRAC.Embedded.1/NetworkProtocol"},"Redundancy":[],"Redundancy@odata.count":0,"RedundancySet":[],"RedundancySet@odata.count":0,"SerialConsole":{"ConnectTypesSupported":[],"ConnectTypesSupported@odata.count":0,"MaxConcurrentSessions":0,"ServiceEnabled":false},"SerialInterfaces":{"@odata.id":"/redfish/v1/Managers/iDRAC.Embedded.1/SerialInterfaces"},"Status":{"Health":"Ok","State":"Enabled"},"UUID":"3243434f-c0b9-4480-3510-00304c4c4544","VirtualMedia":{"@odata.id":"/redfish/v1/Managers/iDRAC.Embedded.1/VirtualMedia"}}`),
 			RFBMCNetwork: []byte(``),
 		},
 		HP: map[string][]byte{
@@ -69,7 +69,7 @@ var (
 			RFPower:      []byte(``),
 			RFThermal:    []byte(``),
 			RFCPU:        []byte(``),
-			RFBMC:        []byte(``),
+			RFBMC:        []byte(`{"@odata.context":"/redfish/v1/$metadata#Managers/Members/$entity","@odata.id":"/redfish/v1/Managers/1/","@odata.type":"#Manager.1.0.0.Manager","Actions":{"#Manager.Reset":{"target":"/redfish/v1/Managers/1/Actions/Manager.Reset/"}},"AvailableActions":[{"Action":"Reset"}],"CommandShell":{"ConnectTypesSupported":["SSH","Oem"],"Enabled":true,"MaxConcurrentSessions":9,"ServiceEnabled":true},"Description":"Manager View","EthernetInterfaces":{"@odata.id":"/redfish/v1/Managers/1/EthernetInterfaces/"},"Firmware":{"Current":{"VersionString":"iLO 4 v2.54"}},"FirmwareVersion":"iLO 4 v2.54","GraphicalConsole":{"ConnectTypesSupported":["KVMIP"],"Enabled":true,"MaxConcurrentSessions":10,"ServiceEnabled":true},"Id":"1","LogServices":{"@odata.id":"/redfish/v1/Managers/1/LogServices/"},"ManagerType":"BMC","Name":"Manager","NetworkProtocol":{"@odata.id":"/redfish/v1/Managers/1/NetworkService/"},"Oem":{"Hp":{"@odata.type":"#HpiLO.1.1.0.HpiLO","Actions":{"#HpiLO.ClearRestApiState":{"target":"/redfish/v1/Managers/1/Actions/Oem/Hp/HpiLO.ClearRestApiState/"},"#HpiLO.ResetToFactoryDefaults":{"ResetType@Redfish.AllowableValues":["Default"],"target":"/redfish/v1/Managers/1/Actions/Oem/Hp/HpiLO.ResetToFactoryDefaults/"},"#HpiLO.iLOFunctionality":{"target":"/redfish/v1/Managers/1/Actions/Oem/Hp/HpiLO.iLOFunctionality/"}},"AvailableActions":[{"Action":"ClearRestApiState","Capabilities":[{"AllowableValues":["/Oem/Hp"],"PropertyName":"Target"}]},{"Action":"ResetToFactoryDefaults","Capabilities":[{"AllowableValues":["Default"],"PropertyName":"ResetType"},{"AllowableValues":["/Oem/Hp"],"PropertyName":"Target"}]},{"Action":"iLOFunctionality","Capabilities":[{"AllowableValues":["/Oem/Hp"],"PropertyName":"Target"}]}],"ClearRestApiStatus":"DataPresent","FederationConfig":{"IPv6MulticastScope":"Site","MulticastAnnouncementInterval":600,"MulticastDiscovery":"Enabled","MulticastTimeToLive":5,"iLOFederationManagement":"Enabled"},"Firmware":{"Current":{"Date":"Jun 15 2017","DebugBuild":false,"MajorVersion":2,"MinorVersion":54,"Time":"","VersionString":"iLO 4 v2.54"}},"License":{"LicenseKey":"xxxxx-xxxxx-xxxxx-xxxxx-3DXMM","LicenseString":"iLO Advanced","LicenseType":"Perpetual"},"RequiredLoginForiLORBSU":false,"SerialCLISpeed":9600,"SerialCLIStatus":"EnabledAuthReq","Type":"HpiLO.1.1.0","VSPLogDownloadEnabled":false,"iLOSelfTestResults":[{"Notes":"","SelfTestName":"NVRAMData","Status":"OK"},{"Notes":"","SelfTestName":"NVRAMSpace","Status":"OK"},{"Notes":"Controller firmware revision  2.10.00  ","SelfTestName":"EmbeddedFlash/SDCard","Status":"OK"},{"Notes":"","SelfTestName":"EEPROM","Status":"OK"},{"Notes":"","SelfTestName":"HostRom","Status":"OK"},{"Notes":"","SelfTestName":"SupportedHost","Status":"OK"},{"Notes":"Version 1.0.9","SelfTestName":"PowerManagementController","Status":"Informational"},{"Notes":"ProLiant BL460c Gen9 System Programmable Logic Device version 0x17","SelfTestName":"CPLDPAL0","Status":"Informational"},{"Notes":"ProLiant BL460c Gen9 SAS Programmable Logic Device version 0x02","SelfTestName":"CPLDPAL1","Status":"Informational"}],"links":{"ActiveHealthSystem":{"href":"/redfish/v1/Managers/1/ActiveHealthSystem/"},"DateTimeService":{"href":"/redfish/v1/Managers/1/DateTime/"},"EmbeddedMediaService":{"href":"/redfish/v1/Managers/1/EmbeddedMedia/"},"FederationDispatch":{"extref":"/dispatch/"},"FederationGroups":{"href":"/redfish/v1/Managers/1/FederationGroups/"},"FederationPeers":{"href":"/redfish/v1/Managers/1/FederationPeers/"},"LicenseService":{"href":"/redfish/v1/Managers/1/LicenseService/"},"SecurityService":{"href":"/redfish/v1/Managers/1/SecurityService/"},"UpdateService":{"href":"/redfish/v1/Managers/1/UpdateService/"},"VSPLogLocation":{"extref":"/sol.log.gz/"}}}},"SerialConsole":{"ConnectTypesSupported":["SSH","IPMI","Oem"],"Enabled":true,"MaxConcurrentSessions":13,"ServiceEnabled":true},"Status":{"State":"Enabled"},"Type":"Manager.1.0.0","UUID":"1cf36323-33b6-50e8-a7b3-f58c1fea3f58","VirtualMedia":{"@odata.id":"/redfish/v1/Managers/1/VirtualMedia/"},"links":{"EthernetNICs":{"href":"/redfish/v1/Managers/1/EthernetInterfaces/"},"Logs":{"href":"/redfish/v1/Managers/1/LogServices/"},"ManagerForChassis":[{"href":"/redfish/v1/Chassis/1/"}],"ManagerForServers":[{"href":"/redfish/v1/Systems/1/"}],"NetworkService":{"href":"/redfish/v1/Managers/1/NetworkService/"},"VirtualMedia":{"href":"/redfish/v1/Managers/1/VirtualMedia/"},"self":{"href":"/redfish/v1/Managers/1/"}}}`),
 			RFBMCNetwork: []byte(``),
 		},
 		Supermicro: map[string][]byte{
@@ -77,11 +77,27 @@ var (
 			RFPower:      []byte(``),
 			RFThermal:    []byte(``),
 			RFCPU:        []byte(``),
-			RFBMC:        []byte(``),
+			RFBMC:        []byte(`{"@odata.context":"/redfish/v1/$metadata#Manager.Manager","@odata.type":"#Manager.Manager","@odata.id":"/redfish/v1/Managers/1","Id":"1","Name":"Manager","Description":"BMC","ManagerType":"BMC","UUID":"00000000-0000-0000-0000-0CC47AB982F7","Model":"ASPEED","FirmwareVersion":"3.25","DateTime":"2017-09-07T14:49:19+00:00","DateTimeLocalOffset":"+00:00","Status":{"State":"Enabled","Health":"OK"},"GraphicalConsole":{"ServiceEnabled":true,"MaxConcurrentSessions":4,"ConnectTypesSupported":["KVMIP"]},"SerialConsole":{"ServiceEnabled":true,"MaxConcurrentSessions":1,"ConnectTypesSupported":["SSH","IPMI"]},"CommandShell":{"ServiceEnabled":true,"MaxConcurrentSessions":0,"ConnectTypesSupported":["SSH"]},"EthernetInterfaces":{"@odata.id":"/redfish/v1/Managers/1/EthernetInterfaces"},"SerialInterfaces":{"@odata.id":"/redfish/v1/Managers/1/SerialInterfaces"},"NetworkProtocol":{"@odata.id":"/redfish/v1/Managers/1/NetworkProtocol"},"LogServices":{"@odata.id":"/redfish/v1/Managers/1/LogServices"},"VirtualMedia":{"@odata.id":"/redfish/v1/Managers/1/VM1"},"Links":{"ManagerForServers":[{"@odata.id":"/redfish/v1/Systems/1"}],"ManagerForChassis":[{"@odata.id":"/redfish/v1/Chassis/1"}],"Oem":{}},"Actions":{"Oem":{"#ManagerConfig.Reset":{"target":"/redfish/v1/Managers/1/Actions/Oem/ManagerConfig.Reset"}},"#Manager.Reset":{"target":"/redfish/v1/Managers/1/Actions/Manager.Reset"}},"Oem":{"ActiveDirectory":{"@odata.id":"/redfish/v1/Managers/1/ActiveDirectory"},"SMTP":{"@odata.id":"/redfish/v1/Managers/1/SMTP"},"RADIUS":{"@odata.id":"/redfish/v1/Managers/1/RADIUS"},"MouseMode":{"@odata.id":"/redfish/v1/Managers/1/MouseMode"},"NTP":{"@odata.id":"/redfish/v1/Managers/1/NTP"},"LDAP":{"@odata.id":"/redfish/v1/Managers/1/LDAP"},"IPAccessControl":{"@odata.id":"/redfish/v1/Managers/1/IPAccessControl"},"SMCRAKP":{"@odata.id":"/redfish/v1/Managers/1/SMCRAKP"},"SNMP":{"@odata.id":"/redfish/v1/Managers/1/SNMP"},"Syslog":{"@odata.id":"/redfish/v1/Managers/1/Syslog"},"Snooping":{"@odata.id":"/redfish/v1/Managers/1/Snooping"},"FanMode":{"@odata.id":"/redfish/v1/Managers/1/FanMode"}}}`),
 			RFBMCNetwork: []byte(``),
 		},
 	}
 )
+
+// Serial() (string, error)
+// Model() (string, error)
+// BmcType() (string, error)
+// BmcVersion() (string, error)
+// Name() (string, error)
+// Status() (string, error)
+// Memory() (int, error)
+// CPU() (string, int, int, int, error)
+// BiosVersion() (string, error)
+// PowerKw() (float64, error)
+// TempC() (int, error)
+// Nics() ([]*model.Nic, error)
+// License() (string, string, error)
+// Login() error
+// Logout() error
 
 func TestRedfishBios(t *testing.T) {
 	tt := []struct {
@@ -110,6 +126,165 @@ func TestRedfishBios(t *testing.T) {
 			Supermicro,
 			RFEntry,
 			"2.0",
+			"Supermicro",
+		},
+	}
+
+	for _, tc := range tt {
+		rf, err := setup(tc.vendor, tc.redfishendpoint, tc.detectionString)
+		if err == nil {
+
+			method := reflect.ValueOf(rf).MethodByName(tc.testType)
+			result := method.Call([]reflect.Value{})
+			answer := result[0].Interface()
+			nerr := result[1].Interface()
+			if nerr != nil {
+				t.Errorf("Found errors calling %s: %s", tc.testType, nerr)
+			}
+
+			if answer != tc.expectedAnswer {
+				t.Errorf("%s from vendor %s should answer %v: found %v", tc.testType, tc.vendor, tc.expectedAnswer, answer)
+			}
+		} else {
+			t.Errorf("Found errors during the test setup %v", err)
+		}
+		teardown()
+	}
+}
+
+func TestRedfishBmcType(t *testing.T) {
+	tt := []struct {
+		testType        string
+		vendor          string
+		redfishendpoint string
+		expectedAnswer  string
+		detectionString string
+	}{
+		{
+			"BmcType",
+			HP,
+			RFBMC,
+			"iLO4",
+			"iLO",
+		},
+		{
+			"BmcType",
+			Dell,
+			RFBMC,
+			"iDRAC",
+			"iDRAC",
+		},
+		{
+			"BmcType",
+			Supermicro,
+			RFBMC,
+			"Supermicro",
+			"Supermicro",
+		},
+	}
+
+	for _, tc := range tt {
+		rf, err := setup(tc.vendor, tc.redfishendpoint, tc.detectionString)
+		if err == nil {
+
+			method := reflect.ValueOf(rf).MethodByName(tc.testType)
+			result := method.Call([]reflect.Value{})
+			answer := result[0].Interface()
+			nerr := result[1].Interface()
+			if nerr != nil {
+				t.Errorf("Found errors calling %s: %s", tc.testType, nerr)
+			}
+
+			if answer != tc.expectedAnswer {
+				t.Errorf("%s from vendor %s should answer %v: found %v", tc.testType, tc.vendor, tc.expectedAnswer, answer)
+			}
+		} else {
+			t.Errorf("Found errors during the test setup %v", err)
+		}
+		teardown()
+	}
+}
+
+func TestRedfishBmcVersion(t *testing.T) {
+	tt := []struct {
+		testType        string
+		vendor          string
+		redfishendpoint string
+		expectedAnswer  string
+		detectionString string
+	}{
+		{
+			"BmcVersion",
+			HP,
+			RFBMC,
+			"iLO 4 v2.54",
+			"iLO",
+		},
+		{
+			"BmcVersion",
+			Dell,
+			RFBMC,
+			"2.41.40.40",
+			"iDRAC",
+		},
+		{
+			"BmcVersion",
+			Supermicro,
+			RFBMC,
+			"3.25",
+			"Supermicro",
+		},
+	}
+
+	for _, tc := range tt {
+		rf, err := setup(tc.vendor, tc.redfishendpoint, tc.detectionString)
+		if err == nil {
+
+			method := reflect.ValueOf(rf).MethodByName(tc.testType)
+			result := method.Call([]reflect.Value{})
+			answer := result[0].Interface()
+			nerr := result[1].Interface()
+			if nerr != nil {
+				t.Errorf("Found errors calling %s: %s", tc.testType, nerr)
+			}
+
+			if answer != tc.expectedAnswer {
+				t.Errorf("%s from vendor %s should answer %v: found %v", tc.testType, tc.vendor, tc.expectedAnswer, answer)
+			}
+		} else {
+			t.Errorf("Found errors during the test setup %v", err)
+		}
+		teardown()
+	}
+}
+
+func TestRedfishMemory(t *testing.T) {
+	tt := []struct {
+		testType        string
+		vendor          string
+		redfishendpoint string
+		expectedAnswer  int
+		detectionString string
+	}{
+		{
+			"Memory",
+			HP,
+			RFEntry,
+			128,
+			"iLO",
+		},
+		{
+			"Memory",
+			Dell,
+			RFEntry,
+			128,
+			"iDRAC",
+		},
+		{
+			"Memory",
+			Supermicro,
+			RFEntry,
+			128,
 			"Supermicro",
 		},
 	}
