@@ -338,6 +338,12 @@ func (c *Connection) Collect() (i interface{}, err error) {
 			return i, err
 		}
 		return c.chassis(c7000)
+	} else if c.vendor == Dell && c.hwtype == Chassis {
+		m1000e, err := NewDellCmcReader(&c.host, &c.username, &c.password)
+		if err != nil {
+			return i, err
+		}
+		return c.chassis(m1000e)
 	} /* else if c.vendor == Dell && (c.hwtype == Blade || c.hwtype == Discrete) {
 		redfish, err := NewRedFishReader(&c.host, &c.username, &c.password)
 		if err != nil {
