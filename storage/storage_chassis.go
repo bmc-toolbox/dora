@@ -90,6 +90,21 @@ func (c ChassisStorage) GetAllByBladesID(offset string, limit string, serials []
 	return count, chassis, err
 }
 
+// GetAllByStorageBladesID Chassis
+func (c ChassisStorage) GetAllByStorageBladesID(offset string, limit string, serials []string) (count int, chassis []model.Chassis, err error) {
+	if offset != "" && limit != "" {
+		if err = c.db.Limit(limit).Offset(offset).Joins("INNER JOIN storage_blade ON storage_blade.chassis_serial = chassis.serial").Where("storage_blade.serial in (?)", serials).Find(&chassis).Error; err != nil {
+			return count, chassis, err
+		}
+		c.db.Model(&model.Chassis{}).Joins("INNER JOIN storage_blade ON storage_blade.chassis_serial = chassis.serial").Where("storage_blade.serial in (?)", serials).Count(&count)
+	} else {
+		if err = c.db.Joins("INNER JOIN storage_blade ON storage_blade.chassis_serial = chassis.serial").Where("storage_blade.serial in (?)", serials).Find(&chassis).Error; err != nil {
+			return count, chassis, err
+		}
+	}
+	return count, chassis, err
+}
+
 // UpdateOrCreate
 func (c *ChassisStorage) UpdateOrCreate(chassis *model.Chassis) (serial string, err error) {
 	if err = c.db.Save(&chassis).Error; err != nil {
