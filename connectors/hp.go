@@ -630,16 +630,20 @@ func (h *HpChassisReader) StorageBlades() (storageBlades []*model.StorageBlade, 
 		for _, hpBlade := range h.hpRimp.HpInfra2.HpBlades.HpBlade {
 			if hpBlade.Type == "STORAGE" {
 				storageBlade := model.StorageBlade{}
+				storageBlade.Serial = strings.ToLower(strings.TrimSpace(hpBlade.Bsn))
+				chassisSerial, _ := h.Serial()
+				if storageBlade.Serial == "" || storageBlade.Serial == "[unknown]" || storageBlade.Serial == "0000000000" {
+					log.WithFields(log.Fields{"operation": "connection", "ip": *h.ip, "position": storageBlade.BladePosition, "type": "chassis", "chassis_serial": chassisSerial, "error": "Review this blade. The chassis identifies it as connected, but we have no data"}).Error("Auditing blade")
+					continue
+				}
 				storageBlade.BladePosition = hpBlade.HpBay.Connection
 				storageBlade.Status = hpBlade.Status
-				storageBlade.Serial = strings.ToLower(strings.TrimSpace(hpBlade.Bsn))
 				storageBlade.PowerKw = hpBlade.HpPower.PowerConsumed / 1000.00
 				storageBlade.TempC = hpBlade.HpTemps.HpTemp.C
 				storageBlade.Vendor = HP
 				storageBlade.FwVersion = hpBlade.BladeRomVer
 				storageBlade.Model = hpBlade.Spn
 
-				chassisSerial, _ := h.Serial()
 				blade := model.Blade{}
 				db.Where("chassis_serial = ? and blade_position = ?", chassisSerial, hpBlade.AssociatedBlade).First(&blade)
 				if blade.Serial != "" {
