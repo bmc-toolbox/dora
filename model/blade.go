@@ -65,7 +65,7 @@ func (b Blade) GetReferences() []jsonapi.Reference {
 		{
 			Type:         "storage_blades",
 			Name:         "storage_blades",
-			Relationship: jsonapi.ToManyRelationship,
+			Relationship: jsonapi.ToOneRelationship,
 		},
 	}
 }

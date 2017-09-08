@@ -48,7 +48,7 @@ func (s StorageBlade) GetReferences() []jsonapi.Reference {
 		{
 			Type:         "blades",
 			Name:         "blades",
-			Relationship: jsonapi.ToManyRelationship,
+			Relationship: jsonapi.ToOneRelationship,
 		},
 	}
 }
@@ -66,7 +66,7 @@ func (s StorageBlade) GetReferencedIDs() []jsonapi.ReferenceID {
 			ID:           s.BladeSerial,
 			Type:         "blades",
 			Name:         "blades",
-			Relationship: jsonapi.ToManyRelationship,
+			Relationship: jsonapi.ToOneRelationship,
 		},
 	}
 }
