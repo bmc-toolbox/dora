@@ -99,7 +99,7 @@ func (b StorageBladeStorage) GetAllByBladeID(offset string, limit string, serial
 
 // GetOne storageBlade
 func (b StorageBladeStorage) GetOne(serial string) (storageBlade model.StorageBlade, err error) {
-	if err := b.db.Preload("Nics").Where("serial = ?", serial).First(&storageBlade).Error; err != nil {
+	if err := b.db.Where("serial = ?", serial).First(&storageBlade).Error; err != nil {
 		return storageBlade, err
 	}
 	return storageBlade, err
