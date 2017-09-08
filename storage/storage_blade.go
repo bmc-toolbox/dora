@@ -68,7 +68,7 @@ func (b BladeStorage) GetAllByFilters(offset string, limit string, filters *filt
 	return count, blades, nil
 }
 
-// GetAllByChassisID of the Blades by chassisID
+// GetAllByChassisID retreives Blades by chassisID
 func (b BladeStorage) GetAllByChassisID(offset string, limit string, serials []string) (count int, blades []model.Blade, err error) {
 	if offset != "" && limit != "" {
 		if err = b.db.Limit(limit).Offset(offset).Where("chassis_serial in (?)", serials).Preload("Nics").Find(&blades).Error; err != nil {
@@ -83,7 +83,7 @@ func (b BladeStorage) GetAllByChassisID(offset string, limit string, serials []s
 	return count, blades, err
 }
 
-// GetAllByNicsID of the Blades by chassisID
+// GetAllByNicsID retreives Blades by nicsID
 func (b BladeStorage) GetAllByNicsID(offset string, limit string, macAddresses []string) (count int, blades []model.Blade, err error) {
 	if offset != "" && limit != "" {
 		if err = b.db.Limit(limit).Offset(offset).Joins("INNER JOIN nic ON nic.blade_serial = blade.serial").Where("nic.mac_address in (?)", macAddresses).Find(&blades).Error; err != nil {
@@ -92,6 +92,21 @@ func (b BladeStorage) GetAllByNicsID(offset string, limit string, macAddresses [
 		b.db.Model(&model.Blade{}).Joins("INNER JOIN nic ON nic.blade_serial = blade.serial").Where("nic.mac_address in (?)", macAddresses).Count(&count)
 	} else {
 		if err = b.db.Joins("INNER JOIN nic ON nic.blade_serial = blade.serial").Where("nic.mac_address in (?)", macAddresses).Find(&blades).Error; err != nil {
+			return count, blades, err
+		}
+	}
+	return count, blades, err
+}
+
+// GetAllByStorageBladesID retreives Blades by StorageBladesID
+func (b BladeStorage) GetAllByStorageBladesID(offset string, limit string, serials []string) (count int, blades []model.Blade, err error) {
+	if offset != "" && limit != "" {
+		if err = b.db.Limit(limit).Offset(offset).Joins("INNER JOIN storage_blade ON storage_blade.blade_serial = blade.serial").Where("storage_blade.serial in (?)", serials).Find(&blades).Error; err != nil {
+			return count, blades, err
+		}
+		b.db.Model(&model.Blade{}).Joins("INNER JOIN storage_blade ON storage_blade.blade_serial = blade.serial").Where("storage_blade.serial in (?)", serials).Count(&count)
+	} else {
+		if err = b.db.Joins("INNER JOIN storage_blade ON storage_blade.blade_serial = blade.serial").Where("storage_blade.serial in (?)", serials).Find(&blades).Error; err != nil {
 			return count, blades, err
 		}
 	}
