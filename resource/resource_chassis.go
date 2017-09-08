@@ -79,7 +79,15 @@ func (c ChassisResource) queryAndCountAllWrapper(r api2go.Request) (count int, c
 		count, chassis, err = c.ChassisStorage.GetAllByBladesID(offset, limit, bladesID)
 	}
 
-	if !hasFilters && !hasInclude && !hasBlade {
+	storageBladesID, hasStorageBlade := r.QueryParams["storage_bladesID"]
+	if hasStorageBlade {
+		count, chassis, err = c.ChassisStorage.GetAllByStorageBladesID(offset, limit, storageBladesID)
+		if err != nil {
+			return count, chassis, err
+		}
+	}
+
+	if !hasFilters && !hasInclude && !hasBlade && !hasStorageBlade {
 		count, chassis, err = c.ChassisStorage.GetAll(offset, limit)
 		if err != nil {
 			return count, chassis, err
