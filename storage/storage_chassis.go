@@ -19,12 +19,12 @@ type ChassisStorage struct {
 // GetAll returns all chassis
 func (c ChassisStorage) GetAll(offset string, limit string) (count int, chassis []model.Chassis, err error) {
 	if offset != "" && limit != "" {
-		if err = c.db.Limit(limit).Offset(offset).Order("serial").Find(&chassis).Error; err != nil {
+		if err = c.db.Limit(limit).Offset(offset).Order("serial asc").Find(&chassis).Error; err != nil {
 			return count, chassis, err
 		}
-		c.db.Order("serial").Limit(limit).Offset(offset).Find(&model.Chassis{}).Count(&count)
+		c.db.Model(&model.Chassis{}).Order("serial asc").Count(&count)
 	} else {
-		if err = c.db.Order("serial").Find(&chassis).Error; err != nil {
+		if err = c.db.Order("serial asc").Find(&chassis).Error; err != nil {
 			return count, chassis, err
 		}
 	}
@@ -34,12 +34,12 @@ func (c ChassisStorage) GetAll(offset string, limit string) (count int, chassis 
 // GetAllWithAssociations returns all chassis with their relationships
 func (c ChassisStorage) GetAllWithAssociations(offset string, limit string) (count int, chassis []model.Chassis, err error) {
 	if offset != "" && limit != "" {
-		if err = c.db.Order("serial").Preload("Blades").Find(&chassis).Error; err != nil {
+		if err = c.db.Order("serial asc").Preload("Blades").Find(&chassis).Error; err != nil {
 			return count, chassis, err
 		}
-		c.db.Order("serial").Find(&model.Chassis{}).Count(&count)
+		c.db.Model(&model.Chassis{}).Order("serial asc").Count(&count)
 	} else {
-		if err = c.db.Order("serial").Preload("Blades").Find(&chassis).Error; err != nil {
+		if err = c.db.Order("serial asc").Preload("Blades").Find(&chassis).Error; err != nil {
 			return count, chassis, err
 		}
 	}
