@@ -305,6 +305,11 @@ func (c *Connection) chassis(ch BmcChassis) (chassis *model.Chassis, err error) 
 		log.WithFields(log.Fields{"operation": "reading blades", "ip": chassis.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
 	}
 
+	chassis.StorageBlades, err = ch.StorageBlades()
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "reading blades", "ip": chassis.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
+	}
+
 	db := storage.InitDB()
 	scans := []model.ScannedPort{}
 	db.Where("scanned_host_ip = ?", chassis.BmcAddress).Find(&scans)

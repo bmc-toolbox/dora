@@ -48,7 +48,7 @@ func (c ChassisStorage) GetAllWithAssociations(offset string, limit string) (cou
 
 // GetOne Chassis
 func (c ChassisStorage) GetOne(serial string) (chassis model.Chassis, err error) {
-	if err = c.db.Where("serial = ?", serial).Preload("Blades").First(&chassis).Error; err != nil {
+	if err = c.db.Where("serial = ?", serial).Preload("Blades").Preload("StorageBlades").First(&chassis).Error; err != nil {
 		return chassis, err
 	}
 	return chassis, err

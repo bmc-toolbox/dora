@@ -33,4 +33,5 @@ type BmcChassis interface {
 	PassThru() (string, error)
 	PowerSupplyCount() (int, error)
 	Blades() ([]*model.Blade, error)
+	StorageBlades() ([]*model.StorageBlade, error)
 }

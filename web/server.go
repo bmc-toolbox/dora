@@ -51,8 +51,10 @@ func RunGin(port int, debug bool) {
 	chassisStorage := storage.NewChassisStorage(db)
 	bladeStorage := storage.NewBladeStorage(db)
 	nicStorage := storage.NewNicStorage(db)
+	storageBladeStorage := storage.NewStorageBladeStorage(db)
 	api.AddResource(model.Chassis{}, resource.ChassisResource{BladeStorage: bladeStorage, ChassisStorage: chassisStorage})
 	api.AddResource(model.Blade{}, resource.BladeResource{BladeStorage: bladeStorage, ChassisStorage: chassisStorage, NicStorage: nicStorage})
+	api.AddResource(model.StorageBlade{}, resource.StorageBladeResource{StorageBladeStorage: storageBladeStorage, ChassisStorage: chassisStorage, BladeStorage: bladeStorage})
 	api.AddResource(model.Nic{}, resource.NicResource{BladeStorage: bladeStorage, NicStorage: nicStorage})
 
 	r.GET("/", func(c *gin.Context) {

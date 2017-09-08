@@ -18,17 +18,19 @@ import (
 
 // HpBlade contains the unmarshalled data from the hp chassis
 type HpBlade struct {
-	HpBay       *HpBay   `xml:" BAY,omitempty"`
-	Bsn         string   `xml:" BSN,omitempty"`
-	MgmtIPAddr  string   `xml:" MGMTIPADDR,omitempty"`
-	MgmtType    string   `xml:" MGMTPN,omitempty"`
-	MgmtVersion string   `xml:" MGMTFWVERSION,omitempty"`
-	Name        string   `xml:" NAME,omitempty"`
-	Type        string   `xml:" TYPE,omitempty"`
-	HpPower     *HpPower `xml:" POWER,omitempty"`
-	Status      string   `xml:" STATUS,omitempty"`
-	Spn         string   `xml:" SPN,omitempty"`
-	HpTemps     *HpTemps `xml:" TEMPS,omitempty"`
+	HpBay           *HpBay   `xml:" BAY,omitempty"`
+	Bsn             string   `xml:" BSN,omitempty"`
+	MgmtIPAddr      string   `xml:" MGMTIPADDR,omitempty"`
+	MgmtType        string   `xml:" MGMTPN,omitempty"`
+	MgmtVersion     string   `xml:" MGMTFWVERSION,omitempty"`
+	Name            string   `xml:" NAME,omitempty"`
+	Type            string   `xml:" TYPE,omitempty"`
+	HpPower         *HpPower `xml:" POWER,omitempty"`
+	Status          string   `xml:" STATUS,omitempty"`
+	Spn             string   `xml:" SPN,omitempty"`
+	HpTemps         *HpTemps `xml:" TEMPS,omitempty"`
+	BladeRomVer     string   `xml:" BLADEROMVER,omitempty"`
+	AssociatedBlade string   `xml:" ASSOCIATEDBLADE,omitempty"`
 }
 
 // HpBay contains the position of the blade within the chassis
@@ -621,45 +623,69 @@ func (h *HpChassisReader) PowerSupplyCount() (count int, err error) {
 	return len(h.hpRimp.HpInfra2.HpChassisPower.HpPowersupply), err
 }
 
+// StorageBlades returns all StorageBlades found in this chassis
+func (h *HpChassisReader) StorageBlades() (storageBlades []*model.StorageBlade, err error) {
+	if h.hpRimp.HpInfra2.HpBlades != nil {
+		db := storage.InitDB()
+		for _, hpBlade := range h.hpRimp.HpInfra2.HpBlades.HpBlade {
+			if hpBlade.Type == "STORAGE" {
+				storageBlade := model.StorageBlade{}
+				storageBlade.BladePosition = hpBlade.HpBay.Connection
+				storageBlade.Status = hpBlade.Status
+				storageBlade.Serial = strings.ToLower(strings.TrimSpace(hpBlade.Bsn))
+				storageBlade.PowerKw = hpBlade.HpPower.PowerConsumed / 1000.00
+				storageBlade.TempC = hpBlade.HpTemps.HpTemp.C
+				storageBlade.Vendor = HP
+				storageBlade.FwVersion = hpBlade.BladeRomVer
+				storageBlade.Model = hpBlade.Spn
+
+				chassisSerial, _ := h.Serial()
+				blade := model.Blade{}
+				db.Where("chassis_serial = ? and blade_position = ?", chassisSerial, hpBlade.AssociatedBlade).First(&blade)
+				if blade.Serial != "" {
+					storageBlade.BladeSerial = blade.Serial
+				}
+				storageBlades = append(storageBlades, &storageBlade)
+			}
+		}
+	}
+	return storageBlades, err
+}
+
+// Blades returns all StorageBlades found in this chassis
 func (h *HpChassisReader) Blades() (blades []*model.Blade, err error) {
 	name, _ := h.Name()
 	if h.hpRimp.HpInfra2.HpBlades != nil {
+		db := storage.InitDB()
 		for _, hpBlade := range h.hpRimp.HpInfra2.HpBlades.HpBlade {
-			db := storage.InitDB()
+			if hpBlade.Type == "SERVER" {
+				blade := model.Blade{}
 
-			blade := model.Blade{}
-			blade.BladePosition = hpBlade.HpBay.Connection
-			blade.Status = hpBlade.Status
-			blade.Serial = strings.ToLower(strings.TrimSpace(hpBlade.Bsn))
+				blade.BladePosition = hpBlade.HpBay.Connection
+				blade.Status = hpBlade.Status
+				blade.Serial = strings.ToLower(strings.TrimSpace(hpBlade.Bsn))
 
-			if blade.Serial == "" || blade.Serial == "[unknown]" || blade.Serial == "0000000000" {
-				nb := model.Blade{}
-				db.Where("bmc_address = ? and blade_position = ?", hpBlade.MgmtIPAddr, hpBlade.HpBay.Connection).First(&nb)
-				log.WithFields(log.Fields{"operation": "connection", "ip": *h.ip, "name": name, "position": blade.BladePosition, "type": "chassis", "error": "Review this blade. The chassis identifies it as connected, but we have no data"}).Error("Auditing blade")
+				if blade.Serial == "" || blade.Serial == "[unknown]" || blade.Serial == "0000000000" {
+					nb := model.Blade{}
+					db.Where("bmc_address = ? and blade_position = ?", hpBlade.MgmtIPAddr, hpBlade.HpBay.Connection).First(&nb)
+					log.WithFields(log.Fields{"operation": "connection", "ip": *h.ip, "name": name, "position": blade.BladePosition, "type": "chassis", "error": "Review this blade. The chassis identifies it as connected, but we have no data"}).Error("Auditing blade")
 
-				if nb.Serial == "" {
-					continue
+					if nb.Serial == "" {
+						continue
+					}
+
+					blade.Status = "Require Reseat"
+					blade.Serial = nb.Serial
 				}
-
-				blade.Status = "Require Reseat"
-				blade.Serial = nb.Serial
-			}
-			blade.PowerKw = hpBlade.HpPower.PowerConsumed / 1000.00
-			blade.TempC = hpBlade.HpTemps.HpTemp.C
-			blade.Vendor = HP
-			blade.Model = hpBlade.Spn
-
-			if hpBlade.Type == "STORAGE" {
-				blade.Name = blade.Serial
-				blade.IsStorageBlade = true
-				blade.BmcAddress = "-"
-				blade.BmcType = "-"
-			} else {
+				blade.PowerKw = hpBlade.HpPower.PowerConsumed / 1000.00
+				blade.TempC = hpBlade.HpTemps.HpTemp.C
+				blade.Vendor = HP
+				blade.Model = hpBlade.Spn
 				blade.Name = hpBlade.Name
-				blade.IsStorageBlade = false
 				blade.BmcAddress = hpBlade.MgmtIPAddr
 				blade.BmcVersion = hpBlade.MgmtVersion
 				blade.BmcType = hpBlade.MgmtType
+				blade.BiosVersion = hpBlade.BladeRomVer
 
 				if blade.BmcAddress == "0.0.0.0" || blade.BmcAddress == "" || blade.BmcAddress == "[]" {
 					blade.BmcAddress = "unassigned"
@@ -691,11 +717,6 @@ func (h *HpChassisReader) Blades() (blades []*model.Blade, err error) {
 								defer ilo.Logout()
 								blade.BmcAuth = true
 
-								blade.BiosVersion, err = ilo.BiosVersion()
-								if err != nil {
-									log.WithFields(log.Fields{"operation": "reading bios version", "ip": blade.BmcAddress, "name": blade.Name, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
-								}
-
 								blade.Processor, blade.ProcessorCount, blade.ProcessorCoreCount, blade.ProcessorThreadCount, err = ilo.CPU()
 								if err != nil {
 									log.WithFields(log.Fields{"operation": "reading cpu data", "ip": blade.BmcAddress, "name": blade.Name, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
@@ -716,8 +737,8 @@ func (h *HpChassisReader) Blades() (blades []*model.Blade, err error) {
 						log.WithFields(log.Fields{"operation": "create ilo connection", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
 					}
 				}
+				blades = append(blades, &blade)
 			}
-			blades = append(blades, &blade)
 		}
 	}
 	return blades, err
