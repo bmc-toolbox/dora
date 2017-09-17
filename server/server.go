@@ -56,20 +56,19 @@ func buildClient() (client *http.Client, err error) {
 	return client, err
 }
 
-func serverDBQuery(subnet *string, macAddress *string) (lease string, err error) {
+func serverDBQuery(subnet *string, macAddress *string) (lease *string, err error) {
 	key := fmt.Sprintf("%s-%s", *subnet, *macAddress)
 	data, found := clru.Get(key)
 	if found {
-		return data.(string), err
+		lease := data.(*string)
+		return lease, err
 	}
 
 	url := fmt.Sprintf("%s/api/v1/interface/dhcp_request/%s/%s/", serverDBUrl, *subnet, *macAddress)
-	fmt.Println(url)
 	req, err := http.NewRequest("POST", url, nil)
 	if err != nil {
 		return lease, err
 	}
-	//req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Add("Authorization", authHeader)
 
 	resp, err := client.Do(req)
@@ -87,16 +86,14 @@ func serverDBQuery(subnet *string, macAddress *string) (lease string, err error)
 	}
 	defer resp.Body.Close()
 
-	fmt.Println(string(payload))
-
 	sdbr := &serverDBResponse{}
 	err = json.Unmarshal(payload, sdbr)
 	if err != nil {
 		return lease, err
 	}
 
-	clru.Set(key, sdbr.IPAddress, cache.DefaultExpiration)
-	return lease, err
+	clru.Set(key, &sdbr.IPAddress, cache.DefaultExpiration)
+	return &sdbr.IPAddress, err
 }
 
 func Serve() {
@@ -113,15 +110,14 @@ func Serve() {
 
 	router := gin.Default()
 
-	router.GET("/kea/:subnet/:macAddress", func(c *gin.Context) {
+	router.GET("/kea/:subnet/:macAddress/", func(c *gin.Context) {
 		subnet := c.Param("subnet")
 		macAddress := c.Param("macAddress")
-		//data := fmt.Sprintf(subnet, macAddress)
 		data, err := serverDBQuery(&subnet, &macAddress)
 		if err != nil {
 			c.String(http.StatusForbidden, fmt.Sprintf("We got an error from ServerDB %s", err))
 		}
-		c.String(http.StatusOK, data)
+		c.String(http.StatusOK, *data)
 	})
 
 	router.RunUnix(viper.GetString("socket_path"))
