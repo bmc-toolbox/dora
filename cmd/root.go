@@ -60,7 +60,8 @@ func initConfig() {
 
 	viper.AutomaticEnv() // read in environment variables that match
 	viper.SetDefault("notify_url", "https://serverdb.booking.com")
-	viper.SetDefault("socket_path", "/var/run/nestor/nestor.sock")
+	viper.SetDefault("socket_path", "/run/nestor/nestor.sock")
+	viper.SetDefault("cache_file", "/var/lib/nestor/nestor.state")
 	viper.SetDefault("debug", false)
 
 	// If a config file is found, read it in.
