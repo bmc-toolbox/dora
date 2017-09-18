@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net"
 	"net/http"
 	"net/http/cookiejar"
@@ -101,11 +102,17 @@ func Serve() {
 
 	authHeader = fmt.Sprintf("ApiKey %s:%s", viper.GetString("notify_api_user"), viper.GetString("notify_api_key"))
 	serverDBUrl = viper.GetString("notify_url")
+	debug := viper.GetBool("debug")
 
 	var err error
+
 	client, err = buildClient()
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
+	}
+
+	if !debug {
+		gin.SetMode(gin.ReleaseMode)
 	}
 
 	router := gin.Default()
@@ -117,7 +124,11 @@ func Serve() {
 		if err != nil {
 			c.String(http.StatusForbidden, fmt.Sprintf("We got an error from ServerDB %s", err))
 		}
+
 		c.String(http.StatusOK, *data)
+		if debug {
+			log.Printf("Sending answer from %s - %s: %s", subnet, macAddress, *data)
+		}
 	})
 
 	router.RunUnix(viper.GetString("socket_path"))

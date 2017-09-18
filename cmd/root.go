@@ -15,9 +15,9 @@ var cfgFile string
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
 	Use:   "nestor",
-	Short: "Nestor is a bridge between the ServerDB and kea",
-	Long: `Nestor is a bridge between the ServerDB and kea. Nestor will query the ServerDB and store
-the data using the lru cache to ensure we don't slow down the dhcp handling..
+	Short: "Nestor is a bridge between ServerDB and Kea",
+	Long: `Nestor is a bridge between ServerDB and Kea. Nestor will query the ServerDB and store
+the data using lru cache to ensure we don't slow down the dhcp handling.
 `,
 	Args: cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -61,6 +61,7 @@ func initConfig() {
 	viper.AutomaticEnv() // read in environment variables that match
 	viper.SetDefault("notify_url", "https://serverdb.booking.com")
 	viper.SetDefault("socket_path", "/tmp/nestor.sock")
+	viper.SetDefault("debug", false)
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
