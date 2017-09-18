@@ -1,0 +1,5 @@
+notify_api_key: lala
+notify_api_user: lele
+cache_file: /var/lib/nestor.cache
+socket_path: /var/run/nestor/nestor.sock
+debug: true
