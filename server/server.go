@@ -57,11 +57,11 @@ func buildClient() (client *http.Client, err error) {
 	return client, err
 }
 
-func serverDBQuery(subnet *string, macAddress *string) (lease *string, err error) {
+func serverDBQuery(subnet *string, macAddress *string) (lease string, err error) {
 	key := fmt.Sprintf("%s-%s", *subnet, *macAddress)
 	data, found := clru.Get(key)
 	if found {
-		lease := data.(*string)
+		lease := data.(string)
 		_, err := clru.IncrementInt("CacheHit", 1)
 		if err != nil {
 			log.Println(err)
@@ -97,13 +97,13 @@ func serverDBQuery(subnet *string, macAddress *string) (lease *string, err error
 		return lease, err
 	}
 
-	clru.Set(key, &sdbr.IPAddress, cache.DefaultExpiration)
+	clru.Set(key, sdbr.IPAddress, cache.DefaultExpiration)
 	_, err = clru.IncrementInt("CacheMiss", 1)
 	if err != nil {
 		log.Println(err)
 	}
 
-	return &sdbr.IPAddress, err
+	return sdbr.IPAddress, err
 }
 
 // cacheStats returns that status of our cache
@@ -144,17 +144,19 @@ func Serve() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	go func(clru *cache.Cache, cacheFile *string) {
+	go func(clru *cache.Cache, cacheFile *string, debug bool) {
 		for {
 			time.Sleep(1 * time.Minute)
 			err := clru.SaveFile(*cacheFile)
 			if err != nil {
 				log.Println("Error saving cache file: ", err)
 			} else {
-				log.Println("Cache file saved: ", *cacheFile)
+				if debug {
+					log.Println("Cache file saved: ", *cacheFile)
+				}
 			}
 		}
-	}(clru, &cacheFile)
+	}(clru, &cacheFile, debug)
 
 	router := gin.Default()
 	clru.Set("CacheHit", 0, cache.NoExpiration)
@@ -168,9 +170,9 @@ func Serve() {
 			c.String(http.StatusForbidden, fmt.Sprintf("We got an error from ServerDB %s", err))
 		}
 
-		c.String(http.StatusOK, *data)
+		c.String(http.StatusOK, data)
 		if debug {
-			log.Printf("Sending answer from %s - %s: %s", subnet, macAddress, *data)
+			log.Printf("Sending answer from %s - %s: %s", subnet, macAddress, data)
 		}
 	})
 
