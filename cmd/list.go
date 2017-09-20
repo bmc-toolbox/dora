@@ -15,13 +15,7 @@
 package cmd
 
 import (
-	"fmt"
-	"os"
-	"strings"
-
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-	"gitlab.booking.com/infra/dora/scanner"
 )
 
 // listCmd represents the list command
@@ -36,24 +30,25 @@ usage: dora scan list
        dora scan list 192.168.0.1
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		site := strings.Split(viper.GetString("site"), " ")
-		content, err := scanner.ReadKeaConfig()
-		if err != nil {
-			fmt.Printf("Error reading kea config: %s\n", err)
-			os.Exit(1)
-		}
+		// site := strings.Split(viper.GetString("site"), " ")
+		// content, err := scanner.ReadKeaConfig()
+		// if err != nil {
+		// 	fmt.Printf("Error reading kea config: %s\n", err)
+		// 	os.Exit(1)
+		// }
 
-		for _, subnet := range scanner.LoadSubnets(content, site) {
-			if len(args) != 0 {
-				for _, n := range args {
-					if n == subnet.String() {
-						fmt.Println(subnet.String())
-					}
-				}
-			} else {
-				fmt.Println(subnet.String())
-			}
-		}
+		// db := storage.InitDB()
+		// for _, subnet := range scanner.LoadSubnets(content, site) {
+		// 	if len(args) != 0 {
+		// 		for _, n := range args {
+		// 			if n == subnet.String() {
+		// 				fmt.Println(subnet.String())
+		// 			}
+		// 		}
+		// 	} else {
+		// 		fmt.Println(subnet.String())
+		// 	}
+		// }
 	},
 }
 

@@ -81,18 +81,12 @@ func initConfig() {
 	}
 
 	viper.SetDefault("site", "all")
-	viper.SetDefault("concurrency", 20)
 	viper.SetDefault("debug", false)
 	viper.SetDefault("noop", false)
-	viper.SetDefault("disable_chassis", false)
-	viper.SetDefault("disable_discretes", false)
 	viper.SetDefault("dump_invalid_payloads", false)
 	viper.SetDefault("dump_invalid_payload_path", "/tmp/dora/dumps")
-	viper.SetDefault("kea_config", "/etc/kea/kea.conf")
-	viper.SetDefault("nmap", "/bin/nmap")
 	viper.SetDefault("http_server_port", 8000)
-	viper.SetDefault("nmap_tcp_ports", "22,443")
-	viper.SetDefault("nmap_udp_ports", "161,623")
+
 	viper.AutomaticEnv() // read in environment variables that match
 
 	// If a config file is found, read it in.
