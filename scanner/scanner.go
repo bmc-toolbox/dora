@@ -92,6 +92,11 @@ func LoadSubnetsFromKea(content []byte) (subnets []*ToScan) {
 }
 
 func scan(input <-chan ToScan, db *gorm.DB) {
+	hostname, err := os.Hostname()
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "scanning", "error": err}).Warn("Scanning networks")
+	}
+
 	for subnet := range input {
 		scanType := ""
 
@@ -101,7 +106,7 @@ func scan(input <-chan ToScan, db *gorm.DB) {
 		case "tcp":
 			scanType = "-sT"
 		default:
-			log.WithFields(log.Fields{"operation": "subnet parsing", "error": ErrInvalidProtocol}).Warn("Scanning networks")
+			log.WithFields(log.Fields{"operation": "scanning", "error": ErrInvalidProtocol}).Warn("Scanning networks")
 			continue
 		}
 
@@ -109,12 +114,12 @@ func scan(input <-chan ToScan, db *gorm.DB) {
 		cmd := exec.Command("sudo", "nmap", "-oX", "-", scanType, subnet.CIDR, "--max-parallelism=100", "-p", subnet.Ports)
 		content, err := cmd.Output()
 		if err != nil {
-			log.WithFields(log.Fields{"operation": "subnet parsing", "error": err}).Error("Scanning networks")
+			log.WithFields(log.Fields{"operation": "scanning", "error": err}).Error("Scanning networks")
 		}
 
 		nmap, err := nmapParse(content)
 		if err != nil {
-			log.WithFields(log.Fields{"operation": "subnet parsing", "error": err}).Error("Scanning networks")
+			log.WithFields(log.Fields{"operation": "scanning", "error": err}).Error("Scanning networks")
 			continue
 		}
 		for _, host := range nmap.Hosts {
@@ -126,7 +131,7 @@ func scan(input <-chan ToScan, db *gorm.DB) {
 			}
 
 			if err = db.FirstOrCreate(&sh, model.ScannedHost{IP: ip}).Error; err != nil {
-				log.WithFields(log.Fields{"operation": "scanning ip", "error": err, "hosts": sh.IP}).Error("Scanning networks")
+				log.WithFields(log.Fields{"operation": "scanning", "error": err, "hosts": sh.IP}).Error("Scanning networks")
 			}
 			sh.State = host.Status.State
 
@@ -135,6 +140,7 @@ func scan(input <-chan ToScan, db *gorm.DB) {
 				sp.Port = port.PortID
 				sp.State = port.State.State
 				sp.Protocol = port.Protocol
+				sp.ScannedBy = hostname
 				sh.Ports = append(sh.Ports, sp)
 			}
 
@@ -175,6 +181,7 @@ func LoadSubnets(source string) {
 	}
 }
 
+// ListSubnets all or a list of given subnets
 func ListSubnets(subnetsToQuery []string) (subnets []model.ScannedNetwork) {
 	db := storage.InitDB()
 
