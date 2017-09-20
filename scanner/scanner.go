@@ -2,7 +2,6 @@ package scanner
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net"
 	"os"
@@ -44,49 +43,55 @@ type OptionData struct {
 	Name string `json:"name"`
 }
 
-type toScan struct {
-	Subnet   string
+type ToScan struct {
+	CIDR     string
 	Ports    string
 	Protocol string
 	Site     string
 }
 
+// Verify supported methods to load subnet
+func SupportedSources(source string) bool {
+	switch source {
+	case "kea":
+		return true
+	default:
+		return false
+	}
+}
+
 // LoadSubnets from kea.cfg
-func LoadSubnets(content []byte, site []string) (subnets []*net.IPNet) {
+func LoadSubnetsFromKea(content []byte) (subnets []*ToScan) {
 	keaData := &Kea{}
 	err := json.Unmarshal(content, &keaData)
 	if err != nil {
 		panic(err)
 	}
 
+	keaDomainNameSuffix := viper.GetString("scanner.kea_domain_name_suffix")
 	for _, subnet := range keaData.Dhcp4.Subnet4 {
-		oob := false
 		for _, option := range subnet.OptionData {
-			if option.Name == "domain-name" && strings.HasSuffix(option.Data, ".lom.booking.com") {
-				for _, s := range site {
-					if strings.HasSuffix(option.Data, fmt.Sprintf("%s.lom.booking.com", s)) {
-						oob = true
-					} else if s == "all" {
-						oob = true
-						break
+			if option.Name == "domain-name" && strings.HasSuffix(option.Data, keaDomainNameSuffix) {
+				if strings.HasSuffix(option.Data, keaDomainNameSuffix) {
+					_, ipv4Net, err := net.ParseCIDR(subnet.Subnet)
+					if err != nil {
+						log.WithFields(log.Fields{"operation": "subnet parsing", "error": err}).Warn("Scanning networks")
+						continue
 					}
+					toScan := &ToScan{
+						CIDR: ipv4Net.String(),
+						Site: strings.TrimSuffix(option.Data, keaDomainNameSuffix),
+					}
+					subnets = append(subnets, toScan)
 				}
 			}
-		}
-
-		if oob {
-			_, ipv4Net, err := net.ParseCIDR(subnet.Subnet)
-			if err != nil {
-				log.WithFields(log.Fields{"operation": "subnet parsing", "error": err}).Warn("Scanning networks")
-			}
-			subnets = append(subnets, ipv4Net)
 		}
 	}
 
 	return subnets
 }
 
-func scan(input <-chan toScan, db *gorm.DB) {
+func scan(input <-chan ToScan, db *gorm.DB) {
 	for subnet := range input {
 		scanType := ""
 
@@ -100,8 +105,8 @@ func scan(input <-chan toScan, db *gorm.DB) {
 			continue
 		}
 
-		log.WithFields(log.Fields{"operation": "scanning ip", "subnet": subnet.Subnet, "protocol": subnet.Protocol}).Info("Scanning networks")
-		cmd := exec.Command("sudo", "nmap", "-oX", "-", scanType, subnet.Subnet, "--max-parallelism=100", "-p", subnet.Ports)
+		log.WithFields(log.Fields{"operation": "scanning ip", "subnet": subnet.CIDR, "protocol": subnet.Protocol}).Info("Scanning networks")
+		cmd := exec.Command("sudo", "nmap", "-oX", "-", scanType, subnet.CIDR, "--max-parallelism=100", "-p", subnet.Ports)
 		content, err := cmd.Output()
 		if err != nil {
 			log.WithFields(log.Fields{"operation": "subnet parsing", "error": err}).Error("Scanning networks")
@@ -142,7 +147,7 @@ func scan(input <-chan toScan, db *gorm.DB) {
 
 // ReadKeaConfig reads the config configuration file and returns its data
 func ReadKeaConfig() (content []byte, err error) {
-	keaConfig := viper.GetString("kea_config")
+	keaConfig := viper.GetString("scanner.kea_config")
 	content, err = ioutil.ReadFile(keaConfig)
 	if err != nil {
 		return content, err
@@ -151,10 +156,8 @@ func ReadKeaConfig() (content []byte, err error) {
 	return content, err
 }
 
-// ScanNetworks scan specific or all networks and try to find chassis, blades and servers
-func ScanNetworks(subnets []string) {
-	site := strings.Split(viper.GetString("site"), " ")
-	concurrency := viper.GetInt("concurrency")
+func LoadSubnets(source string) {
+	db := storage.InitDB()
 
 	content, err := ReadKeaConfig()
 	if err != nil {
@@ -162,59 +165,70 @@ func ScanNetworks(subnets []string) {
 		os.Exit(1)
 	}
 
-	cc := make(chan toScan, concurrency)
+	if source == "kea" {
+		for _, entry := range LoadSubnetsFromKea(content) {
+			subnet := model.ScannedNetwork{}
+			if err = db.FirstOrCreate(&subnet, model.ScannedNetwork{CIDR: entry.CIDR, Site: entry.Site}).Error; err != nil {
+				log.WithFields(log.Fields{"operation": "scanning networks", "error": err, "subnet": entry.CIDR}).Error("Scanning networks")
+			}
+		}
+	}
+}
+
+// ScanNetworks scan specific or all networks and try to find chassis, blades and servers
+func ScanNetworks(subnetsToScan []string, site []string) {
+	concurrency := viper.GetInt("scanner.concurrency")
+
+	cc := make(chan ToScan, concurrency)
 	wg := sync.WaitGroup{}
 	db := storage.InitDB()
 
 	wg.Add(concurrency)
 	for i := 0; i < concurrency; i++ {
-		go func(input <-chan toScan, db *gorm.DB, wg *sync.WaitGroup) {
+		go func(input <-chan ToScan, db *gorm.DB, wg *sync.WaitGroup) {
 			defer wg.Done()
 			scan(input, db)
 		}(cc, db, &wg)
 	}
 
-	if subnets[0] == "all" {
-		for _, subnet := range LoadSubnets(content, site) {
-			t := toScan{
-				Subnet:   subnet.String(),
-				Ports:    nmapUDPPorts,
-				Protocol: "udp",
-			}
-			cc <- t
-			t = toScan{
-				Subnet:   subnet.String(),
-				Ports:    nmapTCPPorts,
-				Protocol: "tcp",
-			}
-			cc <- t
-		}
-	} else {
-		sbns := LoadSubnets(content, site)
-		for _, subnet := range subnets {
-			found := false
-			for _, n := range sbns {
-				if n.String() == subnet {
-					found = true
-				}
-			}
-			if !found {
-				log.WithFields(log.Fields{"operation": "scanning ip", "error": "Network doesn't exist in kea.cfg"}).Error("Scanning networks")
+	subnets := []model.ScannedNetwork{}
+	if subnetsToScan[0] == "all" {
+		if site[0] == "all" {
+			if err := db.Find(&subnets).Error; err != nil {
+				log.WithFields(log.Fields{"operation": "scanning ip", "error": err}).Error("Scanning networks")
 				os.Exit(1)
 			}
-			t := toScan{
-				Subnet:   subnet,
-				Ports:    nmapUDPPorts,
-				Protocol: "udp",
+		} else {
+			if err := db.Where("site in (?)", site).Find(&subnets).Error; err != nil {
+				log.WithFields(log.Fields{"operation": "scanning ip", "error": err}).Error("Scanning networks")
+				os.Exit(1)
 			}
-			cc <- t
-			t = toScan{
-				Subnet:   subnet,
-				Ports:    nmapTCPPorts,
-				Protocol: "tcp",
-			}
-			cc <- t
 		}
+	} else {
+		if err := db.Where("cidr in (?)", subnetsToScan).Find(&subnets).Error; err != nil {
+			log.WithFields(log.Fields{"operation": "scanning ip", "error": err}).Error("Scanning networks")
+			os.Exit(1)
+		}
+	}
+
+	for _, subnet := range subnets {
+		t := ToScan{
+			CIDR:     subnet.CIDR,
+			Site:     subnet.Site,
+			Ports:    nmapTCPPorts,
+			Protocol: "tcp",
+		}
+		cc <- t
+	}
+
+	for _, subnet := range subnets {
+		t := ToScan{
+			CIDR:     subnet.CIDR,
+			Site:     subnet.Site,
+			Ports:    nmapUDPPorts,
+			Protocol: "udp",
+		}
+		cc <- t
 	}
 
 	close(cc)

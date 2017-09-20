@@ -19,6 +19,7 @@ import (
 	"net"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"gitlab.booking.com/infra/dora/scanner"
 )
 
@@ -28,10 +29,12 @@ var scanCmd = &cobra.Command{
 	Short: "scan networks found in kea config or a list of given networks",
 	Long: `scan networks found in kea config or a list of given networks and search 
 for the required tcp and udp ports for the hardware discovery. It will build a list of 
-discoverable assets to be later used by dora collecor
+discoverable assets to be later used by dora collector
 
 usage: dora scan  
-       dora scan 192.168.0.1/24
+	   dora scan 192.168.0.1/24
+	   dora scan list
+	   dora scan loadSubnets
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 0 && args[0] != "all" {
@@ -44,13 +47,19 @@ usage: dora scan
 				}
 				subnets = append(subnets, subnet)
 			}
-			scanner.ScanNetworks(subnets)
+			scanner.ScanNetworks(subnets, viper.GetStringSlice("site"))
 		} else {
-			scanner.ScanNetworks([]string{"all"})
+			scanner.ScanNetworks([]string{"all"}, viper.GetStringSlice("site"))
 		}
 	},
 }
 
 func init() {
+	viper.SetDefault("scanner.kea_domain_name_suffix", ".lom.booking.com")
+	viper.SetDefault("scanner.kea_config", "/etc/kea/kea.conf")
+	viper.SetDefault("scanner.subnet_source", "kea")
+	viper.SetDefault("scanner.nmap", "/usr/bin/nmap")
+	viper.SetDefault("scanner.concurrency", 100)
+
 	RootCmd.AddCommand(scanCmd)
 }
