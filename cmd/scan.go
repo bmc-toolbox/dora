@@ -34,7 +34,7 @@ discoverable assets to be later used by dora collector
 usage: dora scan  
 	   dora scan 192.168.0.1/24
 	   dora scan list
-	   dora scan loadSubnets
+	   dora scan loadSubnets <subnetSource>
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 0 && args[0] != "all" {

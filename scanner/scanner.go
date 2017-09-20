@@ -161,7 +161,7 @@ func LoadSubnets(source string) {
 
 	content, err := ReadKeaConfig()
 	if err != nil {
-		log.WithFields(log.Fields{"operation": "scanning ip", "error": err}).Error("Scanning networks")
+		log.WithFields(log.Fields{"operation": "loading subnets", "error": err}).Error("Scanning networks")
 		os.Exit(1)
 	}
 
@@ -169,10 +169,27 @@ func LoadSubnets(source string) {
 		for _, entry := range LoadSubnetsFromKea(content) {
 			subnet := model.ScannedNetwork{}
 			if err = db.FirstOrCreate(&subnet, model.ScannedNetwork{CIDR: entry.CIDR, Site: entry.Site}).Error; err != nil {
-				log.WithFields(log.Fields{"operation": "scanning networks", "error": err, "subnet": entry.CIDR}).Error("Scanning networks")
+				log.WithFields(log.Fields{"operation": "loading subnets", "error": err, "subnet": entry.CIDR}).Error("Scanning networks")
 			}
 		}
 	}
+}
+
+func ListSubnets(subnetsToQuery []string) (subnets []model.ScannedNetwork) {
+	db := storage.InitDB()
+
+	if len(subnetsToQuery) == 0 {
+		if err := db.Find(&subnets).Error; err != nil {
+			log.WithFields(log.Fields{"operation": "listing subnets", "error": err}).Error("Scanning networks")
+			os.Exit(1)
+		}
+	} else {
+		if err := db.Where("CIDR in (?)", subnetsToQuery).Find(&subnets).Error; err != nil {
+			log.WithFields(log.Fields{"operation": "listing subnets", "error": err}).Error("Scanning networks")
+			os.Exit(1)
+		}
+	}
+	return subnets
 }
 
 // ScanNetworks scan specific or all networks and try to find chassis, blades and servers

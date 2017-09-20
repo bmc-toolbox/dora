@@ -80,12 +80,20 @@ func initConfig() {
 		viper.AddConfigPath(fmt.Sprintf("%s/.bmc-toolbox", home))
 	}
 
+	// Collect
 	viper.SetDefault("site", "all")
 	viper.SetDefault("debug", false)
 	viper.SetDefault("noop", false)
 	viper.SetDefault("dump_invalid_payloads", false)
 	viper.SetDefault("dump_invalid_payload_path", "/tmp/dora/dumps")
 	viper.SetDefault("http_server_port", 8000)
+
+	// Scan
+	viper.SetDefault("scanner.kea_domain_name_suffix", ".lom.booking.com")
+	viper.SetDefault("scanner.kea_config", "/etc/kea/kea.conf")
+	viper.SetDefault("scanner.subnet_source", "kea")
+	viper.SetDefault("scanner.nmap", "/usr/bin/nmap")
+	viper.SetDefault("scanner.concurrency", 100)
 
 	viper.AutomaticEnv() // read in environment variables that match
 
