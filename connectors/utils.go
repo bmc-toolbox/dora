@@ -292,13 +292,13 @@ func detectVendorAndType(hostname *string) (vendor string, deviceType string, er
 
 // DumpInvalidPayload is here to help identify unknown or broken payload messages
 func DumpInvalidPayload(name string, payload []byte) (err error) {
-	if viper.GetBool("dump_invalid_payloads") {
+	if viper.GetBool("collector.dump_invalid_payloads") {
 		log.WithFields(log.Fields{"operation": "dump invalid payload", "name": name}).Info("Dump invalid payload")
 
 		t := time.Now()
 		timeStamp := t.Format("20060102150405")
 
-		dumpPath := viper.GetString("dump_invalid_payload_path")
+		dumpPath := viper.GetString("collector.dump_invalid_payload_path")
 		err = os.MkdirAll(path.Join(dumpPath, name), 0755)
 		if err != nil {
 			return err

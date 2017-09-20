@@ -25,26 +25,29 @@ import (
 )
 
 var sampleConfig = []byte(`---
+debug: true
+noop: true
+site:
+   - all 
 bmc_user: Priest
 bmc_pass: Wololo
-simpleapi_user: Priest
-simpleapi_pass: Wololo
-simpleapi_base_url: https://production.booking.com
-site: all
-concurrency: 20
-disable_chassis: false
-disable_discretes: false
-noop: false
-debug: false
 database_type: postgres
-database_options: host=0.0.0.0 user=postgres port=32768 dbname=postgres sslmode=disable password=mysecretpassword
-http_server_port: 8000
-dump_invalid_payloads: true
-dump_invalid_payload_path: /tmp/dora/dumps
-kea_config: /etc/kea/kea.conf
-nmap: /usr/local/bin/nmap
-nmap_tcp_ports: 22,443
-nmap_udp_ports: 161,623
+database_options: host=0.0.0.0 user=postgres port=32768 dbname=postgres password=mysecretpassword
+
+api:
+	http_server_port: 8000
+	dump_invalid_payloads: true
+	dump_invalid_payload_path: /tmp/dora/dumps
+
+collector:
+	concurrency: 60
+
+scanner:
+	concurrency: 100
+	kea_config: /etc/kea/kea.conf
+	nmap: /usr/local/bin/nmap
+	subnet_source: kea
+	kea_domain_name_suffix: .lom.booking.com  
 `)
 
 // createCmd represents the create command

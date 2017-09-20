@@ -41,6 +41,9 @@ usage: dora collect
 			"site",
 			"database_type",
 			"database_options",
+			"collector.concurrency",
+			"collector.dump_invalid_payloads",
+			"collector.dump_invalid_payload_path",
 		}
 
 		for _, item := range configItems {

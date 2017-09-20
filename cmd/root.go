@@ -80,13 +80,16 @@ func initConfig() {
 		viper.AddConfigPath(fmt.Sprintf("%s/.bmc-toolbox", home))
 	}
 
-	// Collect
-	viper.SetDefault("site", "all")
+	viper.SetDefault("site", []string{"all"})
 	viper.SetDefault("debug", false)
 	viper.SetDefault("noop", false)
-	viper.SetDefault("dump_invalid_payloads", false)
-	viper.SetDefault("dump_invalid_payload_path", "/tmp/dora/dumps")
-	viper.SetDefault("http_server_port", 8000)
+
+	// Collector
+	viper.SetDefault("collector.dump_invalid_payloads", false)
+	viper.SetDefault("collector.dump_invalid_payload_path", "/tmp/dora/dumps")
+
+	// Api
+	viper.SetDefault("api.http_server_port", 8000)
 
 	// Scan
 	viper.SetDefault("scanner.kea_domain_name_suffix", ".lom.booking.com")

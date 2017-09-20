@@ -396,7 +396,7 @@ func collect(input <-chan string, db *gorm.DB) {
 
 // DataCollection collects the data of all given ips
 func DataCollection(ips []string) {
-	concurrency := viper.GetInt("concurrency")
+	concurrency := viper.GetInt("collector.concurrency")
 
 	cc := make(chan string, concurrency)
 	wg := sync.WaitGroup{}

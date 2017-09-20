@@ -55,11 +55,5 @@ usage: dora scan
 }
 
 func init() {
-	viper.SetDefault("scanner.kea_domain_name_suffix", ".lom.booking.com")
-	viper.SetDefault("scanner.kea_config", "/etc/kea/kea.conf")
-	viper.SetDefault("scanner.subnet_source", "kea")
-	viper.SetDefault("scanner.nmap", "/usr/bin/nmap")
-	viper.SetDefault("scanner.concurrency", 100)
-
 	RootCmd.AddCommand(scanCmd)
 }
