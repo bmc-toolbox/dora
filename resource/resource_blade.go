@@ -1,7 +1,6 @@
 package resource
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/jinzhu/gorm"
@@ -90,10 +89,6 @@ func (b BladeResource) queryAndCountAllWrapper(r api2go.Request) (count int, bla
 		if err != nil {
 			return count, blades, err
 		}
-	}
-
-	for key, value := range r.QueryParams {
-		fmt.Println(key, value)
 	}
 
 	storageBladesID, hasStorageBlade := r.QueryParams["storage_bladesID"]

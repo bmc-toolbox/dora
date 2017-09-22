@@ -153,6 +153,17 @@ type RedFishStatus struct {
 	State string `json:"State"`
 }
 
+// RedFishPowerControl items exposed on RedFish Power
+type RedFishPowerControl struct {
+	Name               string `json:"Name"`
+	PowerConsumedWatts int    `json:"PowerConsumedWatts"`
+}
+
+// RedFishPower contains the list of power metrics exposed via redfish
+type RedFishPower struct {
+	PowerControl []*RedFishPowerControl `json:"PowerControl"`
+}
+
 // NewRedFishReader returns a new RedFishReader ready to be used
 func NewRedFishReader(ip *string, username *string, password *string) (r *RedFishReader, err error) {
 	r = &RedFishReader{ip: ip, username: username, password: password}

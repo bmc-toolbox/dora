@@ -15,7 +15,7 @@ type NicStorage struct {
 	db *gorm.DB
 }
 
-// GetAll of the Nic
+// GetAll of the nics
 func (n NicStorage) GetAll(offset string, limit string) (count int, nics []model.Nic, err error) {
 	if offset != "" && limit != "" {
 		if err = n.db.Limit(limit).Offset(offset).Order("mac_address").Find(&nics).Error; err != nil {
@@ -30,7 +30,7 @@ func (n NicStorage) GetAll(offset string, limit string) (count int, nics []model
 	return count, nics, err
 }
 
-// GetAllByBladeID of the Blades by BladeID
+// GetAllByBladeID of the nics by BladeID
 func (n NicStorage) GetAllByBladeID(offset string, limit string, serials []string) (count int, nics []model.Nic, err error) {
 	if offset != "" && limit != "" {
 		if err = n.db.Limit(limit).Offset(offset).Where("blade_serial in (?)", serials).Find(&nics).Error; err != nil {
@@ -45,7 +45,7 @@ func (n NicStorage) GetAllByBladeID(offset string, limit string, serials []strin
 	return count, nics, err
 }
 
-// GetOne  Blade
+// GetOne nic
 func (n NicStorage) GetOne(macAddress string) (nic model.Nic, err error) {
 	if err := n.db.Where("mac_address = ?", macAddress).First(&nic).Error; err != nil {
 		return nic, err

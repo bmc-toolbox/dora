@@ -47,13 +47,13 @@ usage: dora server
 			}
 		}
 
-		web.RunGin(viper.GetInt("http_server_port"), viper.GetBool("debug"))
+		web.RunGin(viper.GetInt("api.http_server_port"), viper.GetBool("debug"))
 	},
 }
 
 func init() {
 	RootCmd.Flags().IntVar(&port, "port", 8080, "Port to bind the webwerver")
-	viper.BindPFlag("http_server_port", RootCmd.PersistentFlags().Lookup("port"))
+	viper.BindPFlag("api.http_server_port", RootCmd.Flags().Lookup("port"))
 
 	RootCmd.AddCommand(serverCmd)
 }
