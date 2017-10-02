@@ -30,6 +30,21 @@ func (s ScannedNetworkStorage) GetAll(offset string, limit string) (count int, n
 	return count, networks, err
 }
 
+// GetAllWithAssociations returns all chassis with their relationships
+func (s ScannedNetworkStorage) GetAllWithAssociations(offset string, limit string) (count int, networks []model.ScannedNetwork, err error) {
+	if offset != "" && limit != "" {
+		if err = s.db.Limit(limit).Offset(offset).Preload("Hosts").Order("cidr").Find(&networks).Error; err != nil {
+			return count, networks, err
+		}
+		s.db.Model(&model.ScannedNetwork{}).Preload("Hosts").Order("cidr").Count(&count)
+	} else {
+		if err = s.db.Order("cidr").Preload("Hosts").Find(&networks).Error; err != nil {
+			return count, networks, err
+		}
+	}
+	return count, networks, err
+}
+
 // GetOne  Blade
 func (s ScannedNetworkStorage) GetOne(cidr string) (scan model.ScannedNetwork, err error) {
 	if err := s.db.Where("cidr = ?", cidr).First(&scan).Error; err != nil {

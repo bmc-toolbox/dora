@@ -47,9 +47,29 @@ func (s ScannedNetworkResource) queryAndCountAllWrapper(r api2go.Request) (count
 	}
 
 	offset, limit := filter.OffSetAndLimitParse(&r)
-	count, scans, err = s.ScannedNetworkStorage.GetAll(offset, limit)
-	if err != nil {
-		return count, scans, err
+
+	include, hasInclude := r.QueryParams["include"]
+	if hasInclude && include[0] == "scanned_hosts" {
+		if len(scans) == 0 {
+			count, scans, err = s.ScannedNetworkStorage.GetAllWithAssociations(offset, limit)
+		} else {
+			var scannedNetworksWithInclude []model.ScannedNetwork
+			for _, sn := range scans {
+				snWithInclude, err := s.ScannedNetworkStorage.GetOne(sn.CIDR)
+				if err != nil {
+					return count, scans, err
+				}
+				scannedNetworksWithInclude = append(scannedNetworksWithInclude, snWithInclude)
+			}
+			scans = scannedNetworksWithInclude
+		}
+	}
+
+	if !hasInclude {
+		count, scans, err = s.ScannedNetworkStorage.GetAll(offset, limit)
+		if err != nil {
+			return count, scans, err
+		}
 	}
 
 	return count, scans, err

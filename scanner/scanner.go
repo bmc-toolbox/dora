@@ -130,7 +130,7 @@ func scan(input <-chan ToScan, db *gorm.DB) {
 				break
 			}
 
-			if err = db.FirstOrCreate(&sh, model.ScannedHost{IP: ip}).Error; err != nil {
+			if err = db.FirstOrCreate(&sh, model.ScannedHost{IP: ip, CIDR: subnet.CIDR}).Error; err != nil {
 				log.WithFields(log.Fields{"operation": "scanning", "error": err, "hosts": sh.IP}).Error("Scanning networks")
 			}
 			sh.State = host.Status.State
@@ -141,7 +141,7 @@ func scan(input <-chan ToScan, db *gorm.DB) {
 				sp.State = port.State.State
 				sp.Protocol = port.Protocol
 				sp.ScannedBy = hostname
-				sh.Ports = append(sh.Ports, sp)
+				sh.Ports = append(sh.Ports, &sp)
 			}
 
 			if err = db.Save(&sh).Error; err != nil {
