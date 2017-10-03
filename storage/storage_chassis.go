@@ -31,7 +31,7 @@ func (c ChassisStorage) GetAll(offset string, limit string) (count int, chassis 
 	return count, chassis, err
 }
 
-// GetAllWithAssociations returns all chassis with their relationships
+// GetAllWithAssociations returns all Chassis with their relationships
 func (c ChassisStorage) GetAllWithAssociations(offset string, limit string) (count int, chassis []model.Chassis, err error) {
 	if offset != "" && limit != "" {
 		if err = c.db.Order("serial asc").Preload("Blades").Find(&chassis).Error; err != nil {
@@ -54,7 +54,7 @@ func (c ChassisStorage) GetOne(serial string) (chassis model.Chassis, err error)
 	return chassis, err
 }
 
-// GetAllByFilters get all chassis detecting the struct members dinamically
+// GetAllByFilters get all Chassis based on the filter
 func (c ChassisStorage) GetAllByFilters(offset string, limit string, filters *filter.Filters) (count int, chassis []model.Chassis, err error) {
 	query, err := filters.BuildQuery(model.Chassis{})
 	if err != nil {

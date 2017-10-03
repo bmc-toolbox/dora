@@ -2,7 +2,6 @@ package resource
 
 import (
 	"net/http"
-	"strings"
 
 	"github.com/jinzhu/gorm"
 	"github.com/manyminds/api2go"
@@ -11,20 +10,20 @@ import (
 	"gitlab.booking.com/infra/dora/storage"
 )
 
-// ScannedNetworkResource for api2go routes
-type ScannedNetworkResource struct {
-	ScannedNetworkStorage *storage.ScannedNetworkStorage
+// ScannedHostResource for api2go routes
+type ScannedHostResource struct {
+	ScannedHostStorage *storage.ScannedHostStorage
 }
 
 // FindAll Scans
-func (s ScannedNetworkResource) FindAll(r api2go.Request) (api2go.Responder, error) {
+func (s ScannedHostResource) FindAll(r api2go.Request) (api2go.Responder, error) {
 	_, scans, err := s.queryAndCountAllWrapper(r)
 	return &Response{Res: scans}, err
 }
 
 // FindOne Scanner
-func (s ScannedNetworkResource) FindOne(ID string, r api2go.Request) (api2go.Responder, error) {
-	res, err := s.ScannedNetworkStorage.GetOne(strings.Replace(ID, "-", "/", -1))
+func (s ScannedHostResource) FindOne(ID string, r api2go.Request) (api2go.Responder, error) {
+	res, err := s.ScannedHostStorage.GetOne(ID)
 	if err == gorm.ErrRecordNotFound {
 		return &Response{}, api2go.NewHTTPError(err, err.Error(), http.StatusNotFound)
 	}
@@ -32,13 +31,13 @@ func (s ScannedNetworkResource) FindOne(ID string, r api2go.Request) (api2go.Res
 }
 
 // PaginatedFindAll can be used to load Scans in chunks
-func (s ScannedNetworkResource) PaginatedFindAll(r api2go.Request) (uint, api2go.Responder, error) {
+func (s ScannedHostResource) PaginatedFindAll(r api2go.Request) (uint, api2go.Responder, error) {
 	count, scans, err := s.queryAndCountAllWrapper(r)
 	return uint(count), &Response{Res: scans}, err
 }
 
 // queryAndCountAllWrapper retrieve the data to be used for FindAll and PaginatedFindAll in a standard way
-func (s ScannedNetworkResource) queryAndCountAllWrapper(r api2go.Request) (count int, scans []model.ScannedNetwork, err error) {
+func (s ScannedHostResource) queryAndCountAllWrapper(r api2go.Request) (count int, scans []model.ScannedHost, err error) {
 	for _, invalidQuery := range []string{"page[number]", "page[size]"} {
 		_, invalid := r.QueryParams[invalidQuery]
 		if invalid {
@@ -50,7 +49,7 @@ func (s ScannedNetworkResource) queryAndCountAllWrapper(r api2go.Request) (count
 	offset, limit := filter.OffSetAndLimitParse(&r)
 
 	if hasFilters {
-		count, scans, err = s.ScannedNetworkStorage.GetAllByFilters(offset, limit, filters)
+		count, scans, err = s.ScannedHostStorage.GetAllByFilters(offset, limit, filters)
 		filters.Clean()
 		if err != nil {
 			return count, scans, err
@@ -60,30 +59,30 @@ func (s ScannedNetworkResource) queryAndCountAllWrapper(r api2go.Request) (count
 	include, hasInclude := r.QueryParams["include"]
 	if hasInclude && include[0] == "scanned_hosts" {
 		if len(scans) == 0 {
-			count, scans, err = s.ScannedNetworkStorage.GetAllWithAssociations(offset, limit)
+			count, scans, err = s.ScannedHostStorage.GetAllWithAssociations(offset, limit)
 		} else {
-			var scannedNetworksWithInclude []model.ScannedNetwork
+			var scannedHostsWithInclude []model.ScannedHost
 			for _, sn := range scans {
-				snWithInclude, err := s.ScannedNetworkStorage.GetOne(sn.CIDR)
+				snWithInclude, err := s.ScannedHostStorage.GetOne(sn.CIDR)
 				if err != nil {
 					return count, scans, err
 				}
-				scannedNetworksWithInclude = append(scannedNetworksWithInclude, snWithInclude)
+				scannedHostsWithInclude = append(scannedHostsWithInclude, snWithInclude)
 			}
-			scans = scannedNetworksWithInclude
+			scans = scannedHostsWithInclude
 		}
 	}
 
-	scannedHostsID, hasScannedHosts := r.QueryParams["storage_hostsID"]
-	if hasScannedHosts {
-		count, scans, err = s.ScannedNetworkStorage.GetAllByIP(offset, limit, scannedHostsID)
-		if err != nil {
-			return count, scans, err
-		}
-	}
+	// scannedHostsID, hasScannedHosts := r.QueryParams["storage_hostsID"]
+	// if hasScannedHosts {
+	// 	count, scans, err = s.ScannedHostStorage.GetAllByIP(offset, limit, scannedHostsID)
+	// 	if err != nil {
+	// 		return count, scans, err
+	// 	}
+	// }
 
 	if !hasInclude && !hasFilters {
-		count, scans, err = s.ScannedNetworkStorage.GetAll(offset, limit)
+		count, scans, err = s.ScannedHostStorage.GetAll(offset, limit)
 		if err != nil {
 			return count, scans, err
 		}

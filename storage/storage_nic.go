@@ -15,7 +15,7 @@ type NicStorage struct {
 	db *gorm.DB
 }
 
-// GetAll of the nics
+// GetAll nics
 func (n NicStorage) GetAll(offset string, limit string) (count int, nics []model.Nic, err error) {
 	if offset != "" && limit != "" {
 		if err = n.db.Limit(limit).Offset(offset).Order("mac_address").Find(&nics).Error; err != nil {

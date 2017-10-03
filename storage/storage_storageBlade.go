@@ -46,7 +46,7 @@ func (b StorageBladeStorage) GetAllWithAssociations(offset string, limit string)
 	return count, storageBlades, err
 }
 
-// GetAllByFilters get all blades detecting the struct members dinamically
+// GetAllByFilters get all StorageBlades based on the filter
 func (b StorageBladeStorage) GetAllByFilters(offset string, limit string, filters *filter.Filters) (count int, storageBlades []model.StorageBlade, err error) {
 	query, err := filters.BuildQuery(model.StorageBlade{})
 	if err != nil {
@@ -67,7 +67,7 @@ func (b StorageBladeStorage) GetAllByFilters(offset string, limit string, filter
 	return count, storageBlades, nil
 }
 
-// GetAllByChassisID retreives Blades by chassisID
+// GetAllByChassisID retrieves StorageBlades by chassisID
 func (b StorageBladeStorage) GetAllByChassisID(offset string, limit string, serials []string) (count int, storageBlades []model.StorageBlade, err error) {
 	if offset != "" && limit != "" {
 		if err = b.db.Limit(limit).Offset(offset).Where("chassis_serial in (?)", serials).Find(&storageBlades).Error; err != nil {
@@ -82,7 +82,7 @@ func (b StorageBladeStorage) GetAllByChassisID(offset string, limit string, seri
 	return count, storageBlades, err
 }
 
-// GetAllByBladeID retreives StorageBlades by bladesID
+// GetAllByBladeID retrieves StorageBlades by bladesID
 func (b StorageBladeStorage) GetAllByBladeID(offset string, limit string, serials []string) (count int, storageBlades []model.StorageBlade, err error) {
 	if offset != "" && limit != "" {
 		if err = b.db.Limit(limit).Offset(offset).Where("blade_serial in (?)", serials).Find(&storageBlades).Error; err != nil {
@@ -97,7 +97,7 @@ func (b StorageBladeStorage) GetAllByBladeID(offset string, limit string, serial
 	return count, storageBlades, err
 }
 
-// GetOne storageBlade
+// GetOne StorageBlade
 func (b StorageBladeStorage) GetOne(serial string) (storageBlade model.StorageBlade, err error) {
 	if err := b.db.Where("serial = ?", serial).First(&storageBlade).Error; err != nil {
 		return storageBlade, err
@@ -105,7 +105,7 @@ func (b StorageBladeStorage) GetOne(serial string) (storageBlade model.StorageBl
 	return storageBlade, err
 }
 
-// UpdateOrCreate
+// UpdateOrCreate a StorageBlade
 func (b *StorageBladeStorage) UpdateOrCreate(storageBlade *model.StorageBlade) (serial string, err error) {
 	if err = b.db.Save(&storageBlade).Error; err != nil {
 		return serial, err
