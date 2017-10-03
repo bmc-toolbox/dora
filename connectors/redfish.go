@@ -12,7 +12,6 @@ import (
 )
 
 const (
-
 	// RFPower is the constant for power definition on RedFish
 	RFPower = "power"
 	// RFThermal is the constant for thermal definition on RedFish
@@ -65,7 +64,7 @@ var (
 			RFThermal: "System Board Inlet Temp",
 		},
 		HP: map[string]string{
-			RFThermal: "30-System Board",
+			RFThermal: "01-Inlet Ambient",
 		},
 		Supermicro: map[string]string{
 			RFPower:   "System Power Control",
@@ -446,7 +445,25 @@ func (r *RedFishReader) PowerKw() (power float64, err error) {
 	return power, err
 }
 
-// // TempC returns the current themal status
-// func (r *RedFishReader) TempC() (temp int, err error) {
-// 	return h.hpRimp.HpInfra2.HpTemps.HpTemp.C, err
-// }
+// TempC returns the current themal status
+func (r *RedFishReader) TempC() (temp int, err error) {
+	payload, err := r.get(redfishVendorEndPoints[r.vendor][RFThermal])
+	if err != nil {
+		return temp, err
+	}
+
+	redFishThermal := &RedFishThermal{}
+	err = json.Unmarshal(payload, redFishThermal)
+	if err != nil {
+		DumpInvalidPayload(*r.ip, payload)
+		return temp, err
+	}
+
+	for _, entry := range redFishThermal.Temperatures {
+		if entry.Name == redfishVendorLabels[r.vendor][RFThermal] {
+			return entry.ReadingCelsius, err
+		}
+	}
+
+	return temp, err
+}

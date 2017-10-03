@@ -86,7 +86,6 @@ var (
 
 // Serial() (string, error)
 
-// PowerKw() (float64, error)
 // TempC() (int, error)
 // Nics() ([]*model.Nic, error)
 // License() (string, string, error)
@@ -599,6 +598,59 @@ func TestRedfishPowerKw(t *testing.T) {
 			Supermicro,
 			RFPower,
 			0.176,
+			"Supermicro",
+		},
+	}
+
+	for _, tc := range tt {
+		rf, err := setup(tc.vendor, tc.redfishendpoint, tc.detectionString)
+		if err == nil {
+
+			method := reflect.ValueOf(rf).MethodByName(tc.testType)
+			result := method.Call([]reflect.Value{})
+			answer := result[0].Interface()
+			nerr := result[1].Interface()
+			if nerr != nil {
+				t.Errorf("Found errors calling %s: %s", tc.testType, nerr)
+			}
+
+			if answer != tc.expectedAnswer {
+				t.Errorf("%s from vendor %s should answer %v: found %v", tc.testType, tc.vendor, tc.expectedAnswer, answer)
+			}
+		} else {
+			t.Errorf("Found errors during the test setup %v", err)
+		}
+		teardown()
+	}
+}
+
+func TestRedfishTempC(t *testing.T) {
+	tt := []struct {
+		testType        string
+		vendor          string
+		redfishendpoint string
+		expectedAnswer  int
+		detectionString string
+	}{
+		{
+			"TempC",
+			HP,
+			RFThermal,
+			18,
+			"iLO",
+		},
+		{
+			"TempC",
+			Dell,
+			RFThermal,
+			17,
+			"iDRAC",
+		},
+		{
+			"TempC",
+			Supermicro,
+			RFThermal,
+			19,
 			"Supermicro",
 		},
 	}
