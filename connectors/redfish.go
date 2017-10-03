@@ -106,6 +106,7 @@ type RedFishEntryProcessorSummary struct {
 
 // RedFishEntryStatus it's the status information for redfish items
 type RedFishEntryStatus struct {
+	Health       string `json:"Health"`
 	HealthRollUp string `json:"HealthRollUp"`
 }
 
@@ -361,4 +362,55 @@ func (r *RedFishReader) BmcVersion() (bmcVersion string, err error) {
 	}
 
 	return redFishManager.FirmwareVersion, err
+}
+
+// Status returns the status of the server
+func (r *RedFishReader) Status() (status string, err error) {
+	payload, err := r.get(redfishVendorEndPoints[r.vendor][RFEntry])
+	if err != nil {
+		return status, err
+	}
+
+	redFishEntry := &RedFishEntry{}
+	err = json.Unmarshal(payload, redFishEntry)
+	if err != nil {
+		DumpInvalidPayload(*r.ip, payload)
+		return status, err
+	}
+
+	return redFishEntry.Status.Health, err
+}
+
+// Model returns the model of the server
+func (r *RedFishReader) Model() (model string, err error) {
+	payload, err := r.get(redfishVendorEndPoints[r.vendor][RFEntry])
+	if err != nil {
+		return model, err
+	}
+
+	redFishEntry := &RedFishEntry{}
+	err = json.Unmarshal(payload, redFishEntry)
+	if err != nil {
+		DumpInvalidPayload(*r.ip, payload)
+		return model, err
+	}
+
+	return redFishEntry.Model, err
+}
+
+// Name returns the hostname of the server
+func (r *RedFishReader) Name() (name string, err error) {
+	payload, err := r.get(redfishVendorEndPoints[r.vendor][RFEntry])
+	if err != nil {
+		return name, err
+	}
+
+	redFishEntry := &RedFishEntry{}
+	err = json.Unmarshal(payload, redFishEntry)
+	if err != nil {
+		DumpInvalidPayload(*r.ip, payload)
+		return name, err
+	}
+
+	return redFishEntry.HostName, err
 }
