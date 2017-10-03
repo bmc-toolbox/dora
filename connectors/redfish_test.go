@@ -85,14 +85,6 @@ var (
 )
 
 // Serial() (string, error)
-// Model() (string, error)
-// BmcType() (string, error)
-// BmcVersion() (string, error)
-// Name() (string, error)
-// Status() (string, error)
-// Memory() (int, error)
-// CPU() (string, int, int, int, error)
-// BiosVersion() (string, error)
 // PowerKw() (float64, error)
 // TempC() (int, error)
 // Nics() ([]*model.Nic, error)
@@ -412,6 +404,165 @@ func TestRedfishCPU(t *testing.T) {
 
 			if hyperthreadCount != tc.expectedAnswer.hyperthreadCount {
 				t.Errorf("%s hyperthreadCount from vendor %s should answer %v: found %v", tc.testType, tc.vendor, tc.expectedAnswer.cpuCount, hyperthreadCount)
+			}
+		} else {
+			t.Errorf("Found errors during the test setup %v", err)
+		}
+		teardown()
+	}
+}
+
+func TestRedfishStatus(t *testing.T) {
+	tt := []struct {
+		testType        string
+		vendor          string
+		redfishendpoint string
+		expectedAnswer  string
+		detectionString string
+	}{
+		{
+			"Status",
+			HP,
+			RFEntry,
+			"OK",
+			"iLO",
+		},
+		{
+			"Status",
+			Dell,
+			RFEntry,
+			"OK",
+			"iDRAC",
+		},
+		{
+			"Status",
+			Supermicro,
+			RFEntry,
+			"OK",
+			"Supermicro",
+		},
+	}
+
+	for _, tc := range tt {
+		rf, err := setup(tc.vendor, tc.redfishendpoint, tc.detectionString)
+		if err == nil {
+
+			method := reflect.ValueOf(rf).MethodByName(tc.testType)
+			result := method.Call([]reflect.Value{})
+			answer := result[0].Interface()
+			nerr := result[1].Interface()
+			if nerr != nil {
+				t.Errorf("Found errors calling %s: %s", tc.testType, nerr)
+			}
+
+			if answer != tc.expectedAnswer {
+				t.Errorf("%s from vendor %s should answer %v: found %v", tc.testType, tc.vendor, tc.expectedAnswer, answer)
+			}
+		} else {
+			t.Errorf("Found errors during the test setup %v", err)
+		}
+		teardown()
+	}
+}
+
+func TestRedfishModel(t *testing.T) {
+	tt := []struct {
+		testType        string
+		vendor          string
+		redfishendpoint string
+		expectedAnswer  string
+		detectionString string
+	}{
+		{
+			"Model",
+			HP,
+			RFEntry,
+			"ProLiant BL460c Gen9",
+			"iLO",
+		},
+		{
+			"Model",
+			Dell,
+			RFEntry,
+			"PowerEdge M630",
+			"iDRAC",
+		},
+		{
+			"Model",
+			Supermicro,
+			RFEntry,
+			"X10DFF-CTG",
+			"Supermicro",
+		},
+	}
+
+	for _, tc := range tt {
+		rf, err := setup(tc.vendor, tc.redfishendpoint, tc.detectionString)
+		if err == nil {
+
+			method := reflect.ValueOf(rf).MethodByName(tc.testType)
+			result := method.Call([]reflect.Value{})
+			answer := result[0].Interface()
+			nerr := result[1].Interface()
+			if nerr != nil {
+				t.Errorf("Found errors calling %s: %s", tc.testType, nerr)
+			}
+
+			if answer != tc.expectedAnswer {
+				t.Errorf("%s from vendor %s should answer %v: found %v", tc.testType, tc.vendor, tc.expectedAnswer, answer)
+			}
+		} else {
+			t.Errorf("Found errors during the test setup %v", err)
+		}
+		teardown()
+	}
+}
+
+func TestRedfishName(t *testing.T) {
+	tt := []struct {
+		testType        string
+		vendor          string
+		redfishendpoint string
+		expectedAnswer  string
+		detectionString string
+	}{
+		{
+			"Name",
+			HP,
+			RFEntry,
+			"bbmi",
+			"iLO",
+		},
+		{
+			"Name",
+			Dell,
+			RFEntry,
+			"machine.example.com",
+			"iDRAC",
+		},
+		{
+			"Name",
+			Supermicro,
+			RFEntry,
+			"",
+			"Supermicro",
+		},
+	}
+
+	for _, tc := range tt {
+		rf, err := setup(tc.vendor, tc.redfishendpoint, tc.detectionString)
+		if err == nil {
+
+			method := reflect.ValueOf(rf).MethodByName(tc.testType)
+			result := method.Call([]reflect.Value{})
+			answer := result[0].Interface()
+			nerr := result[1].Interface()
+			if nerr != nil {
+				t.Errorf("Found errors calling %s: %s", tc.testType, nerr)
+			}
+
+			if answer != tc.expectedAnswer {
+				t.Errorf("%s from vendor %s should answer %v: found %v", tc.testType, tc.vendor, tc.expectedAnswer, answer)
 			}
 		} else {
 			t.Errorf("Found errors during the test setup %v", err)
