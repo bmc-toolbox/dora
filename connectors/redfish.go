@@ -65,7 +65,6 @@ var (
 			RFThermal: "System Board Inlet Temp",
 		},
 		HP: map[string]string{
-			//			RFPower:   "PowerMetrics",
 			RFThermal: "30-System Board",
 		},
 		Supermicro: map[string]string{
@@ -142,7 +141,7 @@ type RedFishManager struct {
 	Status          *RedFishStatus `json:"Status"`
 }
 
-// RedFishCPUEntry it countains a list with all cpus endpoints we have installed in a given server
+// RedFishCPUEntry contains a list with all cpus endpoints we have installed in a given server
 type RedFishCPUEntry struct {
 	MembersOdataCount int `json:"Members@odata.count"`
 }
@@ -154,15 +153,20 @@ type RedFishStatus struct {
 	State string `json:"State"`
 }
 
-// RedFishPowerControl items exposed on RedFish Power
-type RedFishPowerControl struct {
-	Name               string `json:"Name"`
-	PowerConsumedWatts int    `json:"PowerConsumedWatts"`
+// RedFishPowerControl contains the power usage data
+type RedFishPower struct {
+	PowerControl []struct {
+		Name               string  `json:"Name"`
+		PowerConsumedWatts float64 `json:"PowerConsumedWatts"`
+	} `json:"PowerControl"`
 }
 
-// RedFishPower contains the list of power metrics exposed via redfish
-type RedFishPower struct {
-	PowerControl []*RedFishPowerControl `json:"PowerControl"`
+// RedFishThermal contains the thermal usage data
+type RedFishThermal struct {
+	Temperatures []struct {
+		Name           string `json:"Name"`
+		ReadingCelsius int    `json:"ReadingCelsius"`
+	} `json:"Temperatures"`
 }
 
 // NewRedFishReader returns a new RedFishReader ready to be used
@@ -414,3 +418,35 @@ func (r *RedFishReader) Name() (name string, err error) {
 
 	return redFishEntry.HostName, err
 }
+
+// PowerKw returns the current power usage
+func (r *RedFishReader) PowerKw() (power float64, err error) {
+	payload, err := r.get(redfishVendorEndPoints[r.vendor][RFPower])
+	if err != nil {
+		return power, err
+	}
+
+	redFishPower := &RedFishPower{}
+	err = json.Unmarshal(payload, redFishPower)
+	if err != nil {
+		DumpInvalidPayload(*r.ip, payload)
+		return power, err
+	}
+
+	for _, entry := range redFishPower.PowerControl {
+		if r.vendor == HP {
+			power = entry.PowerConsumedWatts / 1000.00
+		} else {
+			if entry.Name == redfishVendorLabels[r.vendor][RFPower] {
+				power = entry.PowerConsumedWatts / 1000.00
+			}
+		}
+	}
+
+	return power, err
+}
+
+// // TempC returns the current themal status
+// func (r *RedFishReader) TempC() (temp int, err error) {
+// 	return h.hpRimp.HpInfra2.HpTemps.HpTemp.C, err
+// }
