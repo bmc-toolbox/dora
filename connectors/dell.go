@@ -150,8 +150,13 @@ type IDracReader struct {
 }
 
 // NewIDracReader returns a new IloReader ready to be used
-func NewIDracReader(ip *string, username *string, password *string) (iDrac *IDracReader) {
-	return &IDracReader{ip: ip, username: username, password: password}
+func NewIDracReader(ip *string, username *string, password *string) (iDrac *IDracReader, err error) {
+	client, err := buildClient()
+	if err != nil {
+		return iDrac, err
+	}
+
+	return &IDracReader{ip: ip, username: username, password: password, client: client}, err
 }
 
 // Login initiates the connection to an iLO device
@@ -165,12 +170,7 @@ func (i *IDracReader) Login() (err error) {
 	}
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
-	client, err := buildClient()
-	if err != nil {
-		return err
-	}
-
-	resp, err := client.Do(req)
+	resp, err := i.client.Do(req)
 	if err != nil {
 		return err
 	}
@@ -199,8 +199,6 @@ func (i *IDracReader) Login() (err error) {
 	stTemp := strings.Split(iDracAuth.ForwardURL, ",")
 	i.st1 = strings.TrimLeft(stTemp[0], "index.html?ST1=")
 	i.st2 = strings.TrimLeft(stTemp[1], "ST2=")
-
-	i.client = client
 
 	return err
 }

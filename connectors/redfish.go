@@ -206,7 +206,7 @@ func (r *RedFishReader) detectVendor() (err error) {
 	return ErrVendorUnknown
 }
 
-// get, so theoretically we should be able to use a session for the whole RedFish connection, but it doesn't seems to be properly supported by any vendors
+// get theoretically we should be able to use a session for the whole RedFish connection, but it doesn't seems to be properly supported by any vendors
 func (r *RedFishReader) get(endpoint string) (payload []byte, err error) {
 	url := fmt.Sprintf("https://%s/%s", *r.ip, endpoint)
 	if r.vendor == "" {
