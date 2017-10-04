@@ -310,7 +310,7 @@ func (i *IloReader) get(endpoint string) (payload []byte, err error) {
 	return payload, err
 }
 
-// Serial returns the device model
+// Serial returns the device serial
 func (i *IloReader) Serial() (serial string, err error) {
 	return strings.ToLower(strings.TrimSpace(i.hpRimpBlade.HpHSI.Sbsn)), err
 }
