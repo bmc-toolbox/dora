@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -76,16 +77,16 @@ type SupermicroGeneric struct {
 
 // SupermicroPlatformInfo holds the hardware related information
 type SupermicroPlatformInfo struct {
-	BiosVersion string `xml:" BIOS_VERSION,attr"  json:",omitempty"`
-	MbMacAddr1  string `xml:" MB_MAC_ADDR1,attr"  json:",omitempty"`
-	MbMacAddr2  string `xml:" MB_MAC_ADDR2,attr"  json:",omitempty"`
+	BiosVersion string `xml:" BIOS_VERSION,attr"`
+	MbMacAddr1  string `xml:" MB_MAC_ADDR1,attr"`
+	MbMacAddr2  string `xml:" MB_MAC_ADDR2,attr"`
 }
 
 // SupermicroPowerSupply holds the power supply information
 type SupermicroPowerSupply struct {
-	Location  string `xml:" LOCATION,attr"  json:",omitempty"`
-	Status    string `xml:" STATUS,attr"  json:",omitempty"`
-	Unplugged string `xml:" UNPLUGGED,attr"  json:",omitempty"`
+	Location  string `xml:" LOCATION,attr"`
+	Status    string `xml:" STATUS,attr"`
+	Unplugged string `xml:" UNPLUGGED,attr"`
 }
 
 // SupermicroReader holds the status and properties of a connection to a supermicro bmc
@@ -140,37 +141,41 @@ func (s *SupermicroReader) Login() (err error) {
 	if !strings.Contains(string(payload), "../cgi/url_redirect.cgi?url_name=mainmenu") {
 		return ErrLoginFailed
 	}
+
+	return err
 }
 
-func (s *SupermicroReader) get(requestType string) (ipmi *SupermicroIPMI, err error) {
-	url := fmt.Sprintf("https://%s/ipmi.cgi", *s.ip)
-	log.WithFields(log.Fields{"step": "BMC Connection Supermicro", "ip": *s.ip, "url": url}).Debug("Retrieving data via BMC")
+func (s *SupermicroReader) query(requestType string) (ipmi *SupermicroIPMI, err error) {
+	bmcURL := fmt.Sprintf("https://%s/cgi/ipmi.cgi", *s.ip)
+	log.WithFields(log.Fields{"step": "BMC Connection Supermicro", "ip": *s.ip, "url": bmcURL}).Debug("Retrieving data via BMC")
 
-	req, err := http.NewRequest("POST", url, bytes.NewBufferString(requestType))
+	req, err := http.NewRequest("POST", bmcURL, bytes.NewBufferString(requestType))
 	if err != nil {
 		return ipmi, err
 	}
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	u, err := url.Parse(bmcURL)
+	if err != nil {
+		return ipmi, err
+	}
+	for _, cookie := range s.client.Jar.Cookies(u) {
+		if cookie.Name == "SID" && cookie.Value != "" {
+			req.AddCookie(cookie)
+		}
+	}
 
-	resp, err := client.Do(req)
+	resp, err := s.client.Do(req)
 	if err != nil {
 		return ipmi, err
 	}
 	defer resp.Body.Close()
 
-	switch resp.StatusCode {
-	case 401:
-		return payload, ErrLoginFailed
-	case 404:
-		return payload, ErrPageNotFound
-	case 500:
-		return payload, ErrRedFishEndPoint500
-	}
-
-	payload, err = ioutil.ReadAll(resp.Body)
+	payload, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return ipmi, err
 	}
 
+	ipmi = &SupermicroIPMI{}
 	err = xml.Unmarshal(payload, ipmi)
 	if err != nil {
 		DumpInvalidPayload(*s.ip, payload)
@@ -180,13 +185,43 @@ func (s *SupermicroReader) get(requestType string) (ipmi *SupermicroIPMI, err er
 	return ipmi, err
 }
 
+// Logout logs out of the bmc
+func (s *SupermicroReader) Logout() (err error) {
+	bmcURL := fmt.Sprintf("https://%s/cgi/logout.cgi", *s.ip)
+	log.WithFields(log.Fields{"step": "BMC Connection Supermicro", "ip": *s.ip, "url": bmcURL}).Debug("Logout from BMC")
+
+	req, err := http.NewRequest("POST", bmcURL, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	u, err := url.Parse(bmcURL)
+	if err != nil {
+		return err
+	}
+	for _, cookie := range s.client.Jar.Cookies(u) {
+		if cookie.Name == "SID" && cookie.Value != "" {
+			req.AddCookie(cookie)
+		}
+	}
+
+	resp, err := s.client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	return err
+}
+
 // Serial returns the device serial
 func (s *SupermicroReader) Serial() (serial string, err error) {
-	ipmi, err := s.get("FRU_INFO.XML=(0,0)")
+	ipmi, err := s.query("FRU_INFO.XML=(0,0)")
 	if err != nil {
 		return serial, err
 	}
-	serial := fmt.Sprintf("%s@%s", ipmi.FruInfo.Chassis.SerialNum, ipmi.FruInfo.Board.SerialNum)
+
+	serial = fmt.Sprintf("%s@%s", ipmi.FruInfo.Chassis.SerialNum, ipmi.FruInfo.Board.SerialNum)
 	return serial, err
 }
 
