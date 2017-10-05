@@ -320,7 +320,7 @@ func (i *IloReader) Model() (model string, err error) {
 	return i.hpRimpBlade.HpHSI.Spn, err
 }
 
-// BmcType returns the device model
+// BmcType returns the type of bmc we are talking to
 func (i *IloReader) BmcType() (bmcType string, err error) {
 	switch i.hpRimpBlade.HpMP.Pn {
 	case "Integrated Lights-Out 4 (iLO 4)":
@@ -332,7 +332,7 @@ func (i *IloReader) BmcType() (bmcType string, err error) {
 	}
 }
 
-// BmcVersion returns the device model
+// BmcVersion returns the version of the bmc we are running
 func (i *IloReader) BmcVersion() (bmcVersion string, err error) {
 	return i.hpRimpBlade.HpMP.Fwri, err
 }
