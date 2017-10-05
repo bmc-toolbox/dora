@@ -16,6 +16,7 @@ import (
 type SupermicroIPMI struct {
 	Bios         *SupermicroBios          `xml:" BIOS,omitempty"`
 	CPU          []*SupermicroCPU         `xml:" CPU,omitempty"`
+	ConfigInfo   *SupermicroConfigInfo    `xml:" CONFIG_INFO,omitempty"`
 	Dimm         []*SupermicroDimm        `xml:" DIMM,omitempty"`
 	FruInfo      *SupermicroFruInfo       `xml:" FRU_INFO,omitempty"`
 	GenericInfo  *SupermicroGenericInfo   `xml:" GENERIC_INFO,omitempty"`
@@ -35,6 +36,16 @@ type SupermicroCPU struct {
 	Core    string `xml:" CORE,attr"`
 	Type    string `xml:" TYPE,attr"`
 	Version string `xml:" VER,attr"`
+}
+
+// SupermicroConfigInfo holds the bmc configuration
+type SupermicroConfigInfo struct {
+	Hostname *SupermicroHostname `xml:" HOSTNAME,omitempty"`
+}
+
+// SupermicroHostname is the bmc hostname
+type SupermicroHostname struct {
+	Name string `xml:" NAME,attr"`
 }
 
 // SupermicroDimm holds the ram information
@@ -102,6 +113,7 @@ type SupermicroReader struct {
 // "GENERIC_INFO.XML=(0,0)" https://ha150datanode-28.example.com/cgi/ipmi.cgi
 // "Get_PlatformInfo.XML=(0,0)" https://ha150datanode-28.example.com/cgi/ipmi.cgi
 // "SMBIOS_INFO.XML=(0,0)" https://ha150datanode-28.example.com/cgi/ipmi.cgi
+// "CONFIG_INFO.XML=(0,0)" https://ha150datanode-28.example.com/cgi/ipmi.cgi
 
 // NewSupermicroReader returns a new IloReader ready to be used
 func NewSupermicroReader(ip *string, username *string, password *string) (sm *SupermicroReader, err error) {
@@ -248,4 +260,19 @@ func (s *SupermicroReader) BmcVersion() (bmcVersion string, err error) {
 	}
 
 	return ipmi.GenericInfo.Generic.IpmiFwVersion, err
+}
+
+// Name returns the hostname of the machine
+func (s *SupermicroReader) Name() (name string, err error) {
+	ipmi, err := s.query("CONFIG_INFO.XML=(0,0)")
+	if err != nil {
+		return name, err
+	}
+
+	return ipmi.ConfigInfo.Hostname.Name, err
+}
+
+// Status returns health string status from the bmc
+func (s *SupermicroReader) Status() (health string, err error) {
+	return
 }

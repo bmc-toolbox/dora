@@ -1,6 +1,7 @@
 package connectors
 
 import (
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -31,6 +32,30 @@ var (
 				<HOST_AND_USER HOSTNAME="" BMC_IP="010.193.171.016" SESS_USER_NAME="Administrator" USER_ACCESS="04" DHCP6C_DUID="0E 00 00 01 00 01 20 FA 0E 90 0C C4 7A B8 22 64 "/>
 			  </PLATFORM_INFO>
 			</IPMI>`),
+		"CONFIG_INFO.XML=(0,0)": []byte(`<?xml version="1.0"?>
+			<IPMI>
+			  <CONFIG_INFO>
+				<TOTAL_NUMBER LAN="1" USER="a"/>
+				<LAN BMC_IP="010.193.171.016" BMC_MAC="0c-c4-7a-b8-22-64" BMC_NETMASK="255.255.255.000" GATEWAY_IP="010.193.171.254" GATEWAY_MAC="0c-c4-7a-b8-22-64" VLAN_ID="0000" DHCP_TOUT="0" DHCP_EN="1" RMCP_PORT="026f"/>
+				<USER NAME="                " USER_ACCESS="00" IKVM_VIDEO_EN="1" IKVM_KM_EN="1" IKVM_KICK_EN="1" VUSB_EN="1"/>
+				<USER NAME="Administrator" USER_ACCESS="04" IKVM_VIDEO_EN="1" IKVM_KM_EN="1" IKVM_KICK_EN="1" VUSB_EN="1"/>
+				<USER NAME="" USER_ACCESS="00" IKVM_VIDEO_EN="1" IKVM_KM_EN="1" IKVM_KICK_EN="1" VUSB_EN="1"/>
+				<USER NAME="" USER_ACCESS="00" IKVM_VIDEO_EN="1" IKVM_KM_EN="1" IKVM_KICK_EN="1" VUSB_EN="1"/>
+				<USER NAME="" USER_ACCESS="00" IKVM_VIDEO_EN="1" IKVM_KM_EN="1" IKVM_KICK_EN="1" VUSB_EN="1"/>
+				<USER NAME="" USER_ACCESS="00" IKVM_VIDEO_EN="1" IKVM_KM_EN="1" IKVM_KICK_EN="1" VUSB_EN="1"/>
+				<USER NAME="" USER_ACCESS="00" IKVM_VIDEO_EN="1" IKVM_KM_EN="1" IKVM_KICK_EN="1" VUSB_EN="1"/>
+				<USER NAME="" USER_ACCESS="00" IKVM_VIDEO_EN="1" IKVM_KM_EN="1" IKVM_KICK_EN="1" VUSB_EN="1"/>
+				<USER NAME="" USER_ACCESS="00" IKVM_VIDEO_EN="1" IKVM_KM_EN="1" IKVM_KICK_EN="1" VUSB_EN="1"/>
+				<USER NAME="" USER_ACCESS="00" IKVM_VIDEO_EN="1" IKVM_KM_EN="1" IKVM_KICK_EN="1" VUSB_EN="1"/>
+				<SERVICE DNS_ADDR="000.000.000.000" ALERT_EN="0" SMTP_SERVER=" " SMTP_PORT="587" MAIL_ADDR="0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;" MAIL_USR=" " MAIL_PWD=" " SMTP_SSL="0"/>
+				<LDAP LDAP_SSL="0" LDAP_IP="000.000.000.000" LDAP_EN="0" Encryption_EN="1" TIMEOUT="00" LDAP_PORT="00000" BASE_DN=" " BINDDN=" "/>
+				<DNS DNS_SERVER="10.252.13.2"/>
+				<LAN_IF INTERFACE="2"/>
+				<HOSTNAME NAME="testserver"/>
+				<DHCP6C DUID="0E 00 00 01 00 01 20 FA 0E 90 0C C4 7A B8 22 64 "/>
+				<LINK_INFO MII_LINK_CONF="0" MII_AUTO_NEGOTIATION="0" MII_DUPLEX="1" MII_SPEED="2" MII_OPERSTATE="1" NCSI_AUTO_NEGOTIATION="0" NCSI_SPEED_AND_DUPLEX="0" NCSI_OPERSTATE="0" DEV_IF_MODE="2" BOND0_PORT="0"/>
+			  </CONFIG_INFO>
+			</IPMI>`),
 		"SMBIOS_INFO.XML=(0,0)": []byte(`<?xml version="1.0"?>
 			<IPMI>
 			  <BIOS VENDOR="American Megatrends Inc." VER="2.0" REL_DATE="12/17/2015"/>
@@ -51,7 +76,7 @@ var (
 	}
 )
 
-func smSetup(query string) (r *SupermicroReader, err error) {
+func smSetup() (r *SupermicroReader, err error) {
 	viper.SetDefault("debug", false)
 	mux = http.NewServeMux()
 	server = httptest.NewTLSServer(mux)
@@ -60,7 +85,12 @@ func smSetup(query string) (r *SupermicroReader, err error) {
 	password := "test"
 
 	mux.HandleFunc("/cgi/ipmi.cgi", func(w http.ResponseWriter, r *http.Request) {
-		w.Write(supermicroAnswers[query])
+		query, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Write(supermicroAnswers[string(query)])
 	})
 
 	mux.HandleFunc("/cgi/login.cgi", func(w http.ResponseWriter, r *http.Request) {
@@ -80,7 +110,7 @@ func smTeardown() {
 }
 
 func TestSupermicroLogin(t *testing.T) {
-	bmc, err := smSetup("")
+	bmc, err := smSetup()
 	if err != nil {
 		t.Fatalf("Found errors during the test smSetup %v", err)
 	}
@@ -94,7 +124,7 @@ func TestSupermicroLogin(t *testing.T) {
 func TestSupermicroSerial(t *testing.T) {
 	expectedAnswer := "CF414AF38N50003@VM158S009467"
 
-	bmc, err := smSetup("FRU_INFO.XML=(0,0)")
+	bmc, err := smSetup()
 	if err != nil {
 		t.Fatalf("Found errors during the test smSetup %v", err)
 	}
@@ -108,7 +138,7 @@ func TestSupermicroSerial(t *testing.T) {
 func TestSupermicroModel(t *testing.T) {
 	expectedAnswer := "X10DRFF-CTG"
 
-	bmc, err := smSetup("FRU_INFO.XML=(0,0)")
+	bmc, err := smSetup()
 	if err != nil {
 		t.Fatalf("Found errors during the test smSetup %v", err)
 	}
@@ -122,7 +152,7 @@ func TestSupermicroModel(t *testing.T) {
 func TestSupermicroBmcType(t *testing.T) {
 	expectedAnswer := "Supermicro"
 
-	bmc, err := smSetup("")
+	bmc, err := smSetup()
 	if err != nil {
 		t.Fatalf("Found errors during the test smSetup %v", err)
 	}
@@ -136,12 +166,26 @@ func TestSupermicroBmcType(t *testing.T) {
 func TestSupermicroBmcVersion(t *testing.T) {
 	expectedAnswer := "0325"
 
-	bmc, err := smSetup("GENERIC_INFO.XML=(0,0)")
+	bmc, err := smSetup()
 	if err != nil {
 		t.Fatalf("Found errors during the test smSetup %v", err)
 	}
 
 	answer, err := bmc.BmcVersion()
+	if answer != expectedAnswer {
+		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
+	}
+}
+
+func TestSupermicroName(t *testing.T) {
+	expectedAnswer := "testserver"
+
+	bmc, err := smSetup()
+	if err != nil {
+		t.Fatalf("Found errors during the test smSetup %v", err)
+	}
+
+	answer, err := bmc.Name()
 	if answer != expectedAnswer {
 		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
 	}
