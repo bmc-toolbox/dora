@@ -118,3 +118,31 @@ func TestSupermicroModel(t *testing.T) {
 		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
 	}
 }
+
+func TestSupermicroBmcType(t *testing.T) {
+	expectedAnswer := "Supermicro"
+
+	bmc, err := smSetup("")
+	if err != nil {
+		t.Fatalf("Found errors during the test smSetup %v", err)
+	}
+
+	answer, err := bmc.BmcType()
+	if answer != expectedAnswer {
+		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
+	}
+}
+
+func TestSupermicroBmcVersion(t *testing.T) {
+	expectedAnswer := "0325"
+
+	bmc, err := smSetup("GENERIC_INFO.XML=(0,0)")
+	if err != nil {
+		t.Fatalf("Found errors during the test smSetup %v", err)
+	}
+
+	answer, err := bmc.BmcVersion()
+	if answer != expectedAnswer {
+		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
+	}
+}

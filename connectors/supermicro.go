@@ -234,3 +234,18 @@ func (s *SupermicroReader) Model() (model string, err error) {
 
 	return ipmi.FruInfo.Board.ProdName, err
 }
+
+// BmcType returns the type of bmc we are talking to
+func (s *SupermicroReader) BmcType() (bmcType string, err error) {
+	return "Supermicro", err
+}
+
+// BmcVersion returns the version of the bmc we are running
+func (s *SupermicroReader) BmcVersion() (bmcVersion string, err error) {
+	ipmi, err := s.query("GENERIC_INFO.XML=(0,0)")
+	if err != nil {
+		return bmcVersion, err
+	}
+
+	return ipmi.GenericInfo.Generic.IpmiFwVersion, err
+}
