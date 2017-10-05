@@ -227,5 +227,10 @@ func (s *SupermicroReader) Serial() (serial string, err error) {
 
 // Model returns the device model
 func (s *SupermicroReader) Model() (model string, err error) {
-	return
+	ipmi, err := s.query("FRU_INFO.XML=(0,0)")
+	if err != nil {
+		return model, err
+	}
+
+	return ipmi.FruInfo.Board.ProdName, err
 }
