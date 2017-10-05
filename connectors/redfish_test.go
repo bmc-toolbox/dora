@@ -22,11 +22,13 @@ type rFTest struct {
 	}
 }
 
-func setup(vendor string, redfishendpoint string, detectionString string) (r *RedFishReader, err error) {
+func rfSetup(vendor string, redfishendpoint string, detectionString string) (r *RedFishReader, err error) {
 	viper.SetDefault("debug", false)
 	mux = http.NewServeMux()
 	server = httptest.NewTLSServer(mux)
 	ip := strings.TrimPrefix(server.URL, "https://")
+	username := "super"
+	password := "test"
 
 	mux.HandleFunc(fmt.Sprintf("/%s", redfishVendorEndPoints[vendor][redfishendpoint]), func(w http.ResponseWriter, r *http.Request) {
 		w.Write(redfishVendorAnswers[vendor][redfishendpoint])
@@ -44,14 +46,11 @@ func setup(vendor string, redfishendpoint string, detectionString string) (r *Re
 	return r, err
 }
 
-func teardown() {
+func rfTeardown() {
 	server.Close()
 }
 
 var (
-	username = "super"
-	password = "test"
-
 	rft                  rFTest
 	mux                  *http.ServeMux
 	server               *httptest.Server
@@ -124,7 +123,7 @@ func TestRedfishBios(t *testing.T) {
 	}
 
 	for _, tc := range tt {
-		rf, err := setup(tc.vendor, tc.redfishendpoint, tc.detectionString)
+		rf, err := rfSetup(tc.vendor, tc.redfishendpoint, tc.detectionString)
 		if err == nil {
 
 			method := reflect.ValueOf(rf).MethodByName(tc.testType)
@@ -139,9 +138,9 @@ func TestRedfishBios(t *testing.T) {
 				t.Errorf("%s from vendor %s should answer %v: found %v", tc.testType, tc.vendor, tc.expectedAnswer, answer)
 			}
 		} else {
-			t.Errorf("Found errors during the test setup %v", err)
+			t.Errorf("Found errors during the test rfSetup %v", err)
 		}
-		teardown()
+		rfTeardown()
 	}
 }
 
@@ -177,7 +176,7 @@ func TestRedfishBmcType(t *testing.T) {
 	}
 
 	for _, tc := range tt {
-		rf, err := setup(tc.vendor, tc.redfishendpoint, tc.detectionString)
+		rf, err := rfSetup(tc.vendor, tc.redfishendpoint, tc.detectionString)
 		if err == nil {
 
 			method := reflect.ValueOf(rf).MethodByName(tc.testType)
@@ -192,9 +191,9 @@ func TestRedfishBmcType(t *testing.T) {
 				t.Errorf("%s from vendor %s should answer %v: found %v", tc.testType, tc.vendor, tc.expectedAnswer, answer)
 			}
 		} else {
-			t.Errorf("Found errors during the test setup %v", err)
+			t.Errorf("Found errors during the test rfSetup %v", err)
 		}
-		teardown()
+		rfTeardown()
 	}
 }
 
@@ -230,7 +229,7 @@ func TestRedfishBmcVersion(t *testing.T) {
 	}
 
 	for _, tc := range tt {
-		rf, err := setup(tc.vendor, tc.redfishendpoint, tc.detectionString)
+		rf, err := rfSetup(tc.vendor, tc.redfishendpoint, tc.detectionString)
 		if err == nil {
 
 			method := reflect.ValueOf(rf).MethodByName(tc.testType)
@@ -245,9 +244,9 @@ func TestRedfishBmcVersion(t *testing.T) {
 				t.Errorf("%s from vendor %s should answer %v: found %v", tc.testType, tc.vendor, tc.expectedAnswer, answer)
 			}
 		} else {
-			t.Errorf("Found errors during the test setup %v", err)
+			t.Errorf("Found errors during the test rfSetup %v", err)
 		}
-		teardown()
+		rfTeardown()
 	}
 }
 
@@ -283,7 +282,7 @@ func TestRedfishMemory(t *testing.T) {
 	}
 
 	for _, tc := range tt {
-		rf, err := setup(tc.vendor, tc.redfishendpoint, tc.detectionString)
+		rf, err := rfSetup(tc.vendor, tc.redfishendpoint, tc.detectionString)
 		if err == nil {
 
 			method := reflect.ValueOf(rf).MethodByName(tc.testType)
@@ -298,9 +297,9 @@ func TestRedfishMemory(t *testing.T) {
 				t.Errorf("%s from vendor %s should answer %v: found %v", tc.testType, tc.vendor, tc.expectedAnswer, answer)
 			}
 		} else {
-			t.Errorf("Found errors during the test setup %v", err)
+			t.Errorf("Found errors during the test rfSetup %v", err)
 		}
-		teardown()
+		rfTeardown()
 	}
 }
 
@@ -371,7 +370,7 @@ func TestRedfishCPU(t *testing.T) {
 	}
 
 	for _, tc := range tt {
-		rf, err := setup(tc.vendor, tc.redfishendpoint, tc.detectionString)
+		rf, err := rfSetup(tc.vendor, tc.redfishendpoint, tc.detectionString)
 		if err == nil {
 			mux.HandleFunc(fmt.Sprintf("/%s", redfishVendorEndPoints[tc.vendor][RFCPU]), func(w http.ResponseWriter, r *http.Request) {
 				w.Write(redfishVendorAnswers[tc.vendor][RFCPU])
@@ -406,9 +405,9 @@ func TestRedfishCPU(t *testing.T) {
 				t.Errorf("%s hyperthreadCount from vendor %s should answer %v: found %v", tc.testType, tc.vendor, tc.expectedAnswer.cpuCount, hyperthreadCount)
 			}
 		} else {
-			t.Errorf("Found errors during the test setup %v", err)
+			t.Errorf("Found errors during the test rfSetup %v", err)
 		}
-		teardown()
+		rfTeardown()
 	}
 }
 
@@ -444,7 +443,7 @@ func TestRedfishStatus(t *testing.T) {
 	}
 
 	for _, tc := range tt {
-		rf, err := setup(tc.vendor, tc.redfishendpoint, tc.detectionString)
+		rf, err := rfSetup(tc.vendor, tc.redfishendpoint, tc.detectionString)
 		if err == nil {
 
 			method := reflect.ValueOf(rf).MethodByName(tc.testType)
@@ -459,9 +458,9 @@ func TestRedfishStatus(t *testing.T) {
 				t.Errorf("%s from vendor %s should answer %v: found %v", tc.testType, tc.vendor, tc.expectedAnswer, answer)
 			}
 		} else {
-			t.Errorf("Found errors during the test setup %v", err)
+			t.Errorf("Found errors during the test rfSetup %v", err)
 		}
-		teardown()
+		rfTeardown()
 	}
 }
 
@@ -497,7 +496,7 @@ func TestRedfishModel(t *testing.T) {
 	}
 
 	for _, tc := range tt {
-		rf, err := setup(tc.vendor, tc.redfishendpoint, tc.detectionString)
+		rf, err := rfSetup(tc.vendor, tc.redfishendpoint, tc.detectionString)
 		if err == nil {
 
 			method := reflect.ValueOf(rf).MethodByName(tc.testType)
@@ -512,9 +511,9 @@ func TestRedfishModel(t *testing.T) {
 				t.Errorf("%s from vendor %s should answer %v: found %v", tc.testType, tc.vendor, tc.expectedAnswer, answer)
 			}
 		} else {
-			t.Errorf("Found errors during the test setup %v", err)
+			t.Errorf("Found errors during the test rfSetup %v", err)
 		}
-		teardown()
+		rfTeardown()
 	}
 }
 
@@ -550,7 +549,7 @@ func TestRedfishName(t *testing.T) {
 	}
 
 	for _, tc := range tt {
-		rf, err := setup(tc.vendor, tc.redfishendpoint, tc.detectionString)
+		rf, err := rfSetup(tc.vendor, tc.redfishendpoint, tc.detectionString)
 		if err == nil {
 
 			method := reflect.ValueOf(rf).MethodByName(tc.testType)
@@ -565,9 +564,9 @@ func TestRedfishName(t *testing.T) {
 				t.Errorf("%s from vendor %s should answer %v: found %v", tc.testType, tc.vendor, tc.expectedAnswer, answer)
 			}
 		} else {
-			t.Errorf("Found errors during the test setup %v", err)
+			t.Errorf("Found errors during the test rfSetup %v", err)
 		}
-		teardown()
+		rfTeardown()
 	}
 }
 
@@ -603,7 +602,7 @@ func TestRedfishPowerKw(t *testing.T) {
 	}
 
 	for _, tc := range tt {
-		rf, err := setup(tc.vendor, tc.redfishendpoint, tc.detectionString)
+		rf, err := rfSetup(tc.vendor, tc.redfishendpoint, tc.detectionString)
 		if err == nil {
 
 			method := reflect.ValueOf(rf).MethodByName(tc.testType)
@@ -618,9 +617,9 @@ func TestRedfishPowerKw(t *testing.T) {
 				t.Errorf("%s from vendor %s should answer %v: found %v", tc.testType, tc.vendor, tc.expectedAnswer, answer)
 			}
 		} else {
-			t.Errorf("Found errors during the test setup %v", err)
+			t.Errorf("Found errors during the test rfSetup %v", err)
 		}
-		teardown()
+		rfTeardown()
 	}
 }
 
@@ -656,7 +655,7 @@ func TestRedfishTempC(t *testing.T) {
 	}
 
 	for _, tc := range tt {
-		rf, err := setup(tc.vendor, tc.redfishendpoint, tc.detectionString)
+		rf, err := rfSetup(tc.vendor, tc.redfishendpoint, tc.detectionString)
 		if err == nil {
 
 			method := reflect.ValueOf(rf).MethodByName(tc.testType)
@@ -671,8 +670,8 @@ func TestRedfishTempC(t *testing.T) {
 				t.Errorf("%s from vendor %s should answer %v: found %v", tc.testType, tc.vendor, tc.expectedAnswer, answer)
 			}
 		} else {
-			t.Errorf("Found errors during the test setup %v", err)
+			t.Errorf("Found errors during the test rfSetup %v", err)
 		}
-		teardown()
+		rfTeardown()
 	}
 }
