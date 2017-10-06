@@ -459,7 +459,7 @@ func (i *IloReader) PowerKw() (power float64, err error) {
 	return float64(hpPowerSummary.PowerSupplyInputPower) / 1024, err
 }
 
-// TempC returns the current verion of the bios
+// TempC returns the current temperature of the machine
 func (i *IloReader) TempC() (temp int, err error) {
 	payload, err := i.get("json/health_temperature")
 	if err != nil {
