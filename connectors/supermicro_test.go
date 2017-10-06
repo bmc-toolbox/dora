@@ -227,3 +227,32 @@ func TestSupermicroMemory(t *testing.T) {
 		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
 	}
 }
+
+func TestSupermicroCPU(t *testing.T) {
+	expectedAnswerCPUType := "Intel(R) Xeon(R) CPU E5-2630 v4 @ 2.20GHz"
+	expectedAnswerCPUCount := 2
+	expectedAnswerCore := 10
+	expectedAnswerHyperthread := 10
+
+	bmc, err := smSetup()
+	if err != nil {
+		t.Fatalf("Found errors during the test smSetup %v", err)
+	}
+
+	cpuType, cpuCount, core, ht, err := bmc.CPU()
+	if cpuType != expectedAnswerCPUType {
+		t.Errorf("Expected cpuType answer %v: found %v", expectedAnswerCPUType, cpuType)
+	}
+
+	if cpuCount != expectedAnswerCPUCount {
+		t.Errorf("Expected cpuCount answer %v: found %v", expectedAnswerCPUCount, cpuCount)
+	}
+
+	if core != expectedAnswerCore {
+		t.Errorf("Expected core answer %v: found %v", expectedAnswerCore, core)
+	}
+
+	if ht != expectedAnswerHyperthread {
+		t.Errorf("Expected ht answer %v: found %v", expectedAnswerHyperthread, ht)
+	}
+}

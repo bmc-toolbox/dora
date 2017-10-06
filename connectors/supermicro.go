@@ -35,7 +35,6 @@ type SupermicroBios struct {
 // SupermicroCPU holds the cpu information
 type SupermicroCPU struct {
 	Core    string `xml:" CORE,attr"`
-	Type    string `xml:" TYPE,attr"`
 	Version string `xml:" VER,attr"`
 }
 
@@ -292,4 +291,23 @@ func (s *SupermicroReader) Memory() (mem int, err error) {
 	}
 
 	return mem / 1024, err
+}
+
+// CPU returns the cpu, cores and hyperthreads of the server
+func (s *SupermicroReader) CPU() (cpu string, cpuCount int, coreCount int, hyperthreadCount int, err error) {
+	ipmi, err := s.query("SMBIOS_INFO.XML=(0,0)")
+	for _, entry := range ipmi.CPU {
+		cpu = entry.Version
+		cpuCount = len(ipmi.CPU)
+
+		coreCount, err = strconv.Atoi(entry.Core)
+		if err != nil {
+			return cpu, cpuCount, coreCount, hyperthreadCount, err
+		}
+
+		hyperthreadCount = coreCount
+		break
+	}
+
+	return cpu, cpuCount, coreCount, hyperthreadCount, err
 }
