@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/spf13/viper"
+	"gitlab.booking.com/infra/dora/model"
 )
 
 var (
@@ -306,5 +307,34 @@ func TestSupermicroTempC(t *testing.T) {
 	answer, err := bmc.TempC()
 	if answer != expectedAnswer {
 		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
+	}
+}
+
+func TestSupermicroNics(t *testing.T) {
+	expectedAnswer := []*model.Nic{
+		&model.Nic{
+			MacAddress: "0c:c4:7a:b8:22:64",
+			Name:       "bmc",
+		},
+		&model.Nic{
+			MacAddress: "0c:c4:7a:bc:dc:1a",
+			Name:       "eth0",
+		},
+		&model.Nic{
+			MacAddress: "0c:c4:7a:bc:dc:1b",
+			Name:       "eth1",
+		},
+	}
+
+	bmc, err := smSetup()
+	if err != nil {
+		t.Fatalf("Found errors during the test smSetup %v", err)
+	}
+
+	nics, err := bmc.Nics()
+	for pos, nic := range nics {
+		if nic.MacAddress != expectedAnswer[pos].MacAddress || nic.Name != expectedAnswer[pos].Name {
+			t.Errorf("Expected answer %v: found %v", expectedAnswer[pos], nic)
+		}
 	}
 }

@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	log "github.com/sirupsen/logrus"
+	"gitlab.booking.com/infra/dora/model"
 )
 
 // SupermicroIPMI is the base structure that holds the information on queries to https://$ip/cgi/ipmi.cgi
@@ -92,6 +93,8 @@ type SupermicroPlatformInfo struct {
 	BiosVersion string `xml:" BIOS_VERSION,attr"`
 	MbMacAddr1  string `xml:" MB_MAC_ADDR1,attr"`
 	MbMacAddr2  string `xml:" MB_MAC_ADDR2,attr"`
+	MbMacAddr3  string `xml:" MB_MAC_ADDR3,attr"`
+	MbMacAddr4  string `xml:" MB_MAC_ADDR4,attr"`
 }
 
 // SupermicroPowerSupply holds the power supply information
@@ -376,7 +379,7 @@ func (s *SupermicroReader) PowerKw() (power float64, err error) {
 	return power, err
 }
 
-// TempC returns the current verion of the bios
+// TempC returns the current temperature of the machine
 func (s *SupermicroReader) TempC() (temp int, err error) {
 	ipmi, err := s.query("Get_NodeInfoReadings.XML=(0,0)")
 	if err != nil {
@@ -397,4 +400,61 @@ func (s *SupermicroReader) TempC() (temp int, err error) {
 	}
 
 	return temp, err
+}
+
+// Nics returns all found Nics in the device
+func (s *SupermicroReader) Nics() (nics []*model.Nic, err error) {
+	nics = make([]*model.Nic, 0)
+	ipmi, err := s.query("GENERIC_INFO.XML=(0,0)")
+	if err != nil {
+		return nics, err
+	}
+
+	bmcNic := &model.Nic{
+		MacAddress: ipmi.GenericInfo.Generic.BmcMac,
+		Name:       "bmc",
+	}
+
+	nics = append(nics, bmcNic)
+
+	ipmi, err = s.query("Get_PlatformInfo.XML=(0,0)")
+	if err != nil {
+		return nics, err
+	}
+
+	if ipmi.PlatformInfo != nil {
+		if ipmi.PlatformInfo.MbMacAddr1 != "" {
+			bmcNic := &model.Nic{
+				MacAddress: ipmi.PlatformInfo.MbMacAddr1,
+				Name:       "eth0",
+			}
+			nics = append(nics, bmcNic)
+		}
+
+		if ipmi.PlatformInfo.MbMacAddr2 != "" {
+			bmcNic := &model.Nic{
+				MacAddress: ipmi.PlatformInfo.MbMacAddr2,
+				Name:       "eth1",
+			}
+			nics = append(nics, bmcNic)
+		}
+
+		if ipmi.PlatformInfo.MbMacAddr3 != "" {
+			bmcNic := &model.Nic{
+				MacAddress: ipmi.PlatformInfo.MbMacAddr3,
+				Name:       "eth2",
+			}
+			nics = append(nics, bmcNic)
+		}
+
+		if ipmi.PlatformInfo.MbMacAddr4 != "" {
+			bmcNic := &model.Nic{
+				MacAddress: ipmi.PlatformInfo.MbMacAddr4,
+				Name:       "eth3",
+			}
+			nics = append(nics, bmcNic)
+		}
+	}
+
+	return nics, err
 }
