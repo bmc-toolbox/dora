@@ -152,42 +152,6 @@ func NewConnection(username string, password string, host string) (c *Connection
 }
 
 func (c *Connection) blade(bmc Bmc) (blade *model.Blade, err error) {
-	db := storage.InitDB()
-	blade = &model.Blade{}
-
-	blade.BmcAddress = c.host
-	blade.Vendor = c.Vendor()
-
-	blade.Serial, err = bmc.Serial()
-	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading serial", "ip": blade.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
-	}
-
-	if blade.Serial == "" || blade.Serial == "[unknown]" || blade.Serial == "0000000000" {
-		log.WithFields(log.Fields{"operation": "reading serial", "ip": blade.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": "The server has no serial"}).Warning("Auditing hardware")
-		return nil, ErrUnabletoReadData
-	}
-
-	blade.BmcType, err = bmc.BmcType()
-	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading bmc type", "ip": blade.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
-	}
-
-	blade.BmcVersion, err = bmc.BmcVersion()
-	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading bmc version", "ip": blade.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
-	}
-
-	blade.Model, err = bmc.Model()
-	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading model", "ip": blade.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
-	}
-
-	blade.Nics, err = bmc.Nics()
-	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading nics", "ip": blade.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
-	}
-
 	err = bmc.Login()
 	if err != nil {
 		log.WithFields(log.Fields{"operation": "bmc auth", "ip": blade.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
@@ -195,6 +159,42 @@ func (c *Connection) blade(bmc Bmc) (blade *model.Blade, err error) {
 		defer bmc.Logout()
 		blade.BmcAuth = true
 		blade.BmcWEBReachable = true
+
+		db := storage.InitDB()
+		blade = &model.Blade{}
+
+		blade.BmcAddress = c.host
+		blade.Vendor = c.Vendor()
+
+		blade.Serial, err = bmc.Serial()
+		if err != nil {
+			log.WithFields(log.Fields{"operation": "reading serial", "ip": blade.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
+		}
+
+		if blade.Serial == "" || blade.Serial == "[unknown]" || blade.Serial == "0000000000" {
+			log.WithFields(log.Fields{"operation": "reading serial", "ip": blade.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": "The server has no serial"}).Warning("Auditing hardware")
+			return nil, ErrUnabletoReadData
+		}
+
+		blade.BmcType, err = bmc.BmcType()
+		if err != nil {
+			log.WithFields(log.Fields{"operation": "reading bmc type", "ip": blade.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
+		}
+
+		blade.BmcVersion, err = bmc.BmcVersion()
+		if err != nil {
+			log.WithFields(log.Fields{"operation": "reading bmc version", "ip": blade.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
+		}
+
+		blade.Model, err = bmc.Model()
+		if err != nil {
+			log.WithFields(log.Fields{"operation": "reading model", "ip": blade.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
+		}
+
+		blade.Nics, err = bmc.Nics()
+		if err != nil {
+			log.WithFields(log.Fields{"operation": "reading nics", "ip": blade.BmcAddress, "vendor": c.Vendor, "type": c.HwType, "error": err}).Warning("Auditing hardware")
+		}
 
 		blade.BiosVersion, err = bmc.BiosVersion()
 		if err != nil {
@@ -344,7 +344,14 @@ func (c *Connection) Collect() (i interface{}, err error) {
 			return i, err
 		}
 		return c.chassis(m1000e)
-	} /* else if c.vendor == Dell && (c.hwtype == Blade || c.hwtype == Discrete) {
+	} else if c.vendor == Supermicro && c.hwtype == Discrete {
+		smBmc, err := NewSupermicroReader(&c.host, &c.username, &c.password)
+		if err != nil {
+			return i, err
+		}
+		return c.blade(smBmc)
+	}
+	/* else if c.vendor == Dell && (c.hwtype == Blade || c.hwtype == Discrete) {
 		redfish, err := NewRedFishReader(&c.host, &c.username, &c.password)
 		if err != nil {
 			return i, err

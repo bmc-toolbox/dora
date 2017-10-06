@@ -73,13 +73,13 @@ func (s ScannedHostResource) queryAndCountAllWrapper(r api2go.Request) (count in
 		}
 	}
 
-	scannedPortsID, hasScannedPorts := r.QueryParams["storage_hostsID"]
-	if hasScannedHosts {
-		count, scans, err = s.ScannedHostStorage.GetAllByP(offset, limit, scannedHostsID)
-		if err != nil {
-			return count, scans, err
-		}
-	}
+	// scannedPortsID, hasScannedPorts := r.QueryParams["storage_hostsID"]
+	// if hasScannedPorts {
+	// 	count, scans, err = s.ScannedHostStorage.GetAllByP(offset, limit, scannedPortsID)
+	// 	if err != nil {
+	// 		return count, scans, err
+	// 	}
+	// }
 
 	if !hasInclude && !hasFilters {
 		count, scans, err = s.ScannedHostStorage.GetAll(offset, limit)
