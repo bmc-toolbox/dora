@@ -93,6 +93,10 @@ var (
 				<Node ID="3" Present="1" PowerStatus="1" Power="252" Current="214" IP="127.0.0.1" NodePartNo="X10DRFF-CTG" NodeSerialNo="VM158S008739" CPU1Temp="55" CPU2Temp="57" SystemTemp="24"/>
 			  </NodeInfo>
 			</IPMI>`),
+		"BIOS_LINCENSE_ACTIVATE.XML=(0,0)": []byte(`<?xml version="1.0"?>
+			<IPMI>
+			  <BIOS_LINCESNE CHECK="0"/>
+			</IPMI>`),
 	}
 )
 
@@ -336,5 +340,24 @@ func TestSupermicroNics(t *testing.T) {
 		if nic.MacAddress != expectedAnswer[pos].MacAddress || nic.Name != expectedAnswer[pos].Name {
 			t.Errorf("Expected answer %v: found %v", expectedAnswer[pos], nic)
 		}
+	}
+}
+
+func TestSupermicroLicense(t *testing.T) {
+	expectedName := "oob"
+	expectedLicType := "Activated"
+
+	bmc, err := smSetup()
+	if err != nil {
+		t.Fatalf("Found errors during the test smSetup %v", err)
+	}
+
+	name, licType, err := bmc.License()
+	if name != expectedName {
+		t.Errorf("Expected name %v: found %v", expectedName, name)
+	}
+
+	if licType != expectedLicType {
+		t.Errorf("Expected name %v: found %v", expectedLicType, licType)
 	}
 }

@@ -25,6 +25,7 @@ type SupermicroIPMI struct {
 	PlatformInfo *SupermicroPlatformInfo  `xml:" PLATFORM_INFO,omitempty"`
 	PowerSupply  []*SupermicroPowerSupply `xml:" PowerSupply,omitempty"`
 	NodeInfo     *SupermicroNodeInfo      `xml:" NodeInfo,omitempty"`
+	BiosLicense  *SupermicroBiosLicense   `xml:" BIOS_LINCESNE,omitempty" json:"BIOS_LINCESNE,omitempty"`
 }
 
 // SupermicroBios holds the bios information
@@ -125,12 +126,10 @@ type SupermicroNode struct {
 	SystemTemp  string `xml:" SystemTemp,attr"`
 }
 
-// "FRU_INFO.XML=(0,0)" https://ha150datanode-28.example.com/cgi/ipmi.cgi
-// "Get_PlatformCap.XML=(0,0)" https://ha150datanode-28.example.com/cgi/ipmi.cgi
-// "GENERIC_INFO.XML=(0,0)" https://ha150datanode-28.example.com/cgi/ipmi.cgi
-// "Get_PlatformInfo.XML=(0,0)" https://ha150datanode-28.example.com/cgi/ipmi.cgi
-// "SMBIOS_INFO.XML=(0,0)" https://ha150datanode-28.example.com/cgi/ipmi.cgi
-// "CONFIG_INFO.XML=(0,0)" https://ha150datanode-28.example.com/cgi/ipmi.cgi
+// SupermicroBiosLicense contains the license of bmc
+type SupermicroBiosLicense struct {
+	Check string `xml:" CHECK,attr"  json:",omitempty"`
+}
 
 // NewSupermicroReader returns a new IloReader ready to be used
 func NewSupermicroReader(ip *string, username *string, password *string) (sm *SupermicroReader, err error) {
@@ -457,4 +456,23 @@ func (s *SupermicroReader) Nics() (nics []*model.Nic, err error) {
 	}
 
 	return nics, err
+}
+
+// License returns the iLO's license information
+func (s *SupermicroReader) License() (name string, licType string, err error) {
+	ipmi, err := s.query("BIOS_LINCENSE_ACTIVATE.XML=(0,0)")
+	if err != nil {
+		return name, licType, err
+	}
+
+	if ipmi.BiosLicense != nil {
+		switch ipmi.BiosLicense.Check {
+		case "0":
+			return "oob", "Activated", err
+		case "1":
+			return "oob", "Not Activated", err
+		}
+	}
+
+	return name, licType, err
 }
