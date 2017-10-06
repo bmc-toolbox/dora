@@ -73,6 +73,15 @@ var (
 			  <PowerSupply TYPE="Switching" STATUS="OK" IVRS="Auto-switch" UNPLUGGED="NO" PRESENT="YES" HOTREP="YES" MAXPOWER="2000 Watts" GROUP="2" LOCATION="SLOT 2" SN="P2K4ACG22QT0165" PN="PWS-2K04A-1R" ASSET="N/A" MANUFACTURER="SUPERMICRO" NAME="PWS-2K04A-1R" REV="1.1"/>
 			  <PowerSupply TYPE="Switching" STATUS="OK" IVRS="Auto-switch" UNPLUGGED="NO" PRESENT="YES" HOTREP="YES" MAXPOWER="2000 Watts" GROUP="1" LOCATION="SLOT 1" SN="P2K4ACG22QT0168" PN="PWS-2K04A-1R" ASSET="N/A" MANUFACTURER="SUPERMICRO" NAME="PWS-2K04A-1R" REV="1.1"/>
 			</IPMI>`),
+		"Get_PSInfoReadings.XML=(0,0)": []byte(`<?xml version="1.0"?>
+			<IPMI>
+			  <PSInfo at_w_PSTimeoutValue="0" at_b_PSTimeoutEnable="0" BBP_TIMEOUT_VALUE="0">
+				<PSItem a_b_PS_Status_I2C="1" psType="1" acInVoltage="e4" acInCurrent="6eb" dc12OutVoltage="7a" dc12OutCurrent="7762" temp1="21" temp2="28" fan1="1da0" fan2="247f" dcOutPower="177" acInPower="193" name=""/>
+				<PSItem a_b_PS_Status_I2C="1" psType="1" acInVoltage="e4" acInCurrent="66c" dc12OutVoltage="7a" dc12OutCurrent="6f34" temp1="20" temp2="28" fan1="1955" fan2="1f58" dcOutPower="15f" acInPower="175" name=""/>
+				<PSItem a_b_PS_Status_I2C="ff" psType="0" acInVoltage="0" acInCurrent="0" dc12OutVoltage="0" dc12OutCurrent="0" temp1="0" temp2="0" fan1="0" fan2="0" dcOutPower="0" acInPower="0" name=""/>
+				<PSItem a_b_PS_Status_I2C="ff" psType="0" acInVoltage="0" acInCurrent="0" dc12OutVoltage="0" dc12OutCurrent="0" temp1="0" temp2="0" fan1="0" fan2="0" dcOutPower="0" acInPower="0" name=""/>
+			  </PSInfo>
+			</IPMI>`),
 	}
 )
 
@@ -186,6 +195,34 @@ func TestSupermicroName(t *testing.T) {
 	}
 
 	answer, err := bmc.Name()
+	if answer != expectedAnswer {
+		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
+	}
+}
+
+func TestSupermicroStatus(t *testing.T) {
+	expectedAnswer := "Not supported"
+
+	bmc, err := smSetup()
+	if err != nil {
+		t.Fatalf("Found errors during the test smSetup %v", err)
+	}
+
+	answer, err := bmc.Status()
+	if answer != expectedAnswer {
+		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
+	}
+}
+
+func TestSupermicroMemory(t *testing.T) {
+	expectedAnswer := 128
+
+	bmc, err := smSetup()
+	if err != nil {
+		t.Fatalf("Found errors during the test smSetup %v", err)
+	}
+
+	answer, err := bmc.Memory()
 	if answer != expectedAnswer {
 		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
 	}

@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -274,5 +275,21 @@ func (s *SupermicroReader) Name() (name string, err error) {
 
 // Status returns health string status from the bmc
 func (s *SupermicroReader) Status() (health string, err error) {
-	return
+	return "Not Supported", err
+}
+
+// Memory returns the total amount of memory of the server
+func (s *SupermicroReader) Memory() (mem int, err error) {
+	ipmi, err := s.query("SMBIOS_INFO.XML=(0,0)")
+
+	for _, dimm := range ipmi.Dimm {
+		dimm := strings.TrimSuffix(dimm.Size, " MB")
+		size, err := strconv.Atoi(dimm)
+		if err != nil {
+			return mem, err
+		}
+		mem += size
+	}
+
+	return mem / 1024, err
 }
