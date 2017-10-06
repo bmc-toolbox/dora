@@ -23,6 +23,7 @@ type SupermicroIPMI struct {
 	GenericInfo  *SupermicroGenericInfo   `xml:" GENERIC_INFO,omitempty"`
 	PlatformInfo *SupermicroPlatformInfo  `xml:" PLATFORM_INFO,omitempty"`
 	PowerSupply  []*SupermicroPowerSupply `xml:" PowerSupply,omitempty"`
+	NodeInfo     *SupermicroNodeInfo      `xml:" NodeInfo,omitempty"`
 }
 
 // SupermicroBios holds the bios information
@@ -108,6 +109,19 @@ type SupermicroReader struct {
 	client   *http.Client
 }
 
+// SupermicroNodeInfo contains a lists of boards in the chassis
+type SupermicroNodeInfo struct {
+	Nodes []*SupermicroNode `xml:" Node,omitempty"`
+}
+
+// SupermicroNode contains the power and thermal information of each board in the chassis
+type SupermicroNode struct {
+	IP          string `xml:" IP,attr"`
+	Power       string `xml:" Power,attr"`
+	PowerStatus string `xml:" PowerStatus,attr"`
+	SystemTemp  string `xml:" SystemTemp,attr"`
+}
+
 // "FRU_INFO.XML=(0,0)" https://ha150datanode-28.example.com/cgi/ipmi.cgi
 // "Get_PlatformCap.XML=(0,0)" https://ha150datanode-28.example.com/cgi/ipmi.cgi
 // "GENERIC_INFO.XML=(0,0)" https://ha150datanode-28.example.com/cgi/ipmi.cgi
@@ -186,6 +200,7 @@ func (s *SupermicroReader) query(requestType string) (ipmi *SupermicroIPMI, err 
 	if err != nil {
 		return ipmi, err
 	}
+	defer resp.Body.Close()
 
 	ipmi = &SupermicroIPMI{}
 	err = xml.Unmarshal(payload, ipmi)
@@ -244,7 +259,11 @@ func (s *SupermicroReader) Model() (model string, err error) {
 		return model, err
 	}
 
-	return ipmi.FruInfo.Board.ProdName, err
+	if ipmi.FruInfo != nil && ipmi.FruInfo.Board != nil {
+		return ipmi.FruInfo.Board.ProdName, err
+	}
+
+	return model, err
 }
 
 // BmcType returns the type of bmc we are talking to
@@ -259,7 +278,11 @@ func (s *SupermicroReader) BmcVersion() (bmcVersion string, err error) {
 		return bmcVersion, err
 	}
 
-	return ipmi.GenericInfo.Generic.IpmiFwVersion, err
+	if ipmi.GenericInfo != nil && ipmi.GenericInfo.Generic != nil {
+		return ipmi.GenericInfo.Generic.IpmiFwVersion, err
+	}
+
+	return bmcVersion, err
 }
 
 // Name returns the hostname of the machine
@@ -269,7 +292,11 @@ func (s *SupermicroReader) Name() (name string, err error) {
 		return name, err
 	}
 
-	return ipmi.ConfigInfo.Hostname.Name, err
+	if ipmi.ConfigInfo != nil && ipmi.ConfigInfo.Hostname != nil {
+		return ipmi.ConfigInfo.Hostname.Name, err
+	}
+
+	return name, err
 }
 
 // Status returns health string status from the bmc
@@ -310,4 +337,64 @@ func (s *SupermicroReader) CPU() (cpu string, cpuCount int, coreCount int, hyper
 	}
 
 	return cpu, cpuCount, coreCount, hyperthreadCount, err
+}
+
+// BiosVersion returns the current version of the bios
+func (s *SupermicroReader) BiosVersion() (version string, err error) {
+	ipmi, err := s.query("SMBIOS_INFO.XML=(0,0)")
+	if err != nil {
+		return version, err
+	}
+
+	if ipmi.Bios != nil {
+		return ipmi.Bios.Version, err
+	}
+
+	return version, err
+}
+
+// PowerKw returns the current power usage in Kw
+func (s *SupermicroReader) PowerKw() (power float64, err error) {
+	ipmi, err := s.query("Get_NodeInfoReadings.XML=(0,0)")
+	if err != nil {
+		return power, err
+	}
+
+	if ipmi.NodeInfo != nil {
+		for _, node := range ipmi.NodeInfo.Nodes {
+			if node.IP == strings.Split(*s.ip, ":")[0] {
+				value, err := strconv.Atoi(node.Power)
+				if err != nil {
+					return power, err
+				}
+
+				return float64(value) / 1000.00, err
+			}
+		}
+	}
+
+	return power, err
+}
+
+// TempC returns the current verion of the bios
+func (s *SupermicroReader) TempC() (temp int, err error) {
+	ipmi, err := s.query("Get_NodeInfoReadings.XML=(0,0)")
+	if err != nil {
+		return temp, err
+	}
+
+	if ipmi.NodeInfo != nil {
+		for _, node := range ipmi.NodeInfo.Nodes {
+			if node.IP == strings.Split(*s.ip, ":")[0] {
+				temp, err := strconv.Atoi(node.SystemTemp)
+				if err != nil {
+					return temp, err
+				}
+
+				return temp, err
+			}
+		}
+	}
+
+	return temp, err
 }

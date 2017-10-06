@@ -82,6 +82,16 @@ var (
 				<PSItem a_b_PS_Status_I2C="ff" psType="0" acInVoltage="0" acInCurrent="0" dc12OutVoltage="0" dc12OutCurrent="0" temp1="0" temp2="0" fan1="0" fan2="0" dcOutPower="0" acInPower="0" name=""/>
 			  </PSInfo>
 			</IPMI>`),
+		"Get_NodeInfoReadings.XML=(0,0)": []byte(`<?xml version="1.0"?>
+			<IPMI>
+			  <NodeModule psPower="1229" psCurrent="5390" nNODE_Status="1" nNNODE="4" nMYID="3" nMCUFWVer="272" nFatTwin_bp_location="ff" nUsrDefSysName="" nSysName="SYS-F618H6-FTPTL+" nSysSerialNo="A19627226A05562" nBPID="255" nBPRevision="512" nChaName="CSE-F414IS2-R2K04BP" nChaSerialNo="CF414AF38N50022" nBPModelName="BPN-PDB-F418" nBPModelSerialNo="EB164S011414"/>
+			  <NodeInfo>
+				<Node ID="0" Present="1" PowerStatus="1" Power="270" Current="230" IP="10.193.171.12" NodePartNo="X10DRFF-CTG" NodeSerialNo="VM158S008970" CPU1Temp="57" CPU2Temp="64" SystemTemp="24"/>
+				<Node ID="1" Present="1" PowerStatus="1" Power="284" Current="231" IP="10.193.171.15" NodePartNo="X10DRFF-CTG" NodeSerialNo="VM157S014256" CPU1Temp="59" CPU2Temp="63" SystemTemp="24"/>
+				<Node ID="2" Present="1" PowerStatus="1" Power="270" Current="221" IP="10.193.171.13" NodePartNo="X10DRFF-CTG" NodeSerialNo="VM156S002490" CPU1Temp="56" CPU2Temp="60" SystemTemp="24"/>
+				<Node ID="3" Present="1" PowerStatus="1" Power="252" Current="214" IP="127.0.0.1" NodePartNo="X10DRFF-CTG" NodeSerialNo="VM158S008739" CPU1Temp="55" CPU2Temp="57" SystemTemp="24"/>
+			  </NodeInfo>
+			</IPMI>`),
 	}
 )
 
@@ -254,5 +264,47 @@ func TestSupermicroCPU(t *testing.T) {
 
 	if ht != expectedAnswerHyperthread {
 		t.Errorf("Expected ht answer %v: found %v", expectedAnswerHyperthread, ht)
+	}
+}
+
+func TestSupermicroBiosVersion(t *testing.T) {
+	expectedAnswer := "2.0"
+
+	bmc, err := smSetup()
+	if err != nil {
+		t.Fatalf("Found errors during the test smSetup %v", err)
+	}
+
+	answer, err := bmc.BiosVersion()
+	if answer != expectedAnswer {
+		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
+	}
+}
+
+func TestSupermicroPowerKW(t *testing.T) {
+	expectedAnswer := 0.252
+
+	bmc, err := smSetup()
+	if err != nil {
+		t.Fatalf("Found errors during the test smSetup %v", err)
+	}
+
+	answer, err := bmc.PowerKw()
+	if answer != expectedAnswer {
+		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
+	}
+}
+
+func TestSupermicroTempC(t *testing.T) {
+	expectedAnswer := 24
+
+	bmc, err := smSetup()
+	if err != nil {
+		t.Fatalf("Found errors during the test smSetup %v", err)
+	}
+
+	answer, err := bmc.TempC()
+	if answer != expectedAnswer {
+		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
 	}
 }
