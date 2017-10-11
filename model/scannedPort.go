@@ -26,10 +26,15 @@ type ScannedPort struct {
 	UpdatedAt     time.Time
 }
 
-// BeforeCreate Generates the ID before saving the object
+// GenID generates the ID based on the date we have
+func (s *ScannedPort) GenID() string {
+	fmt.Println(fmt.Sprintf("%s-%d-%s-%s", s.ScannedHostIP, s.Port, s.Protocol, s.ScannedBy))
+	return fmt.Sprintf("%x", md5.Sum([]byte(fmt.Sprintf("%s-%d-%s-%s", s.ScannedHostIP, s.Port, s.Protocol, s.ScannedBy))))
+}
+
+// BeforeCreate run all operations before creating the object
 func (s *ScannedPort) BeforeCreate(scope *gorm.Scope) (err error) {
-	id := fmt.Sprintf("%s-%d-%s-%s", s.ScannedHostIP, s.Port, s.Protocol, s.ScannedBy)
-	scope.SetColumn("ID", fmt.Sprintf("%x", md5.Sum([]byte(id))))
+	scope.SetColumn("ID", s.GenID())
 	return nil
 }
 

@@ -141,6 +141,7 @@ func scan(input <-chan ToScan, db *gorm.DB) {
 				sp.State = port.State.State
 				sp.Protocol = port.Protocol
 				sp.ScannedBy = hostname
+				sp.ID = sp.GenID()
 				sh.Ports = append(sh.Ports, &sp)
 			}
 
