@@ -251,7 +251,7 @@ func (s *SupermicroReader) Serial() (serial string, err error) {
 	}
 
 	serial = fmt.Sprintf("%s@%s", ipmi.FruInfo.Chassis.SerialNum, ipmi.FruInfo.Board.SerialNum)
-	return serial, err
+	return strings.ToLower(serial), err
 }
 
 // Model returns the device model
@@ -410,8 +410,8 @@ func (s *SupermicroReader) Nics() (nics []*model.Nic, err error) {
 	}
 
 	bmcNic := &model.Nic{
-		MacAddress: ipmi.GenericInfo.Generic.BmcMac,
 		Name:       "bmc",
+		MacAddress: ipmi.GenericInfo.Generic.BmcMac,
 	}
 
 	nics = append(nics, bmcNic)
@@ -424,32 +424,32 @@ func (s *SupermicroReader) Nics() (nics []*model.Nic, err error) {
 	if ipmi.PlatformInfo != nil {
 		if ipmi.PlatformInfo.MbMacAddr1 != "" {
 			bmcNic := &model.Nic{
-				MacAddress: ipmi.PlatformInfo.MbMacAddr1,
 				Name:       "eth0",
+				MacAddress: ipmi.PlatformInfo.MbMacAddr1,
 			}
 			nics = append(nics, bmcNic)
 		}
 
 		if ipmi.PlatformInfo.MbMacAddr2 != "" {
 			bmcNic := &model.Nic{
-				MacAddress: ipmi.PlatformInfo.MbMacAddr2,
 				Name:       "eth1",
+				MacAddress: ipmi.PlatformInfo.MbMacAddr2,
 			}
 			nics = append(nics, bmcNic)
 		}
 
 		if ipmi.PlatformInfo.MbMacAddr3 != "" {
 			bmcNic := &model.Nic{
-				MacAddress: ipmi.PlatformInfo.MbMacAddr3,
 				Name:       "eth2",
+				MacAddress: ipmi.PlatformInfo.MbMacAddr3,
 			}
 			nics = append(nics, bmcNic)
 		}
 
 		if ipmi.PlatformInfo.MbMacAddr4 != "" {
 			bmcNic := &model.Nic{
-				MacAddress: ipmi.PlatformInfo.MbMacAddr4,
 				Name:       "eth3",
+				MacAddress: ipmi.PlatformInfo.MbMacAddr4,
 			}
 			nics = append(nics, bmcNic)
 		}
