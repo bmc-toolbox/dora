@@ -490,8 +490,15 @@ func (i *IloReader) Nics() (nics []*model.Nic, err error) {
 		i.hpRimpBlade.HpHSI.HpNICS != nil &&
 		i.hpRimpBlade.HpHSI.HpNICS.HpNIC != nil {
 		for _, nic := range i.hpRimpBlade.HpHSI.HpNICS.HpNIC {
+			var name string
+			if strings.HasPrefix(nic.Description, "iLO") {
+				name = "bmc"
+			} else {
+				name = nic.Description
+			}
+
 			n := &model.Nic{
-				Name:       nic.Description,
+				Name:       name,
 				MacAddress: strings.ToLower(nic.MacAddr),
 			}
 			nics = append(nics, n)
