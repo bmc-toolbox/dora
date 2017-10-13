@@ -124,9 +124,11 @@ func (c *ChassisStorage) RemoveOldBladesRefs(chassis *model.Chassis) (count int,
 		return count, serials, err
 	}
 
-	// if err = c.db.Model(&model.Blade{}).Where("blade serial in (?) and chassis_serial = ?", serials, chassis).Count(model.Blade{})!= nil {
-	// 	return count, serials, err
-	// }
+	if count > 0 {
+		if err = c.db.Where("serial in (?) and chassis_serial = ?", serials, chassis.Serial).Delete(model.Blade{}).Error; err != nil {
+			return count, serials, err
+		}
+	}
 
 	return count, serials, err
 }
@@ -142,9 +144,11 @@ func (c *ChassisStorage) RemoveOldStorageBladesRefs(chassis *model.Chassis) (cou
 		return count, serials, err
 	}
 
-	// if err = c.db.Model(&model.StorageBlade{}).Where("blade serial in (?) and chassis_serial = ?", serials, chassis).Count(model.Blade{})!= nil {
-	// 	return count, serials, err
-	// }
+	if count > 0 {
+		if err = c.db.Where("serial in (?) and chassis_serial = ?", serials, chassis.Serial).Delete(model.StorageBlade{}).Error; err != nil {
+			return count, serials, err
+		}
+	}
 
 	return count, serials, err
 }
