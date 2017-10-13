@@ -28,7 +28,6 @@ type ScannedPort struct {
 
 // GenID generates the ID based on the date we have
 func (s *ScannedPort) GenID() string {
-	fmt.Println(fmt.Sprintf("%s-%d-%s-%s", s.ScannedHostIP, s.Port, s.Protocol, s.ScannedBy))
 	return fmt.Sprintf("%x", md5.Sum([]byte(fmt.Sprintf("%s-%d-%s-%s", s.ScannedHostIP, s.Port, s.Protocol, s.ScannedBy))))
 }
 
