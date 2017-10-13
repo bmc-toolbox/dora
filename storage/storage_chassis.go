@@ -112,3 +112,39 @@ func (c *ChassisStorage) UpdateOrCreate(chassis *model.Chassis) (serial string, 
 	}
 	return chassis.Serial, nil
 }
+
+// RemoveOldBladesRefs deletes all the old references from StorageBlades that used to be inside of the chassis
+func (c *ChassisStorage) RemoveOldBladesRefs(chassis *model.Chassis) (count int, serials []string, err error) {
+	var connectedSerials []string
+	for _, blade := range chassis.Blades {
+		connectedSerials = append(connectedSerials, blade.Serial)
+	}
+
+	if err = c.db.Model(&model.Blade{}).Where("serial not in (?) and chassis_serial = ?", connectedSerials, chassis.Serial).Pluck("serial", &serials).Count(&count).Error; err != nil {
+		return count, serials, err
+	}
+
+	// if err = c.db.Model(&model.Blade{}).Where("blade serial in (?) and chassis_serial = ?", serials, chassis).Count(model.Blade{})!= nil {
+	// 	return count, serials, err
+	// }
+
+	return count, serials, err
+}
+
+// RemoveOldStorageBladesRefs deletes all the old references from StorageBlades that used to be inside of the chassis
+func (c *ChassisStorage) RemoveOldStorageBladesRefs(chassis *model.Chassis) (count int, serials []string, err error) {
+	var connectedSerials []string
+	for _, blade := range chassis.StorageBlades {
+		connectedSerials = append(connectedSerials, blade.Serial)
+	}
+
+	if err = c.db.Model(&model.StorageBlade{}).Where("serial not in (?) and chassis_serial = ?", connectedSerials, chassis.Serial).Pluck("serial", &serials).Count(&count).Error; err != nil {
+		return count, serials, err
+	}
+
+	// if err = c.db.Model(&model.StorageBlade{}).Where("blade serial in (?) and chassis_serial = ?", serials, chassis).Count(model.Blade{})!= nil {
+	// 	return count, serials, err
+	// }
+
+	return count, serials, err
+}

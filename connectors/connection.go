@@ -387,24 +387,46 @@ func collect(input <-chan string, db *gorm.DB) {
 		case *model.Chassis:
 			chassis := data.(*model.Chassis)
 			if chassis == nil {
-				return
+				continue
 			}
 
 			chassisStorage := storage.NewChassisStorage(db)
 			_, err = chassisStorage.UpdateOrCreate(chassis)
 			if err != nil {
-				log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType(), "error": err}).Error("Collecting data")
+				log.WithFields(log.Fields{"operation": "store", "ip": host, "type": c.HwType(), "error": err}).Error("Collecting data")
+				continue
+			}
+
+			count, serials, err := chassisStorage.RemoveOldBladesRefs(chassis)
+			if err != nil {
+				log.WithFields(log.Fields{"operation": "cleanup", "ip": host, "type": c.HwType(), "error": err}).Error("Collecting data")
+				continue
+			} else if count > 0 {
+				for _, serial := range serials {
+					log.WithFields(log.Fields{"operation": "cleanup", "ip": host, "type": c.HwType(), "chassis": chassis.Serial, "serial": serial}).Info("blade has been remove from chassis")
+				}
+			}
+
+			count, serials, err = chassisStorage.RemoveOldStorageBladesRefs(chassis)
+			if err != nil {
+				log.WithFields(log.Fields{"operation": "cleanup", "ip": host, "type": c.HwType(), "error": err}).Error("Collecting data")
+				continue
+			} else if count > 0 {
+				for _, serial := range serials {
+					log.WithFields(log.Fields{"operation": "cleanup", "ip": host, "type": c.HwType(), "chassis": chassis.Serial, "serial": serial}).Info("storage blade has been remove from chassis")
+				}
 			}
 		case *model.Blade:
 			blade := data.(*model.Blade)
 			if blade == nil {
-				return
+				continue
 			}
 
 			bladeStorage := storage.NewBladeStorage(db)
 			_, err = bladeStorage.UpdateOrCreate(blade)
 			if err != nil {
 				log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType(), "error": err}).Error("Collecting data")
+				continue
 			}
 		}
 	}
