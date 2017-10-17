@@ -745,7 +745,7 @@ func (h *HpChassisReader) Blades() (blades []*model.Blade, err error) {
 							}
 						}
 					} else {
-						log.WithFields(log.Fields{"operation": "create ilo connection", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+						log.WithFields(log.Fields{"operation": "create ilo connection", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis", "error": "bmc web is not reachable"}).Warning("Auditing blade")
 					}
 				}
 				blades = append(blades, &blade)
