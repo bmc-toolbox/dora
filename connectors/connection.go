@@ -5,7 +5,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
+	"sort"
+	"strings"
 	"sync"
+
+	"github.com/kr/pretty"
 
 	"github.com/jinzhu/gorm"
 	log "github.com/sirupsen/logrus"
@@ -361,6 +365,57 @@ func (c *Connection) Collect() (i interface{}, err error) {
 	return i, ErrVendorUnknown
 }
 
+func notifyServerChanges(blade *model.Blade, existingData *model.Blade) {
+	hasDiff := true
+	if len(blade.Nics) == len(existingData.Nics) {
+		count := 0
+		for _, nic := range blade.Nics {
+			for _, enic := range existingData.Nics {
+				if nic.MacAddress == enic.MacAddress {
+					count++
+				}
+			}
+		}
+
+		if count == len(blade.Nics) {
+			hasDiff = false
+		}
+	}
+
+	if !hasDiff {
+		sort.Slice(blade.Nics, func(i, j int) bool {
+			switch strings.Compare(blade.Nics[i].MacAddress, blade.Nics[j].MacAddress) {
+			case -1:
+				return true
+			case 1:
+				return false
+			}
+			return blade.Nics[i].MacAddress > blade.Nics[j].MacAddress
+		})
+
+		sort.Slice(existingData.Nics, func(i, j int) bool {
+			switch strings.Compare(existingData.Nics[i].MacAddress, existingData.Nics[j].MacAddress) {
+			case -1:
+				return true
+			case 1:
+				return false
+			}
+			return existingData.Nics[i].MacAddress > existingData.Nics[j].MacAddress
+		})
+
+		for _, diff := range pretty.Diff(blade, existingData) {
+			if strings.Contains(diff, "UpdatedAt") || strings.Contains(diff, "].BladeSerial") || strings.Contains(diff, "PowerKw") || strings.Contains(diff, "TempC") || strings.Contains(diff, "ChassisSerial: \"\"") {
+				continue
+			}
+			hasDiff = true
+		}
+	}
+
+	if hasDiff {
+		fmt.Println("We have a diff tell sdb")
+	}
+}
+
 func collect(input <-chan string, db *gorm.DB) {
 	bmcUser := viper.GetString("bmc_user")
 	bmcPass := viper.GetString("bmc_pass")
@@ -388,6 +443,14 @@ func collect(input <-chan string, db *gorm.DB) {
 			chassis := data.(*model.Chassis)
 			if chassis == nil {
 				continue
+			}
+
+			bladeStorage := storage.NewBladeStorage(db)
+			for _, blade := range chassis.Blades {
+				existingData, err := bladeStorage.GetOne(blade.Serial)
+				if err == nil || err == gorm.ErrRecordNotFound {
+					notifyServerChanges(blade, &existingData)
+				}
 			}
 
 			chassisStorage := storage.NewChassisStorage(db)
@@ -423,6 +486,11 @@ func collect(input <-chan string, db *gorm.DB) {
 			}
 
 			bladeStorage := storage.NewBladeStorage(db)
+			existingData, err := bladeStorage.GetOne(blade.Serial)
+			if err == nil || err == gorm.ErrRecordNotFound {
+				notifyServerChanges(blade, &existingData)
+			}
+
 			_, err = bladeStorage.UpdateOrCreate(blade)
 			if err != nil {
 				log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType(), "error": err}).Error("Collecting data")
