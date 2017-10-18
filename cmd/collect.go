@@ -38,12 +38,16 @@ usage: dora collect
 		configItems := []string{
 			"bmc_pass",
 			"bmc_user",
-			"site",
-			"database_type",
-			"database_options",
 			"collector.concurrency",
 			"collector.dump_invalid_payloads",
 			"collector.dump_invalid_payload_path",
+			"database_type",
+			"database_options",
+			"site",
+			"notify_api_user",
+			"notify_api_key",
+			"notify_url",
+			"url",
 		}
 
 		for _, item := range configItems {
