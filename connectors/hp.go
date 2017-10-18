@@ -640,7 +640,7 @@ func (h *HpChassisReader) StorageBlades() (storageBlades []*model.StorageBlade, 
 				storageBlade.Serial = strings.ToLower(strings.TrimSpace(hpBlade.Bsn))
 				chassisSerial, _ := h.Serial()
 				if storageBlade.Serial == "" || storageBlade.Serial == "[unknown]" || storageBlade.Serial == "0000000000" {
-					log.WithFields(log.Fields{"operation": "connection", "ip": *h.ip, "position": storageBlade.BladePosition, "type": "chassis", "chassis_serial": chassisSerial, "error": "Review this blade. The chassis identifies it as connected, but we have no data"}).Error("Auditing blade")
+					log.WithFields(log.Fields{"operation": "connection", "ip": *h.ip, "position": storageBlade.BladePosition, "type": "chassis", "chassis_serial": chassisSerial, "error": ErrInvalidSerial}).Error("Auditing blade")
 					continue
 				}
 				storageBlade.BladePosition = hpBlade.HpBay.Connection

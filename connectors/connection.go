@@ -37,7 +37,7 @@ const (
 	Unknown = "Unknown"
 )
 
-// Connection is used to connect and later dicover the hardware information we have for each vendor
+// Connection is used to connect and later discover the hardware information we have for each vendor
 type Connection struct {
 	username string
 	password string
@@ -173,11 +173,11 @@ func (c *Connection) blade(bmc Bmc) (blade *model.Blade, err error) {
 	blade.Serial, err = bmc.Serial()
 	if err != nil {
 		log.WithFields(log.Fields{"operation": "reading serial", "ip": blade.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+		return nil, err
 	}
 
-	if blade.Serial == "" || blade.Serial == "[unknown]" || blade.Serial == "0000000000" {
-		log.WithFields(log.Fields{"operation": "reading serial", "ip": blade.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": "The server has no serial"}).Warning("Auditing hardware")
-		return nil, ErrUnabletoReadData
+	if blade.Serial == "" || blade.Serial == "[unknown]" || blade.Serial == "0000000000" || blade.Serial == "_" {
+		return nil, ErrInvalidSerial
 	}
 
 	blade.BmcType, err = bmc.BmcType()
@@ -412,7 +412,11 @@ func notifyServerChanges(blade *model.Blade, existingData *model.Blade) {
 	}
 
 	if hasDiff {
-		fmt.Println("We have a diff tell sdb")
+		callback := fmt.Sprintf("%s/blades/%s", viper.GetString("url"), blade.Serial)
+		err := assetNotify(callback)
+		if err != nil {
+			log.WithFields(log.Fields{"operation": "serverdb callback", "url": callback, "error": err}).Error("Sending ServerDB callback")
+		}
 	}
 }
 
@@ -468,6 +472,11 @@ func collect(input <-chan string, db *gorm.DB) {
 				for _, serial := range serials {
 					log.WithFields(log.Fields{"operation": "cleanup", "ip": host, "type": c.HwType(), "chassis": chassis.Serial, "serial": serial}).Info("blade has been remove from chassis")
 				}
+				callback := fmt.Sprintf("%s/chassis/%s", viper.GetString("url"), chassis.Serial)
+				err := assetNotify(callback)
+				if err != nil {
+					log.WithFields(log.Fields{"operation": "serverdb callback", "url": callback, "error": err}).Error("Sending ServerDB callback")
+				}
 			}
 
 			count, serials, err = chassisStorage.RemoveOldStorageBladesRefs(chassis)
@@ -477,6 +486,11 @@ func collect(input <-chan string, db *gorm.DB) {
 			} else if count > 0 {
 				for _, serial := range serials {
 					log.WithFields(log.Fields{"operation": "cleanup", "ip": host, "type": c.HwType(), "chassis": chassis.Serial, "serial": serial}).Info("storage blade has been remove from chassis")
+				}
+				callback := fmt.Sprintf("%s/chassis/%s", viper.GetString("url"), chassis.Serial)
+				err := assetNotify(callback)
+				if err != nil {
+					log.WithFields(log.Fields{"operation": "serverdb callback", "url": callback, "error": err}).Error("Sending ServerDB callback")
 				}
 			}
 		case *model.Blade:

@@ -415,7 +415,7 @@ func (d *DellCmcReader) StorageBlades() (storageBlades []*model.StorageBlade, er
 			storageBlade.Serial = strings.ToLower(dellBlade.BladeSvcTag)
 			chassisSerial, _ := d.Serial()
 			if storageBlade.Serial == "" || storageBlade.Serial == "[unknown]" || storageBlade.Serial == "0000000000" {
-				log.WithFields(log.Fields{"operation": "connection", "ip": *d.ip, "position": storageBlade.BladePosition, "type": "chassis", "chassis_serial": chassisSerial, "error": "Review this blade. The chassis identifies it as connected, but we have no data"}).Error("Auditing blade")
+				log.WithFields(log.Fields{"operation": "connection", "ip": *d.ip, "position": storageBlade.BladePosition, "type": "chassis", "chassis_serial": chassisSerial, "error": ErrInvalidSerial}).Error("Auditing blade")
 				continue
 			}
 
