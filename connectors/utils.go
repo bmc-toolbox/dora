@@ -31,7 +31,9 @@ var (
 	// ErrBiosNotFound is returned when we are not able to find the server bios version
 	ErrBiosNotFound = errors.New("Bios version not found")
 	// ErrVendorUnknown is returned when we are unable to identify the redfish vendor
-	ErrVendorUnknown = errors.New("Unabled to identify the vendor")
+	ErrVendorUnknown = errors.New("Unable to identify the vendor")
+	// ErrInvalidSerial is returned when the serial number for the device is invalid
+	ErrInvalidSerial = errors.New("Unable to find the serial number")
 	// ErrPageNotFound is used to inform the http request that we couldn't find the expected page and/or endpoint
 	ErrPageNotFound = errors.New("Requested page couldn't be found in the server")
 	// ErrRedFishNotSupported is returned when redfish isn't supported by the vendor
@@ -318,6 +320,31 @@ func DumpInvalidPayload(name string, payload []byte) (err error) {
 		file.Sync()
 		file.Close()
 	}
+
+	return err
+}
+
+func assetNotify(callback string) (err error) {
+	// client, err := buildClient()
+	// if err != nil {
+	// 	return err
+	// }
+	authHeader := fmt.Sprintf("ApiKey %s:%s", viper.GetString("notify_api_user"), viper.GetString("notify_api_key"))
+	serverDBUrl := viper.GetString("notify_url")
+	payload := []byte(fmt.Sprintf(`{"key":"callback","value":"%s","description":""}`, callback))
+
+	url := fmt.Sprintf("%s/api/v1/server/dora/dora_update_or_create/", serverDBUrl)
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(payload))
+	if err != nil {
+		return err
+	}
+	req.Header.Add("Authorization", authHeader)
+
+	fmt.Printf("We would have notified %s\n", payload)
+	// resp, err := client.Do(req)
+	// if err != nil {
+	// 	return err
+	// }
 
 	return err
 }
