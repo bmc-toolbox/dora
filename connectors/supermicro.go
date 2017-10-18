@@ -250,7 +250,7 @@ func (s *SupermicroReader) Serial() (serial string, err error) {
 		return serial, err
 	}
 
-	serial = fmt.Sprintf("%s_%s", ipmi.FruInfo.Chassis.SerialNum, ipmi.FruInfo.Board.SerialNum)
+	serial = strings.TrimSpace(fmt.Sprintf("%s_%s", strings.TrimSpace(ipmi.FruInfo.Chassis.SerialNum), strings.TrimSpace(ipmi.FruInfo.Board.SerialNum)))
 	return strings.ToLower(serial), err
 }
 
