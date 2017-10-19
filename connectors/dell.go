@@ -507,7 +507,7 @@ func (d *DellCmcReader) Blades() (blades []*model.Blade, err error) {
 				blade.BmcAuth = false
 			} else {
 				scans := []model.ScannedPort{}
-				db.Where("scanned_host_ip = ?", blade.BmcAddress).Find(&scans)
+				db.Where("ip = ?", blade.BmcAddress).Find(&scans)
 				for _, scan := range scans {
 					if scan.Port == 443 && scan.Protocol == "tcp" && scan.State == "open" {
 						blade.BmcWEBReachable = true

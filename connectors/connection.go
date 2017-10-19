@@ -242,7 +242,7 @@ func (c *Connection) blade(bmc Bmc) (blade *model.Blade, err error) {
 	}
 
 	scans := []model.ScannedPort{}
-	db.Where("scanned_host_ip = ?", blade.BmcAddress).Find(&scans)
+	db.Where("ip = ?", blade.BmcAddress).Find(&scans)
 	for _, scan := range scans {
 		if scan.Port == 22 && scan.Protocol == "tcp" && scan.State == "open" {
 			blade.BmcSSHReachable = true
@@ -316,7 +316,7 @@ func (c *Connection) chassis(ch BmcChassis) (chassis *model.Chassis, err error) 
 
 	db := storage.InitDB()
 	scans := []model.ScannedPort{}
-	db.Where("scanned_host_ip = ?", chassis.BmcAddress).Find(&scans)
+	db.Where("ip = ?", chassis.BmcAddress).Find(&scans)
 	for _, scan := range scans {
 		if scan.Port == 443 && scan.Protocol == "tcp" && scan.State == "open" {
 			chassis.BmcWEBReachable = true
@@ -553,7 +553,7 @@ func DataCollection(ips []string) {
 				ip = lookup[0]
 			}
 
-			if err := db.Where("scanned_host_ip = ? and port = 443 and protocol = 'tcp' and state = 'open'", ip).Find(&host).Error; err != nil {
+			if err := db.Where("ip = ? and port = 443 and protocol = 'tcp' and state = 'open'", ip).Find(&host).Error; err != nil {
 				log.WithFields(log.Fields{"operation": "connection", "ip": ip, "error": err}).Error(fmt.Sprintf("Retrieving scanned hosts"))
 				continue
 			}
