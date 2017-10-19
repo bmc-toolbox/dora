@@ -329,22 +329,33 @@ func assetNotify(callback string) (err error) {
 	if err != nil {
 		return err
 	}
-	log.WithFields(log.Fields{"operation": "notify", "callback": callback}).Info("Notifying ServerDB")
 
 	authHeader := fmt.Sprintf("ApiKey %s:%s", viper.GetString("notify_api_user"), viper.GetString("notify_api_key"))
 	serverDBUrl := viper.GetString("notify_url")
-	payload := []byte(fmt.Sprintf(`{"key":"callback","value":"%s","description":""}`, callback))
+	payload := []byte(fmt.Sprintf(`{"callback": "%s"}`, callback))
 
 	url := fmt.Sprintf("%s/api/v1/server/dora/dora_update_or_create/", serverDBUrl)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(payload))
 	if err != nil {
 		return err
 	}
+	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Authorization", authHeader)
+
+	log.WithFields(log.Fields{"operation": "notify", "callback": callback}).Info("Notifying ServerDB")
 
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
+	}
+
+	if resp.StatusCode != 200 {
+		payload, err = ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+		return errors.New(string(payload))
 	}
 
 	_, err = io.Copy(ioutil.Discard, resp.Body)
