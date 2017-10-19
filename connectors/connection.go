@@ -451,10 +451,11 @@ func collect(input <-chan string, db *gorm.DB) {
 			}
 
 			bladeStorage := storage.NewBladeStorage(db)
+			existingBlades := make(map[*model.Blade]*model.Blade)
 			for _, blade := range chassis.Blades {
-				existingData, err := bladeStorage.GetOne(blade.Serial)
+				existingBlade, err := bladeStorage.GetOne(blade.Serial)
 				if err == nil || err == gorm.ErrRecordNotFound {
-					notifyServerChanges(blade, &existingData)
+					existingBlades[blade] = &existingBlade
 				}
 			}
 
@@ -463,6 +464,10 @@ func collect(input <-chan string, db *gorm.DB) {
 			if err != nil {
 				log.WithFields(log.Fields{"operation": "store", "ip": host, "type": c.HwType(), "error": err}).Error("Collecting data")
 				continue
+			}
+
+			for blade, existingBlade := range existingBlades {
+				notifyServerChanges(blade, existingBlade)
 			}
 
 			count, serials, err := chassisStorage.RemoveOldBladesRefs(chassis)

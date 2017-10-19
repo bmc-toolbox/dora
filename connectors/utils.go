@@ -349,17 +349,17 @@ func assetNotify(callback string) (err error) {
 		return err
 	}
 
-	payload, err = ioutil.ReadAll(resp.Body)
+	response, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return errors.New(fmt.Sprintf("Error code: %d, message: %s", resp.StatusCode, string(payload)))
-	} else {
-		log.WithFields(log.Fields{"operation": "notify", "answer": string(payload)}).Debug("Notifying ServerDB")
+		return fmt.Errorf("Error code: %d, message: %s", resp.StatusCode, string(response))
 	}
+
+	log.WithFields(log.Fields{"operation": "notify", "answer": string(response)}).Debug("Notifying ServerDB")
 
 	return err
 }
