@@ -325,10 +325,10 @@ func DumpInvalidPayload(name string, payload []byte) (err error) {
 }
 
 func assetNotify(callback string) (err error) {
-	// client, err := buildClient()
-	// if err != nil {
-	// 	return err
-	// }
+	client, err := buildClient()
+	if err != nil {
+		return err
+	}
 	authHeader := fmt.Sprintf("ApiKey %s:%s", viper.GetString("notify_api_user"), viper.GetString("notify_api_key"))
 	serverDBUrl := viper.GetString("notify_url")
 	payload := []byte(fmt.Sprintf(`{"key":"callback","value":"%s","description":""}`, callback))
@@ -340,11 +340,15 @@ func assetNotify(callback string) (err error) {
 	}
 	req.Header.Add("Authorization", authHeader)
 
-	fmt.Printf("We would have notified %s\n", payload)
-	// resp, err := client.Do(req)
-	// if err != nil {
-	// 	return err
-	// }
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(ioutil.Discard, resp.Body)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
 
 	return err
 }

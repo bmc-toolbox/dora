@@ -177,6 +177,7 @@ func (c *Connection) blade(bmc Bmc) (blade *model.Blade, err error) {
 	}
 
 	if blade.Serial == "" || blade.Serial == "[unknown]" || blade.Serial == "0000000000" || blade.Serial == "_" {
+		log.WithFields(log.Fields{"operation": "reading serial", "ip": blade.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": ErrInvalidSerial}).Warning("Auditing hardware")
 		return nil, ErrInvalidSerial
 	}
 
@@ -536,7 +537,7 @@ func DataCollection(ips []string) {
 			log.WithFields(log.Fields{"operation": "connection", "ip": "all", "error": err}).Error(fmt.Sprintf("Retrieving scanned hosts"))
 		} else {
 			for _, host := range hosts {
-				cc <- host.ScannedHostIP
+				cc <- host.IP
 			}
 		}
 	} else {
@@ -556,7 +557,7 @@ func DataCollection(ips []string) {
 				log.WithFields(log.Fields{"operation": "connection", "ip": ip, "error": err}).Error(fmt.Sprintf("Retrieving scanned hosts"))
 				continue
 			}
-			cc <- host.ScannedHostIP
+			cc <- host.IP
 		}
 	}
 

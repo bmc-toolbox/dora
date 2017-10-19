@@ -123,30 +123,21 @@ func scan(input <-chan ToScan, db *gorm.DB) {
 			continue
 		}
 		for _, host := range nmap.Hosts {
-			sh := model.ScannedHost{}
-			ip := ""
-			for _, address := range host.Addresses {
-				ip = address.Addr
-				break
-			}
-
-			if err = db.FirstOrCreate(&sh, model.ScannedHost{IP: ip, CIDR: subnet.CIDR}).Error; err != nil {
-				log.WithFields(log.Fields{"operation": "scanning", "error": err, "hosts": sh.IP}).Error("Scanning networks")
-			}
-			sh.State = host.Status.State
-
+			ip := host.Addresses[0].Addr
 			for _, port := range host.Ports {
-				sp := model.ScannedPort{}
-				sp.Port = port.PortID
-				sp.State = port.State.State
-				sp.Protocol = port.Protocol
-				sp.ScannedBy = hostname
+				sp := model.ScannedPort{
+					IP:        ip,
+					CIDR:      subnet.CIDR,
+					Port:      port.PortID,
+					State:     port.State.State,
+					Protocol:  port.Protocol,
+					ScannedBy: hostname,
+				}
 				sp.ID = sp.GenID()
-				sh.Ports = append(sh.Ports, &sp)
-			}
 
-			if err = db.Save(&sh).Error; err != nil {
-				log.WithFields(log.Fields{"operation": "scanning ip", "error": err, "hosts": sh.IP}).Error("Scanning networks")
+				if err = db.Save(&sp).Error; err != nil {
+					log.WithFields(log.Fields{"operation": "scanning port", "error": err, "hosts": sp.Port, "port": sp.Port}).Error("Scanning networks")
+				}
 			}
 		}
 	}
@@ -163,9 +154,7 @@ func ReadKeaConfig() (content []byte, err error) {
 	return content, err
 }
 
-func LoadSubnets(source string) {
-	db := storage.InitDB()
-
+func LoadSubnets(source string, subnetsToScan []string, site []string) (subnets []*ToScan) {
 	content, err := ReadKeaConfig()
 	if err != nil {
 		log.WithFields(log.Fields{"operation": "loading subnets", "error": err}).Error("Scanning networks")
@@ -173,31 +162,39 @@ func LoadSubnets(source string) {
 	}
 
 	if source == "kea" {
-		for _, entry := range LoadSubnetsFromKea(content) {
-			subnet := model.ScannedNetwork{}
-			if err = db.FirstOrCreate(&subnet, model.ScannedNetwork{CIDR: entry.CIDR, Site: entry.Site}).Error; err != nil {
-				log.WithFields(log.Fields{"operation": "loading subnets", "error": err, "subnet": entry.CIDR}).Error("Scanning networks")
+		subnets = LoadSubnetsFromKea(content)
+	}
+
+	if subnetsToScan[0] == "all" && site[0] == "all" {
+		return subnets
+	} else if subnetsToScan[0] == "all" && site[0] != "all" {
+		filteredSubnets := make([]*ToScan, 0)
+		for _, subnet := range subnets {
+			for _, s := range site {
+				if subnet.Site == s {
+					filteredSubnets = append(filteredSubnets, subnet)
+				}
 			}
 		}
+		subnets = filteredSubnets
+	} else {
+		filteredSubnets := make([]*ToScan, 0)
+		for _, subnet := range subnets {
+			for _, s := range subnetsToScan {
+				if s == subnet.CIDR {
+					filteredSubnets = append(filteredSubnets, subnet)
+				}
+			}
+		}
+		subnets = filteredSubnets
 	}
+
+	return subnets
 }
 
 // ListSubnets all or a list of given subnets
-func ListSubnets(subnetsToQuery []string) (subnets []model.ScannedNetwork) {
-	db := storage.InitDB()
-
-	if len(subnetsToQuery) == 0 {
-		if err := db.Find(&subnets).Error; err != nil {
-			log.WithFields(log.Fields{"operation": "listing subnets", "error": err}).Error("Scanning networks")
-			os.Exit(1)
-		}
-	} else {
-		if err := db.Where("CIDR in (?)", subnetsToQuery).Find(&subnets).Error; err != nil {
-			log.WithFields(log.Fields{"operation": "listing subnets", "error": err}).Error("Scanning networks")
-			os.Exit(1)
-		}
-	}
-	return subnets
+func ListSubnets(subnetsToQuery []string) (subnets []*ToScan) {
+	return LoadSubnets(viper.GetString("scanner.subnet_source"), subnetsToQuery, []string{})
 }
 
 // ScanNetworks scan specific or all networks and try to find chassis, blades and servers
@@ -216,25 +213,7 @@ func ScanNetworks(subnetsToScan []string, site []string) {
 		}(cc, db, &wg)
 	}
 
-	subnets := []model.ScannedNetwork{}
-	if subnetsToScan[0] == "all" {
-		if site[0] == "all" {
-			if err := db.Find(&subnets).Error; err != nil {
-				log.WithFields(log.Fields{"operation": "scanning ip", "error": err}).Error("Scanning networks")
-				os.Exit(1)
-			}
-		} else {
-			if err := db.Where("site in (?)", site).Find(&subnets).Error; err != nil {
-				log.WithFields(log.Fields{"operation": "scanning ip", "error": err}).Error("Scanning networks")
-				os.Exit(1)
-			}
-		}
-	} else {
-		if err := db.Where("cidr in (?)", subnetsToScan).Find(&subnets).Error; err != nil {
-			log.WithFields(log.Fields{"operation": "scanning ip", "error": err}).Error("Scanning networks")
-			os.Exit(1)
-		}
-	}
+	subnets := LoadSubnets(viper.GetString("scanner.subnet_source"), subnetsToScan, site)
 
 	for _, subnet := range subnets {
 		t := ToScan{
