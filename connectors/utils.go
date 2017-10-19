@@ -329,6 +329,8 @@ func assetNotify(callback string) (err error) {
 	if err != nil {
 		return err
 	}
+	log.WithFields(log.Fields{"operation": "notify", "callback": callback}).Info("Notifying ServerDB")
+
 	authHeader := fmt.Sprintf("ApiKey %s:%s", viper.GetString("notify_api_user"), viper.GetString("notify_api_key"))
 	serverDBUrl := viper.GetString("notify_url")
 	payload := []byte(fmt.Sprintf(`{"key":"callback","value":"%s","description":""}`, callback))
@@ -344,6 +346,7 @@ func assetNotify(callback string) (err error) {
 	if err != nil {
 		return err
 	}
+
 	_, err = io.Copy(ioutil.Discard, resp.Body)
 	if err != nil {
 		return err
