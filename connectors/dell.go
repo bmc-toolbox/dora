@@ -151,6 +151,7 @@ type IDracLicense struct {
 type IDracRoot struct {
 	BiosVer   string `xml:"biosVer"`
 	FwVersion string `xml:"fwVersion"`
+	SysDesc   string `xml:"sysDesc"`
 }
 
 // DellSVMInventory is the struct used to collect data from "https://$ip/sysmgmt/2012/server/inventory/software"
@@ -323,6 +324,27 @@ func (i *IDracReader) BmcVersion() (bmcVersion string, err error) {
 	}
 
 	return bmcVersion, err
+}
+
+// Model returns the device model
+func (i *IDracReader) Model() (model string, err error) {
+	payload, err := i.get("data?get=sysDesc", nil)
+	if err != nil {
+		return model, ErrBiosNotFound
+	}
+
+	iDracRoot := &IDracRoot{}
+	err = xml.Unmarshal(payload, iDracRoot)
+	if err != nil {
+		DumpInvalidPayload(*i.ip, payload)
+		return model, ErrBiosNotFound
+	}
+
+	if iDracRoot.SysDesc != "" {
+		return iDracRoot.SysDesc, err
+	}
+
+	return model, ErrBiosNotFound
 }
 
 // BmcType returns the type of bmc we are talking to
