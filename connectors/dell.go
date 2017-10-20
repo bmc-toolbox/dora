@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -139,6 +140,36 @@ type IDracAuth struct {
 	ErrorMsg   string `xml:"errorMsg"`
 }
 
+// IDracLicense is the struct used to collect data from "https://$ip/sysmgmt/2012/server/license" and it contains the license information for the bmc
+type IDracLicense struct {
+	License struct {
+		VConsole int `json:"VCONSOLE"`
+	} `json:"License"`
+}
+
+// IDracRoot is the structure used to render the data when querying -> https://$ip/data?get
+type IDracRoot struct {
+	BiosVer   string `xml:"biosVer"`
+	FwVersion string `xml:"fwVersion"`
+}
+
+// DellSVMInventory is the struct used to collect data from "https://$ip/sysmgmt/2012/server/inventory/software"
+type DellSVMInventory struct {
+	Device []*DellIDracDevice `xml:"Device"`
+}
+
+// DellIDracDevice contains the list of devices and their information
+type DellIDracDevice struct {
+	Display     string                `xml:" display,attr"`
+	Application *DellIDracApplication `xml:" Application"`
+}
+
+// DellIDracApplication contains the name of the device and it's version
+type DellIDracApplication struct {
+	Display string `xml:" display,attr"`
+	Version string `xml:" version,attr"`
+}
+
 // IDracReader holds the status and properties of a connection to an iDrac device
 type IDracReader struct {
 	ip       *string
@@ -207,13 +238,27 @@ func (i *IDracReader) Login() (err error) {
 func (i *IDracReader) get(endpoint string, extraHeaders *map[string]string) (payload []byte, err error) {
 	log.WithFields(log.Fields{"step": "iDrac Connection Dell", "ip": *i.ip, "endpoint": endpoint}).Debug("Retrieving data from iDrac")
 
-	req, err := http.NewRequest("GET", fmt.Sprintf("https://%s/%s", *i.ip, endpoint), nil)
+	bmcURL := fmt.Sprintf("https://%s", *i.ip)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/%s", bmcURL, endpoint), nil)
 	if err != nil {
-		return nil, err
+		return payload, err
 	}
 	req.Header.Add("ST2", i.st2)
-	for key, value := range *extraHeaders {
-		req.Header.Add(key, value)
+	if extraHeaders != nil {
+		for key, value := range *extraHeaders {
+			req.Header.Add(key, value)
+		}
+	}
+
+	u, err := url.Parse(bmcURL)
+	if err != nil {
+		return payload, err
+	}
+
+	for _, cookie := range i.client.Jar.Cookies(u) {
+		if cookie.Name == "-http-session-" {
+			req.AddCookie(cookie)
+		}
 	}
 
 	resp, err := i.client.Do(req)
@@ -232,6 +277,81 @@ func (i *IDracReader) get(endpoint string, extraHeaders *map[string]string) (pay
 	}
 
 	return payload, err
+}
+
+// BiosVersion returns the current version of the bios
+func (i *IDracReader) BiosVersion() (version string, err error) {
+	payload, err := i.get("data?get=biosVer", nil)
+	if err != nil {
+		return version, ErrBiosNotFound
+	}
+
+	iDracRoot := &IDracRoot{}
+	err = xml.Unmarshal(payload, iDracRoot)
+	if err != nil {
+		DumpInvalidPayload(*i.ip, payload)
+		return version, ErrBiosNotFound
+	}
+
+	if iDracRoot.BiosVer != "" {
+		return iDracRoot.BiosVer, err
+	}
+
+	return version, ErrBiosNotFound
+}
+
+// BmcVersion returns the version of the bmc we are running
+func (i *IDracReader) BmcVersion() (bmcVersion string, err error) {
+	payload, err := i.get("sysmgmt/2012/server/inventory/software", nil)
+	if err != nil {
+		return bmcVersion, err
+	}
+
+	dellSVMInventory := &DellSVMInventory{}
+	err = xml.Unmarshal(payload, dellSVMInventory)
+	if err != nil {
+		DumpInvalidPayload(*i.ip, payload)
+		return bmcVersion, err
+	}
+
+	if dellSVMInventory.Device != nil {
+		for _, device := range dellSVMInventory.Device {
+			if device.Display == "Lifecycle Controller" && device.Application != nil {
+				return device.Application.Version, err
+			}
+		}
+	}
+
+	return bmcVersion, err
+}
+
+// BmcType returns the type of bmc we are talking to
+func (i *IDracReader) BmcType() (bmcType string, err error) {
+	return "iDrac", err
+}
+
+// License returns the bmc license information
+func (i *IDracReader) License() (name string, licType string, err error) {
+	extraHeaders := &map[string]string{
+		"X_SYSMGMT_OPTIMIZE": "true",
+	}
+
+	payload, err := i.get("sysmgmt/2012/server/license", extraHeaders)
+	if err != nil {
+		return name, licType, err
+	}
+
+	iDracLicense := &IDracLicense{}
+	err = json.Unmarshal(payload, iDracLicense)
+	if err != nil {
+		DumpInvalidPayload(*i.ip, payload)
+		return name, licType, err
+	}
+
+	if iDracLicense.License.VConsole == 1 {
+		return "Enterprise", "Licensed", err
+	}
+	return "-", "Unlicensed", err
 }
 
 // Memory return the total amount of memory of the server
