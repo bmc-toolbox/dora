@@ -433,7 +433,7 @@ func collect(input <-chan string, db *gorm.DB) {
 		}
 
 		if c.HwType() == Blade {
-			log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType(), "data": "We don't want to scan blades directly since the chassis does it for us"}).Debug("Connecting to host")
+			log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType()}).Debug("We don't want to scan blades directly since the chassis does it for us")
 			continue
 		}
 
@@ -454,7 +454,9 @@ func collect(input <-chan string, db *gorm.DB) {
 			existingBlades := make(map[*model.Blade]*model.Blade)
 			for _, blade := range chassis.Blades {
 				existingBlade, err := bladeStorage.GetOne(blade.Serial)
-				if err == nil || err == gorm.ErrRecordNotFound {
+				if err != nil && err != gorm.ErrRecordNotFound {
+					log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType(), "error": err}).Error("Collecting data")
+				} else {
 					existingBlades[blade] = &existingBlade
 				}
 			}
@@ -507,8 +509,9 @@ func collect(input <-chan string, db *gorm.DB) {
 
 			bladeStorage := storage.NewBladeStorage(db)
 			existingData, err := bladeStorage.GetOne(blade.Serial)
-			if err == nil || err == gorm.ErrRecordNotFound {
-				notifyServerChanges(blade, &existingData)
+			if err != nil && err != gorm.ErrRecordNotFound {
+				log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType(), "error": err}).Error("Collecting data")
+				continue
 			}
 
 			_, err = bladeStorage.UpdateOrCreate(blade)
@@ -516,6 +519,8 @@ func collect(input <-chan string, db *gorm.DB) {
 				log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType(), "error": err}).Error("Collecting data")
 				continue
 			}
+
+			notifyServerChanges(blade, &existingData)
 		}
 	}
 }

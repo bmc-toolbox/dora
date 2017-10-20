@@ -359,7 +359,5 @@ func assetNotify(callback string) (err error) {
 		return fmt.Errorf("Error code: %d, message: %s", resp.StatusCode, string(response))
 	}
 
-	log.WithFields(log.Fields{"operation": "notify", "answer": string(response)}).Debug("Notifying ServerDB")
-
 	return err
 }
