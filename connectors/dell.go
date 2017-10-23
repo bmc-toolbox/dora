@@ -843,18 +843,34 @@ func (d *DellCmcReader) Blades() (blades []*model.Blade, err error) {
 				}
 
 				if blade.BmcWEBReachable {
-					redFish, err := NewRedFishReader(&blade.BmcAddress, d.username, d.password)
+					idrac, err := NewIDracReader(&blade.BmcAddress, d.username, d.password)
 					if err != nil {
-						blade.BmcAuth = true
+						log.WithFields(log.Fields{"operation": "opening ilo connection", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+					} else {
+						err = idrac.Login()
+						if err == nil {
+							defer idrac.Logout()
+							blade.BmcAuth = true
 
-						blade.Memory, err = redFish.Memory()
-						if err != nil {
-							log.WithFields(log.Fields{"operation": "reading memory data", "ip": blade.BmcAddress, "name": blade.Name, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
-						}
+							blade.Processor, blade.ProcessorCount, blade.ProcessorCoreCount, blade.ProcessorThreadCount, err = idrac.CPU()
+							if err != nil {
+								log.WithFields(log.Fields{"operation": "reading cpu data", "ip": blade.BmcAddress, "name": blade.Name, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+							}
 
-						blade.Processor, blade.ProcessorCount, blade.ProcessorCoreCount, blade.ProcessorThreadCount, err = redFish.CPU()
-						if err != nil {
-							log.WithFields(log.Fields{"operation": "reading cpu data", "ip": blade.BmcAddress, "name": blade.Name, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+							blade.Nics, err = idrac.Nics()
+							if err != nil {
+								log.WithFields(log.Fields{"operation": "reading nics", "ip": blade.BmcAddress, "name": blade.Name, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+							}
+
+							blade.Memory, err = idrac.Memory()
+							if err != nil {
+								log.WithFields(log.Fields{"operation": "reading memory data", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+							}
+
+							blade.BmcLicenceType, blade.BmcLicenceStatus, err = idrac.License()
+							if err != nil {
+								log.WithFields(log.Fields{"operation": "reading license data", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+							}
 						}
 					}
 				} else {
