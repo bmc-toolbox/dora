@@ -149,9 +149,27 @@ type IDracLicense struct {
 
 // IDracRoot is the structure used to render the data when querying -> https://$ip/data?get
 type IDracRoot struct {
-	BiosVer   string `xml:"biosVer"`
-	FwVersion string `xml:"fwVersion"`
-	SysDesc   string `xml:"sysDesc"`
+	BiosVer          string                 `xml:"biosVer"`
+	FwVersion        string                 `xml:"fwVersion"`
+	SysDesc          string                 `xml:"sysDesc"`
+	Powermonitordata *IDracPowermonitordata `xml:"powermonitordata,omitempty"`
+}
+
+// IDracPowermonitordata contains the power consumption data for the iDrac
+type IDracPowermonitordata struct {
+	PresentReading *IDracPresentReading `xml:"presentReading,omitempty"`
+}
+
+// IDracPresentReading contains the present reading data
+type IDracPresentReading struct {
+	Reading *IDracReading `xml:" reading,omitempty"`
+}
+
+// IDracReading is used to express the power data
+type IDracReading struct {
+	ProbeName string `xml:" probeName,omitempty"`
+	Reading   string `xml:" reading"`
+	//Text             string            `xml:",chardata" json:",omitempty"`
 }
 
 // DellSVMInventory is the struct used to collect data from "https://$ip/sysmgmt/2012/server/inventory/software"
@@ -171,14 +189,64 @@ type DellIDracApplication struct {
 	Version string `xml:" version,attr"`
 }
 
+// DellSystemServerOS contains the hostname, os name and os version
+type DellSystemServerOS struct {
+	SystemServerOS struct {
+		HostName  string `json:"HostName"`
+		OSName    string `json:"OSName"`
+		OSVersion string `json:"OSVersion"`
+	} `json:"system.ServerOS"`
+}
+
+// IDracInventory contains the whole hardware inventory exposed thru https://$ip/sysmgmt/2012/server/inventory/hardware
+type IDracInventory struct {
+	Version   string            `xml:" version,attr"`
+	Component []*IDracComponent `xml:" Component,omitempty"`
+}
+
+// IDracComponent holds the information from each component detected by the iDrac
+type IDracComponent struct {
+	Classname  string           `xml:" Classname,attr"`
+	Key        string           `xml:" Key,attr"`
+	Properties []*IDracProperty `xml:" PROPERTY,omitempty"`
+}
+
+// IDracProperty is the property of each component exposed to iDrac
+type IDracProperty struct {
+	Name         string `xml:" NAME,attr"`
+	Type         string `xml:" TYPE,attr"`
+	DisplayValue string `xml:" DisplayValue,omitempty"`
+	Value        string `xml:" VALUE,omitempty"`
+}
+
+// IDracTemp contains the data structure to render the thermal data from iDrac http://$ip/sysmgmt/2012/server/temperature
+type IDracTemp struct {
+	Statistics   string `json:"Statistics"`
+	Temperatures struct {
+		IDRACEmbedded1SystemBoardInletTemp struct {
+			MaxFailure         int    `json:"max_failure"`
+			MaxWarning         int    `json:"max_warning"`
+			MaxWarningSettable int    `json:"max_warning_settable"`
+			MinFailure         int    `json:"min_failure"`
+			MinWarning         int    `json:"min_warning"`
+			MinWarningSettable int    `json:"min_warning_settable"`
+			Name               string `json:"name"`
+			Reading            int    `json:"reading"`
+			SensorStatus       int    `json:"sensor_status"`
+		} `json:"iDRAC.Embedded.1#SystemBoardInletTemp"`
+	} `json:"Temperatures"`
+	IsFreshAirCompliant int `json:"is_fresh_air_compliant"`
+}
+
 // IDracReader holds the status and properties of a connection to an iDrac device
 type IDracReader struct {
-	ip       *string
-	username *string
-	password *string
-	client   *http.Client
-	st1      string
-	st2      string
+	ip             *string
+	username       *string
+	password       *string
+	client         *http.Client
+	st1            string
+	st2            string
+	iDracInventory *IDracInventory
 }
 
 // NewIDracReader returns a new IloReader ready to be used
@@ -232,6 +300,27 @@ func (i *IDracReader) Login() (err error) {
 	i.st1 = strings.TrimLeft(stTemp[0], "index.html?ST1=")
 	i.st2 = strings.TrimLeft(stTemp[1], "ST2=")
 
+	i.loadHwData()
+
+	return err
+}
+
+//
+func (i *IDracReader) loadHwData() (err error) {
+	payload, err := i.get("sysmgmt/2012/server/inventory/hardware", nil)
+	if err != nil {
+		return err
+	}
+
+	iDracInventory := &IDracInventory{}
+	err = xml.Unmarshal(payload, iDracInventory)
+	if err != nil {
+		DumpInvalidPayload(*i.ip, payload)
+		return err
+	}
+
+	i.iDracInventory = iDracInventory
+
 	return err
 }
 
@@ -280,71 +369,143 @@ func (i *IDracReader) get(endpoint string, extraHeaders *map[string]string) (pay
 	return payload, err
 }
 
-// BiosVersion returns the current version of the bios
-func (i *IDracReader) BiosVersion() (version string, err error) {
-	payload, err := i.get("data?get=biosVer", nil)
+// Nics returns all found Nics in the device
+func (i *IDracReader) Nics() (nics []*model.Nic, err error) {
+	for _, component := range i.iDracInventory.Component {
+		if component.Classname == "DCIM_NICView" {
+			for _, property := range component.Properties {
+				if property.Name == "ProductName" && property.Type == "string" {
+					if nics == nil {
+						nics = make([]*model.Nic, 0)
+					}
+
+					data := strings.Split(property.Value, " - ")
+					n := &model.Nic{
+						Name:       data[0],
+						MacAddress: data[1],
+					}
+					nics = append(nics, n)
+				}
+			}
+		} else if component.Classname == "DCIM_iDRACCardView" {
+			for _, property := range component.Properties {
+				if property.Name == "PermanentMACAddress" && property.Type == "string" {
+					if nics == nil {
+						nics = make([]*model.Nic, 0)
+					}
+
+					n := &model.Nic{
+						Name:       "bmc",
+						MacAddress: property.Value,
+					}
+					nics = append(nics, n)
+				}
+			}
+		}
+	}
+	return nics, err
+}
+
+// Serial returns the device serial
+func (i *IDracReader) Serial() (serial string, err error) {
+	for _, component := range i.iDracInventory.Component {
+		if component.Classname == "DCIM_SystemView" {
+			for _, property := range component.Properties {
+				if property.Name == "NodeID" && property.Type == "string" {
+					return strings.ToLower(property.Value), err
+				}
+			}
+		}
+	}
+	return serial, err
+}
+
+// Status returns health string status from the bmc
+func (i *IDracReader) Status() (serial string, err error) {
+	return "NotSupported", err
+}
+
+// PowerKw returns the current power usage in Kw
+func (i *IDracReader) PowerKw() (power float64, err error) {
+	payload, err := i.get("data?get=powermonitordata", nil)
 	if err != nil {
-		return version, ErrBiosNotFound
+		return power, err
 	}
 
 	iDracRoot := &IDracRoot{}
 	err = xml.Unmarshal(payload, iDracRoot)
 	if err != nil {
 		DumpInvalidPayload(*i.ip, payload)
-		return version, ErrBiosNotFound
+		return power, err
 	}
 
-	if iDracRoot.BiosVer != "" {
-		return iDracRoot.BiosVer, err
+	if iDracRoot.Powermonitordata != nil && iDracRoot.Powermonitordata.PresentReading != nil && iDracRoot.Powermonitordata.PresentReading.Reading != nil {
+		value, err := strconv.Atoi(iDracRoot.Powermonitordata.PresentReading.Reading.Reading)
+		if err != nil {
+			return power, err
+		}
+		return float64(value) / 1000.00, err
 	}
 
-	return version, ErrBiosNotFound
+	return power, err
 }
 
-// BmcVersion returns the version of the bmc we are running
-func (i *IDracReader) BmcVersion() (bmcVersion string, err error) {
-	payload, err := i.get("sysmgmt/2012/server/inventory/software", nil)
-	if err != nil {
-		return bmcVersion, err
-	}
-
-	dellSVMInventory := &DellSVMInventory{}
-	err = xml.Unmarshal(payload, dellSVMInventory)
-	if err != nil {
-		DumpInvalidPayload(*i.ip, payload)
-		return bmcVersion, err
-	}
-
-	if dellSVMInventory.Device != nil {
-		for _, device := range dellSVMInventory.Device {
-			if device.Display == "Lifecycle Controller" && device.Application != nil {
-				return device.Application.Version, err
+// BiosVersion returns the current version of the bios
+func (i *IDracReader) BiosVersion() (version string, err error) {
+	for _, component := range i.iDracInventory.Component {
+		if component.Classname == "DCIM_SystemView" {
+			for _, property := range component.Properties {
+				if property.Name == "BIOSVersionString" && property.Type == "string" {
+					return property.Value, err
+				}
 			}
 		}
 	}
 
+	return version, err
+}
+
+// Name returns the name of this server from the bmc point of view
+func (i *IDracReader) Name() (name string, err error) {
+	for _, component := range i.iDracInventory.Component {
+		if component.Classname == "DCIM_SystemView" {
+			for _, property := range component.Properties {
+				if property.Name == "HostName" && property.Type == "string" {
+					return property.Value, err
+				}
+			}
+		}
+	}
+
+	return name, err
+}
+
+// BmcVersion returns the version of the bmc we are running
+func (i *IDracReader) BmcVersion() (bmcVersion string, err error) {
+	for _, component := range i.iDracInventory.Component {
+		if component.Classname == "DCIM_iDRACCardView" {
+			for _, property := range component.Properties {
+				if property.Name == "FirmwareVersion" && property.Type == "string" {
+					return property.Value, err
+				}
+			}
+		}
+	}
 	return bmcVersion, err
 }
 
 // Model returns the device model
 func (i *IDracReader) Model() (model string, err error) {
-	payload, err := i.get("data?get=sysDesc", nil)
-	if err != nil {
-		return model, ErrBiosNotFound
+	for _, component := range i.iDracInventory.Component {
+		if component.Classname == "DCIM_SystemView" {
+			for _, property := range component.Properties {
+				if property.Name == "Model" && property.Type == "string" {
+					return property.Value, err
+				}
+			}
+		}
 	}
-
-	iDracRoot := &IDracRoot{}
-	err = xml.Unmarshal(payload, iDracRoot)
-	if err != nil {
-		DumpInvalidPayload(*i.ip, payload)
-		return model, ErrBiosNotFound
-	}
-
-	if iDracRoot.SysDesc != "" {
-		return iDracRoot.SysDesc, err
-	}
-
-	return model, ErrBiosNotFound
+	return model, err
 }
 
 // BmcType returns the type of bmc we are talking to
@@ -395,6 +556,27 @@ func (i *IDracReader) Memory() (mem int, err error) {
 	}
 
 	return dellBladeMemory.Memory.Capacity / 1024, err
+}
+
+// TempC returns the current temperature of the machine
+func (i *IDracReader) TempC() (temp int, err error) {
+	extraHeaders := &map[string]string{
+		"X_SYSMGMT_OPTIMIZE": "true",
+	}
+
+	payload, err := i.get("sysmgmt/2012/server/temperature", extraHeaders)
+	if err != nil {
+		return temp, err
+	}
+
+	iDracTemp := &IDracTemp{}
+	err = json.Unmarshal(payload, iDracTemp)
+	if err != nil {
+		DumpInvalidPayload(*i.ip, payload)
+		return temp, err
+	}
+
+	return iDracTemp.Temperatures.IDRACEmbedded1SystemBoardInletTemp.Reading, err
 }
 
 // CPU return the cpu, cores and hyperthreads the server
