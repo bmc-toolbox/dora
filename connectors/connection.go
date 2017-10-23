@@ -336,6 +336,12 @@ func (c *Connection) Collect() (i interface{}, err error) {
 			return i, err
 		}
 		return c.blade(ilo)
+	} else if c.vendor == Dell && (c.hwtype == Blade || c.hwtype == Discrete) {
+		idrac, err := NewIDracReader(&c.host, &c.username, &c.password)
+		if err != nil {
+			return i, err
+		}
+		return c.blade(idrac)
 	} else if c.vendor == HP && c.hwtype == Chassis {
 		c7000, err := NewHpChassisReader(&c.host, &c.username, &c.password)
 		if err != nil {
@@ -355,13 +361,6 @@ func (c *Connection) Collect() (i interface{}, err error) {
 		}
 		return c.blade(smBmc)
 	}
-	/* else if c.vendor == Dell && (c.hwtype == Blade || c.hwtype == Discrete) {
-		redfish, err := NewRedFishReader(&c.host, &c.username, &c.password)
-		if err != nil {
-			return i, err
-		}
-		return c.blade(redfish), err
-	} */
 
 	return i, ErrVendorUnknown
 }
@@ -432,10 +431,10 @@ func collect(input <-chan string, db *gorm.DB) {
 			continue
 		}
 
-		if c.HwType() == Blade {
-			log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType()}).Debug("We don't want to scan blades directly since the chassis does it for us")
-			continue
-		}
+		// if c.HwType() == Blade {
+		// 	log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType()}).Debug("We don't want to scan blades directly since the chassis does it for us")
+		// 	continue
+		// }
 
 		data, err := c.Collect()
 		if err != nil {
