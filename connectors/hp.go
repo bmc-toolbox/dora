@@ -484,8 +484,6 @@ func (i *IloReader) TempC() (temp int, err error) {
 
 // Nics returns all found Nics in the device
 func (i *IloReader) Nics() (nics []*model.Nic, err error) {
-	nics = make([]*model.Nic, 0)
-
 	if i.hpRimpBlade.HpHSI != nil &&
 		i.hpRimpBlade.HpHSI.HpNICS != nil &&
 		i.hpRimpBlade.HpHSI.HpNICS.HpNIC != nil {
@@ -495,6 +493,10 @@ func (i *IloReader) Nics() (nics []*model.Nic, err error) {
 				name = "bmc"
 			} else {
 				name = nic.Description
+			}
+
+			if nics == nil {
+				nics = make([]*model.Nic, 0)
 			}
 
 			n := &model.Nic{
