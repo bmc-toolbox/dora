@@ -303,7 +303,7 @@ func (s *SupermicroReader) Name() (name string, err error) {
 
 // Status returns health string status from the bmc
 func (s *SupermicroReader) Status() (health string, err error) {
-	return "Not Supported", err
+	return "NotSupported", err
 }
 
 // Memory returns the total amount of memory of the server
@@ -403,7 +403,6 @@ func (s *SupermicroReader) TempC() (temp int, err error) {
 
 // Nics returns all found Nics in the device
 func (s *SupermicroReader) Nics() (nics []*model.Nic, err error) {
-	nics = make([]*model.Nic, 0)
 	ipmi, err := s.query("GENERIC_INFO.XML=(0,0)")
 	if err != nil {
 		return nics, err
