@@ -60,6 +60,7 @@ type SupermicroDimm struct {
 type SupermicroFruInfo struct {
 	Board   *SupermicroBoard   `xml:" BOARD,omitempty"`
 	Chassis *SupermicroChassis `xml:" CHASSIS,omitempty"`
+	Product *SupermicroProduct `xml:" PRODUCT,omitempty" json:"PRODUCT,omitempty"`
 }
 
 // SupermicroChassis holds the chassis information
@@ -74,6 +75,11 @@ type SupermicroBoard struct {
 	PartNum   string `xml:" PART_NUM,attr"`
 	ProdName  string `xml:" PROD_NAME,attr"`
 	SerialNum string `xml:" SERIAL_NUM,attr"`
+}
+
+// SupermicroProduct hold the product information
+type SupermicroProduct struct {
+	SerialNum string `xml:" SERIAL_NUM,attr"  json:",omitempty"`
 }
 
 // SupermicroGenericInfo holds the bmc information
@@ -250,7 +256,12 @@ func (s *SupermicroReader) Serial() (serial string, err error) {
 		return serial, err
 	}
 
-	serial = strings.TrimSpace(fmt.Sprintf("%s_%s", strings.TrimSpace(ipmi.FruInfo.Chassis.SerialNum), strings.TrimSpace(ipmi.FruInfo.Board.SerialNum)))
+	if strings.HasPrefix(ipmi.FruInfo.Chassis.SerialNum, "S") {
+		serial = strings.TrimSpace(fmt.Sprintf("%s_%s", strings.TrimSpace(ipmi.FruInfo.Chassis.SerialNum), strings.TrimSpace(ipmi.FruInfo.Board.SerialNum)))
+	} else {
+		serial = strings.TrimSpace(fmt.Sprintf("%s_%s", strings.TrimSpace(ipmi.FruInfo.Product.SerialNum), strings.TrimSpace(ipmi.FruInfo.Board.SerialNum)))
+	}
+
 	return strings.ToLower(serial), err
 }
 

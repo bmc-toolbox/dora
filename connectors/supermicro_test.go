@@ -146,7 +146,7 @@ func TestSupermicroLogin(t *testing.T) {
 }
 
 func TestSupermicroSerial(t *testing.T) {
-	expectedAnswer := "CF414AF38N50003@VM158S009467"
+	expectedAnswer := "a19627226a05569_vm158s009467"
 
 	bmc, err := smSetup()
 	if err != nil {
