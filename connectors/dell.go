@@ -300,7 +300,10 @@ func (i *IDracReader) Login() (err error) {
 	i.st1 = strings.TrimLeft(stTemp[0], "index.html?ST1=")
 	i.st2 = strings.TrimLeft(stTemp[1], "ST2=")
 
-	i.loadHwData()
+	err = i.loadHwData()
+	if err != nil {
+		return err
+	}
 
 	return err
 }
@@ -317,6 +320,13 @@ func (i *IDracReader) loadHwData() (err error) {
 	if err != nil {
 		DumpInvalidPayload(*i.ip, payload)
 		return err
+	}
+
+	fmt.Println(iDracInventory)
+	fmt.Println(iDracInventory.Component)
+
+	if iDracInventory == nil || iDracInventory.Component == nil {
+		return ErrUnableToReadData
 	}
 
 	i.iDracInventory = iDracInventory
@@ -648,7 +658,7 @@ func NewDellCmcReader(ip *string, username *string, password *string) (chassis *
 	}
 
 	if dellCMC.DellChassis == nil {
-		return chassis, ErrUnabletoReadData
+		return chassis, ErrUnableToReadData
 	}
 
 	return &DellCmcReader{ip: ip, username: username, password: password, cmcJSON: dellCMC}, err

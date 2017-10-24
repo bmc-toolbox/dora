@@ -583,7 +583,7 @@ func NewHpChassisReader(ip *string, username *string, password *string) (chassis
 	}
 
 	if hpRimp.HpInfra2 == nil {
-		return chassis, ErrUnabletoReadData
+		return chassis, ErrUnableToReadData
 	}
 
 	return &HpChassisReader{ip: ip, username: username, password: password, hpRimp: hpRimp, client: client}, err
