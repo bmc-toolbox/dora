@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/rand"
 	"crypto/tls"
-	"encoding/xml"
 	"errors"
 	"fmt"
 	"io"
@@ -257,39 +256,6 @@ func httpGetHP(hostname *string, endpoint string, username *string, password *st
 	}
 
 	return payload, err
-}
-
-func detectVendorAndType(hostname *string) (vendor string, deviceType string, err error) {
-	log.WithFields(log.Fields{"step": "onnection", "hostname": *hostname}).Info("Detecting vendor")
-
-	client, err := buildClient()
-	if err != nil {
-		return vendor, deviceType, err
-	}
-
-	resp, err := client.Get(fmt.Sprintf("https://%s/xmldata?item=all", *hostname))
-	if err != nil {
-		return vendor, deviceType, err
-	}
-
-	if resp.StatusCode == 200 {
-		payload, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return vendor, deviceType, err
-		}
-
-		iloXML := &HpRimpBlade{}
-		err = xml.Unmarshal(payload, iloXML)
-		if err != nil {
-			fmt.Println(err)
-		}
-
-		if iloXML.HpBladeBlade != nil {
-			return HP, Blade, err
-		}
-	}
-
-	return vendor, deviceType, err
 }
 
 // DumpInvalidPayload is here to help identify unknown or broken payload messages

@@ -308,7 +308,7 @@ func (i *IDracReader) Login() (err error) {
 	return err
 }
 
-//
+// loadHwData load the full hardware information from the iDrac
 func (i *IDracReader) loadHwData() (err error) {
 	payload, err := i.get("sysmgmt/2012/server/inventory/hardware", nil)
 	if err != nil {
@@ -321,9 +321,6 @@ func (i *IDracReader) loadHwData() (err error) {
 		DumpInvalidPayload(*i.ip, payload)
 		return err
 	}
-
-	fmt.Println(iDracInventory)
-	fmt.Println(iDracInventory.Component)
 
 	if iDracInventory == nil || iDracInventory.Component == nil {
 		return ErrUnableToReadData
@@ -385,16 +382,20 @@ func (i *IDracReader) Nics() (nics []*model.Nic, err error) {
 		if component.Classname == "DCIM_NICView" {
 			for _, property := range component.Properties {
 				if property.Name == "ProductName" && property.Type == "string" {
-					if nics == nil {
-						nics = make([]*model.Nic, 0)
-					}
-
 					data := strings.Split(property.Value, " - ")
-					n := &model.Nic{
-						Name:       data[0],
-						MacAddress: data[1],
+					if len(data) == 2 {
+						if nics == nil {
+							nics = make([]*model.Nic, 0)
+						}
+
+						n := &model.Nic{
+							Name:       data[0],
+							MacAddress: data[1],
+						}
+						nics = append(nics, n)
+					} else {
+						log.WithFields(log.Fields{"operation": "connection", "ip": *i.ip, "type": "blade", "error": "Invalid network card, please review"}).Error("Auditing blade")
 					}
-					nics = append(nics, n)
 				}
 			}
 		} else if component.Classname == "DCIM_iDRACCardView" {
