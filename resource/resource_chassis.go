@@ -13,7 +13,6 @@ import (
 // ChassisResource for api2go routes
 type ChassisResource struct {
 	ChassisStorage *storage.ChassisStorage
-	BladeStorage   *storage.BladeStorage
 }
 
 // FindAll Chassis

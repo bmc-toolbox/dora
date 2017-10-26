@@ -12,9 +12,7 @@ import (
 
 // BladeResource for api2go routes
 type BladeResource struct {
-	BladeStorage   *storage.BladeStorage
-	ChassisStorage *storage.ChassisStorage
-	NicStorage     *storage.NicStorage
+	BladeStorage *storage.BladeStorage
 }
 
 // FindAll Blades

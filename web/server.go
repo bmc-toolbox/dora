@@ -50,14 +50,16 @@ func RunGin(port int, debug bool) {
 
 	chassisStorage := storage.NewChassisStorage(db)
 	bladeStorage := storage.NewBladeStorage(db)
+	discreteStorage := storage.NewDiscreteStorage(db)
 	nicStorage := storage.NewNicStorage(db)
 	storageBladeStorage := storage.NewStorageBladeStorage(db)
 	scannedPortStorage := storage.NewScannedPortStorage(db)
 
-	api.AddResource(model.Chassis{}, resource.ChassisResource{BladeStorage: bladeStorage, ChassisStorage: chassisStorage})
-	api.AddResource(model.Blade{}, resource.BladeResource{BladeStorage: bladeStorage, ChassisStorage: chassisStorage, NicStorage: nicStorage})
-	api.AddResource(model.StorageBlade{}, resource.StorageBladeResource{StorageBladeStorage: storageBladeStorage, ChassisStorage: chassisStorage, BladeStorage: bladeStorage})
-	api.AddResource(model.Nic{}, resource.NicResource{BladeStorage: bladeStorage, NicStorage: nicStorage})
+	api.AddResource(model.Chassis{}, resource.ChassisResource{ChassisStorage: chassisStorage})
+	api.AddResource(model.Blade{}, resource.BladeResource{BladeStorage: bladeStorage})
+	api.AddResource(model.Discrete{}, resource.DiscreteResource{DiscreteStorage: discreteStorage})
+	api.AddResource(model.StorageBlade{}, resource.StorageBladeResource{StorageBladeStorage: storageBladeStorage})
+	api.AddResource(model.Nic{}, resource.NicResource{NicStorage: nicStorage})
 	api.AddResource(model.ScannedPort{}, resource.ScannedPortResource{ScannedPortStorage: scannedPortStorage})
 
 	r.GET("/", func(c *gin.Context) {

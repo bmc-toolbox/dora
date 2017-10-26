@@ -33,6 +33,7 @@ func InitDB() *gorm.DB {
 	db.SingularTable(true)
 	db.AutoMigrate(
 		&model.Blade{},
+		&model.Discrete{},
 		&model.Chassis{},
 		&model.Nic{},
 		&model.StorageBlade{},

@@ -13,8 +13,6 @@ import (
 // StorageBladeResource for api2go routes
 type StorageBladeResource struct {
 	StorageBladeStorage *storage.StorageBladeStorage
-	ChassisStorage      *storage.ChassisStorage
-	BladeStorage        *storage.BladeStorage
 }
 
 // FindAll StorageBlades

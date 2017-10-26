@@ -12,8 +12,7 @@ import (
 
 // NicResource for api2go routes
 type NicResource struct {
-	BladeStorage *storage.BladeStorage
-	NicStorage   *storage.NicStorage
+	NicStorage *storage.NicStorage
 }
 
 // FindAll Nics
@@ -51,7 +50,7 @@ func (n NicResource) queryAndCountAllWrapper(r api2go.Request) (count int, nics 
 	bladeID, hasBlade := r.QueryParams["bladesID"]
 	if hasBlade {
 		count, nics, err = n.NicStorage.GetAllByBladeID(offset, limit, bladeID)
-		return
+		return count, nics, err
 	}
 
 	if !hasBlade {
