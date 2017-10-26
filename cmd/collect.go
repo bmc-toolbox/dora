@@ -58,9 +58,9 @@ usage: dora collect
 		}
 
 		if len(args) == 0 {
-			connectors.DataCollection([]string{"all"})
+			connectors.DataCollection([]string{"all"}, "cli")
 		} else {
-			connectors.DataCollection(args)
+			connectors.DataCollection(args, "cli")
 		}
 	},
 }

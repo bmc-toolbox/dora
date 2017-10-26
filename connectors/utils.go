@@ -2,9 +2,7 @@ package connectors
 
 import (
 	"bytes"
-	"crypto/rand"
 	"crypto/tls"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -23,78 +21,6 @@ import (
 
 	"golang.org/x/net/publicsuffix"
 )
-
-var (
-	// ErrLoginFailed is returned when we fail to login to a bmc
-	ErrLoginFailed = errors.New("Failed to login")
-	// ErrBiosNotFound is returned when we are not able to find the server bios version
-	ErrBiosNotFound = errors.New("Bios version not found")
-	// ErrVendorUnknown is returned when we are unable to identify the redfish vendor
-	ErrVendorUnknown = errors.New("Unable to identify the vendor")
-	// ErrInvalidSerial is returned when the serial number for the device is invalid
-	ErrInvalidSerial = errors.New("Unable to find the serial number")
-	// ErrPageNotFound is used to inform the http request that we couldn't find the expected page and/or endpoint
-	ErrPageNotFound = errors.New("Requested page couldn't be found in the server")
-	// ErrRedFishNotSupported is returned when redfish isn't supported by the vendor
-	ErrRedFishNotSupported = errors.New("RedFish not supported")
-	// ErrRedFishEndPoint500 is retured when we receive 500 in a redfish api call and the bmc dies with the request
-	ErrRedFishEndPoint500 = errors.New("We've received 500 calling this endpoint")
-	// ErrUnableToReadData is returned when we fail to read data from a chassis or bmc
-	ErrUnableToReadData = errors.New("Unable to read data from this device")
-)
-
-// newUUID generates a random UUID according to RFC 4122
-func newUUID() (string, error) {
-	uuid := make([]byte, 16)
-	n, err := io.ReadFull(rand.Reader, uuid)
-	if n != len(uuid) || err != nil {
-		return "", err
-	}
-	// variant bits; see section 4.1.1
-	uuid[8] = uuid[8]&^0xc0 | 0x80
-	// version 4 (pseudo-random); see section 4.1.3
-	uuid[6] = uuid[6]&^0xf0 | 0x40
-	return fmt.Sprintf("%x-%x-%x-%x-%x", uuid[0:4], uuid[4:6], uuid[6:8], uuid[8:10], uuid[10:]), nil
-}
-
-func httpGet(url string, username *string, password *string) (payload []byte, err error) {
-	log.WithFields(log.Fields{"step": "ChassisConnections", "url": url}).Debug("Requesting data from BMC")
-
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return payload, err
-	}
-	req.SetBasicAuth(*username, *password)
-	tr := &http.Transport{
-		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
-		DisableKeepAlives: true,
-		Dial: (&net.Dialer{
-			Timeout:   10 * time.Second,
-			KeepAlive: 10 * time.Second,
-		}).Dial,
-		TLSHandshakeTimeout: 10 * time.Second,
-	}
-	client := &http.Client{
-		Timeout:   time.Second * 20,
-		Transport: tr,
-	}
-	resp, err := client.Do(req)
-	if err != nil {
-		return payload, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode == 404 {
-		return payload, ErrPageNotFound
-	}
-
-	payload, err = ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return payload, err
-	}
-
-	return payload, err
-}
 
 func buildClient() (client *http.Client, err error) {
 	tr := &http.Transport{
@@ -193,75 +119,11 @@ func httpGetDell(hostname *string, endpoint string, username *string, password *
 	return payload, err
 }
 
-func httpGetHP(hostname *string, endpoint string, username *string, password *string) (payload []byte, err error) {
-	log.WithFields(log.Fields{"step": "ChassisConnections HP", "hostname": *hostname}).Debug("Requesting data from BMC")
-
-	data := []byte(fmt.Sprintf("{\"method\":\"login\", \"user_login\":\"%s\", \"password\":\"%s\" }", *username, *password))
-	u, err := url.Parse(fmt.Sprintf("https://%s/json/login_session", *hostname))
-	if err != nil {
-		return payload, err
-	}
-
-	req, err := http.NewRequest("POST", u.String(), bytes.NewBuffer(data))
-	if err != nil {
-		return payload, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	client, err := buildClient()
-	if err != nil {
-		return payload, err
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return payload, err
-	}
-
-	io.Copy(ioutil.Discard, resp.Body)
-	defer resp.Body.Close()
-
-	if resp.StatusCode == 404 {
-		return payload, ErrPageNotFound
-	}
-
-	resp, err = client.Get(fmt.Sprintf("https://%s/%s", *hostname, endpoint))
-	if err != nil {
-		return payload, err
-	}
-	defer resp.Body.Close()
-
-	payload, err = ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return payload, err
-	}
-
-	data = []byte(`{"method":"logout"}`)
-
-	req, err = http.NewRequest("POST", u.String(), bytes.NewBuffer(data))
-	if err != nil {
-		return payload, err
-	}
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-
-	resp, err = client.Do(req)
-	if err != nil {
-		return payload, err
-	}
-	io.Copy(ioutil.Discard, resp.Body)
-	defer resp.Body.Close()
-
-	if resp.StatusCode == 404 {
-		return payload, ErrPageNotFound
-	}
-
-	return payload, err
-}
-
 // DumpInvalidPayload is here to help identify unknown or broken payload messages
 func DumpInvalidPayload(name string, payload []byte) (err error) {
+	// TODO: We need to also add the reference for this payload or it's useless
 	if viper.GetBool("collector.dump_invalid_payloads") {
-		log.WithFields(log.Fields{"operation": "dump invalid payload", "name": name}).Info("Dump invalid payload")
+		log.WithFields(log.Fields{"operation": "dump invalid payload", "name": name}).Info("dump invalid payload")
 
 		t := time.Now()
 		timeStamp := t.Format("20060102150405")
@@ -274,13 +136,13 @@ func DumpInvalidPayload(name string, payload []byte) (err error) {
 
 		file, err := os.OpenFile(path.Join(dumpPath, name, timeStamp), os.O_RDWR|os.O_CREATE, 0755)
 		if err != nil {
-			log.WithFields(log.Fields{"operation": "dump invalid payload", "name": name, "error": err}).Error("Dump invalid payload")
+			log.WithFields(log.Fields{"operation": "dump invalid payload", "name": name, "error": err}).Error("dump invalid payload")
 			return err
 		}
 
 		_, err = file.Write(payload)
 		if err != nil {
-			log.WithFields(log.Fields{"operation": "dump invalid payload", "name": name, "error": err}).Error("Dump invalid payload")
+			log.WithFields(log.Fields{"operation": "dump invalid payload", "name": name, "error": err}).Error("dump invalid payload")
 			return err
 		}
 		file.Sync()
@@ -308,7 +170,7 @@ func assetNotify(callback string) (err error) {
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Authorization", authHeader)
 
-	log.WithFields(log.Fields{"operation": "notify", "callback": callback}).Info("Notifying ServerDB")
+	log.WithFields(log.Fields{"operation": "notify", "callback": callback}).Info("notifying ServerDB")
 
 	resp, err := client.Do(req)
 	if err != nil {

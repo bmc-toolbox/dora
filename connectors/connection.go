@@ -4,14 +4,11 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io/ioutil"
-	"net"
 	"sort"
 	"strings"
-	"sync"
 
 	"github.com/kr/pretty"
 
-	"github.com/jinzhu/gorm"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"gitlab.booking.com/infra/dora/model"
@@ -254,6 +251,105 @@ func (c *Connection) blade(bmc Bmc) (blade *model.Blade, err error) {
 	return blade, nil
 }
 
+func (c *Connection) discrete(bmc Bmc) (discrete *model.Discrete, err error) {
+	err = bmc.Login()
+	if err != nil {
+		return discrete, err
+	}
+
+	defer bmc.Logout()
+	discrete = &model.Discrete{}
+	db := storage.InitDB()
+
+	discrete.BmcAuth = true
+	discrete.BmcWEBReachable = true
+	discrete.BmcAddress = c.host
+	discrete.Vendor = c.Vendor()
+
+	discrete.Serial, err = bmc.Serial()
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "reading serial", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+		return nil, err
+	}
+
+	if discrete.Serial == "" || discrete.Serial == "[unknown]" || discrete.Serial == "0000000000" || discrete.Serial == "_" {
+		log.WithFields(log.Fields{"operation": "reading serial", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": ErrInvalidSerial}).Warning("Auditing hardware")
+		return nil, ErrInvalidSerial
+	}
+
+	discrete.BmcType, err = bmc.BmcType()
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "reading bmc type", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+	}
+
+	discrete.BmcVersion, err = bmc.BmcVersion()
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "reading bmc version", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+	}
+
+	discrete.Model, err = bmc.Model()
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "reading model", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+	}
+
+	discrete.Nics, err = bmc.Nics()
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "reading nics", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+	}
+
+	discrete.BiosVersion, err = bmc.BiosVersion()
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "reading bios version", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+	}
+
+	discrete.Processor, discrete.ProcessorCount, discrete.ProcessorCoreCount, discrete.ProcessorThreadCount, err = bmc.CPU()
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "reading cpu", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+	}
+
+	discrete.Memory, err = bmc.Memory()
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "reading memory", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+	}
+
+	discrete.Status, err = bmc.Status()
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "reading status", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+	}
+
+	discrete.Name, err = bmc.Name()
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "reading name", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+	}
+
+	discrete.TempC, err = bmc.TempC()
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "reading thermal data", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+	}
+
+	discrete.PowerKw, err = bmc.PowerKw()
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "reading power usage data", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+	}
+
+	discrete.BmcLicenceType, discrete.BmcLicenceStatus, err = bmc.License()
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "reading license data", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+	}
+
+	scans := []model.ScannedPort{}
+	db.Where("ip = ?", discrete.BmcAddress).Find(&scans)
+	for _, scan := range scans {
+		if scan.Port == 22 && scan.Protocol == "tcp" && scan.State == "open" {
+			discrete.BmcSSHReachable = true
+		} else if scan.Port == 623 && scan.Protocol == "udp" && (scan.State == "open|filtered" || scan.State == "open") {
+			discrete.BmcIpmiReachable = true
+		}
+	}
+
+	return discrete, nil
+}
+
 func (c *Connection) chassis(ch BmcChassis) (chassis *model.Chassis, err error) {
 	chassis = &model.Chassis{}
 
@@ -330,18 +426,30 @@ func (c *Connection) chassis(ch BmcChassis) (chassis *model.Chassis, err error) 
 
 // Collect collects all relevant data of the current hardwand and returns the populated object
 func (c *Connection) Collect() (i interface{}, err error) {
-	if c.vendor == HP && (c.hwtype == Blade || c.hwtype == Discrete) {
+	if c.vendor == HP && c.hwtype == Blade {
 		ilo, err := NewIloReader(&c.host, &c.username, &c.password)
 		if err != nil {
 			return i, err
 		}
 		return c.blade(ilo)
-	} else if c.vendor == Dell && (c.hwtype == Blade || c.hwtype == Discrete) {
+	} else if c.vendor == HP && c.hwtype == Discrete {
+		ilo, err := NewIloReader(&c.host, &c.username, &c.password)
+		if err != nil {
+			return i, err
+		}
+		return c.blade(ilo)
+	} else if c.vendor == Dell && c.hwtype == Blade {
 		idrac, err := NewIDracReader(&c.host, &c.username, &c.password)
 		if err != nil {
 			return i, err
 		}
 		return c.blade(idrac)
+	} else if c.vendor == Dell && c.hwtype == Discrete {
+		idrac, err := NewIDracReader(&c.host, &c.username, &c.password)
+		if err != nil {
+			return i, err
+		}
+		return c.discrete(idrac)
 	} else if c.vendor == HP && c.hwtype == Chassis {
 		c7000, err := NewHpChassisReader(&c.host, &c.username, &c.password)
 		if err != nil {
@@ -359,7 +467,7 @@ func (c *Connection) Collect() (i interface{}, err error) {
 		if err != nil {
 			return i, err
 		}
-		return c.blade(smBmc)
+		return c.discrete(smBmc)
 	}
 
 	return i, ErrVendorUnknown
@@ -418,158 +526,4 @@ func notifyServerChanges(blade *model.Blade, existingData *model.Blade) {
 			log.WithFields(log.Fields{"operation": "serverdb callback", "url": callback, "error": err}).Error("Sending ServerDB callback")
 		}
 	}
-}
-
-func collect(input <-chan string, db *gorm.DB) {
-	bmcUser := viper.GetString("bmc_user")
-	bmcPass := viper.GetString("bmc_pass")
-
-	for host := range input {
-		c, err := NewConnection(bmcUser, bmcPass, host)
-		if err != nil {
-			log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType(), "error": err}).Error("Connecting to host")
-			continue
-		}
-
-		// if c.HwType() == Blade {
-		// 	log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType()}).Debug("We don't want to scan blades directly since the chassis does it for us")
-		// 	continue
-		// }
-
-		data, err := c.Collect()
-		if err != nil {
-			log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType(), "error": err}).Error("Collecting data")
-			continue
-		}
-
-		switch data.(type) {
-		case *model.Chassis:
-			chassis := data.(*model.Chassis)
-			if chassis == nil {
-				continue
-			}
-
-			bladeStorage := storage.NewBladeStorage(db)
-			existingBlades := make(map[*model.Blade]*model.Blade)
-			for _, blade := range chassis.Blades {
-				existingBlade, err := bladeStorage.GetOne(blade.Serial)
-				if err != nil && err != gorm.ErrRecordNotFound {
-					log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType(), "error": err}).Error("Collecting data")
-				} else {
-					existingBlades[blade] = &existingBlade
-				}
-			}
-
-			chassisStorage := storage.NewChassisStorage(db)
-			_, err = chassisStorage.UpdateOrCreate(chassis)
-			if err != nil {
-				log.WithFields(log.Fields{"operation": "store", "ip": host, "type": c.HwType(), "error": err}).Error("Collecting data")
-				continue
-			}
-
-			for blade, existingBlade := range existingBlades {
-				notifyServerChanges(blade, existingBlade)
-			}
-
-			count, serials, err := chassisStorage.RemoveOldBladesRefs(chassis)
-			if err != nil {
-				log.WithFields(log.Fields{"operation": "cleanup", "ip": host, "type": c.HwType(), "error": err}).Error("Collecting data")
-				continue
-			} else if count > 0 {
-				for _, serial := range serials {
-					log.WithFields(log.Fields{"operation": "cleanup", "ip": host, "type": c.HwType(), "chassis": chassis.Serial, "serial": serial}).Info("blade has been remove from chassis")
-				}
-				callback := fmt.Sprintf("%s/chassis/%s", viper.GetString("url"), chassis.Serial)
-				err := assetNotify(callback)
-				if err != nil {
-					log.WithFields(log.Fields{"operation": "serverdb callback", "url": callback, "error": err}).Error("Sending ServerDB callback")
-				}
-			}
-
-			count, serials, err = chassisStorage.RemoveOldStorageBladesRefs(chassis)
-			if err != nil {
-				log.WithFields(log.Fields{"operation": "cleanup", "ip": host, "type": c.HwType(), "error": err}).Error("Collecting data")
-				continue
-			} else if count > 0 {
-				for _, serial := range serials {
-					log.WithFields(log.Fields{"operation": "cleanup", "ip": host, "type": c.HwType(), "chassis": chassis.Serial, "serial": serial}).Info("storage blade has been remove from chassis")
-				}
-				callback := fmt.Sprintf("%s/chassis/%s", viper.GetString("url"), chassis.Serial)
-				err := assetNotify(callback)
-				if err != nil {
-					log.WithFields(log.Fields{"operation": "serverdb callback", "url": callback, "error": err}).Error("Sending ServerDB callback")
-				}
-			}
-		case *model.Blade:
-			blade := data.(*model.Blade)
-			if blade == nil {
-				continue
-			}
-
-			bladeStorage := storage.NewBladeStorage(db)
-			existingData, err := bladeStorage.GetOne(blade.Serial)
-			if err != nil && err != gorm.ErrRecordNotFound {
-				log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType(), "error": err}).Error("Collecting data")
-				continue
-			}
-
-			_, err = bladeStorage.UpdateOrCreate(blade)
-			if err != nil {
-				log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType(), "error": err}).Error("Collecting data")
-				continue
-			}
-
-			notifyServerChanges(blade, &existingData)
-		}
-	}
-}
-
-// DataCollection collects the data of all given ips
-func DataCollection(ips []string) {
-	concurrency := viper.GetInt("collector.concurrency")
-
-	cc := make(chan string, concurrency)
-	wg := sync.WaitGroup{}
-	db := storage.InitDB()
-
-	wg.Add(concurrency)
-	for i := 0; i < concurrency; i++ {
-		go func(input <-chan string, db *gorm.DB, wg *sync.WaitGroup) {
-			defer wg.Done()
-			collect(input, db)
-		}(cc, db, &wg)
-	}
-
-	if ips[0] == "all" {
-		hosts := []model.ScannedPort{}
-		if err := db.Where("port = 443 and protocol = 'tcp' and state = 'open'").Find(&hosts).Error; err != nil {
-			log.WithFields(log.Fields{"operation": "connection", "ip": "all", "error": err}).Error(fmt.Sprintf("Retrieving scanned hosts"))
-		} else {
-			for _, host := range hosts {
-				cc <- host.IP
-			}
-		}
-	} else {
-		for _, ip := range ips {
-			host := model.ScannedPort{}
-			parsedIP := net.ParseIP(ip)
-			if parsedIP == nil {
-				lookup, err := net.LookupHost(ip)
-				if err != nil {
-					log.WithFields(log.Fields{"operation": "connection", "ip": ip, "error": err}).Error(fmt.Sprintf("Retrieving scanned hosts"))
-					continue
-				}
-				ip = lookup[0]
-			}
-
-			if err := db.Where("ip = ? and port = 443 and protocol = 'tcp' and state = 'open'", ip).Find(&host).Error; err != nil {
-				log.WithFields(log.Fields{"operation": "connection", "ip": ip, "error": err}).Error(fmt.Sprintf("Retrieving scanned hosts"))
-				continue
-			}
-			cc <- host.IP
-		}
-	}
-
-	close(cc)
-	wg.Wait()
 }
