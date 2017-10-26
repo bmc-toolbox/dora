@@ -169,73 +169,73 @@ func (c *Connection) blade(bmc Bmc) (blade *model.Blade, err error) {
 
 	blade.Serial, err = bmc.Serial()
 	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading serial", "ip": blade.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+		log.WithFields(log.Fields{"operation": "reading serial", "ip": blade.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
 		return nil, err
 	}
 
 	if blade.Serial == "" || blade.Serial == "[unknown]" || blade.Serial == "0000000000" || blade.Serial == "_" {
-		log.WithFields(log.Fields{"operation": "reading serial", "ip": blade.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": ErrInvalidSerial}).Warning("Auditing hardware")
+		log.WithFields(log.Fields{"operation": "reading serial", "ip": blade.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": ErrInvalidSerial}).Warning("auditing hardware")
 		return nil, ErrInvalidSerial
 	}
 
 	blade.BmcType, err = bmc.BmcType()
 	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading bmc type", "ip": blade.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+		log.WithFields(log.Fields{"operation": "reading bmc type", "ip": blade.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
 	}
 
 	blade.BmcVersion, err = bmc.BmcVersion()
 	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading bmc version", "ip": blade.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+		log.WithFields(log.Fields{"operation": "reading bmc version", "ip": blade.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
 	}
 
 	blade.Model, err = bmc.Model()
 	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading model", "ip": blade.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+		log.WithFields(log.Fields{"operation": "reading model", "ip": blade.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
 	}
 
 	blade.Nics, err = bmc.Nics()
 	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading nics", "ip": blade.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+		log.WithFields(log.Fields{"operation": "reading nics", "ip": blade.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
 	}
 
 	blade.BiosVersion, err = bmc.BiosVersion()
 	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading bios version", "ip": blade.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+		log.WithFields(log.Fields{"operation": "reading bios version", "ip": blade.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
 	}
 
 	blade.Processor, blade.ProcessorCount, blade.ProcessorCoreCount, blade.ProcessorThreadCount, err = bmc.CPU()
 	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading cpu", "ip": blade.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+		log.WithFields(log.Fields{"operation": "reading cpu", "ip": blade.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
 	}
 
 	blade.Memory, err = bmc.Memory()
 	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading memory", "ip": blade.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+		log.WithFields(log.Fields{"operation": "reading memory", "ip": blade.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
 	}
 
 	blade.Status, err = bmc.Status()
 	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading status", "ip": blade.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+		log.WithFields(log.Fields{"operation": "reading status", "ip": blade.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
 	}
 
 	blade.Name, err = bmc.Name()
 	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading name", "ip": blade.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+		log.WithFields(log.Fields{"operation": "reading name", "ip": blade.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
 	}
 
 	blade.TempC, err = bmc.TempC()
 	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading thermal data", "ip": blade.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+		log.WithFields(log.Fields{"operation": "reading thermal data", "ip": blade.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
 	}
 
 	blade.PowerKw, err = bmc.PowerKw()
 	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading power usage data", "ip": blade.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+		log.WithFields(log.Fields{"operation": "reading power usage data", "ip": blade.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
 	}
 
 	blade.BmcLicenceType, blade.BmcLicenceStatus, err = bmc.License()
 	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading license data", "ip": blade.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+		log.WithFields(log.Fields{"operation": "reading license data", "ip": blade.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
 	}
 
 	scans := []model.ScannedPort{}
@@ -268,73 +268,73 @@ func (c *Connection) discrete(bmc Bmc) (discrete *model.Discrete, err error) {
 
 	discrete.Serial, err = bmc.Serial()
 	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading serial", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+		log.WithFields(log.Fields{"operation": "reading serial", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
 		return nil, err
 	}
 
 	if discrete.Serial == "" || discrete.Serial == "[unknown]" || discrete.Serial == "0000000000" || discrete.Serial == "_" {
-		log.WithFields(log.Fields{"operation": "reading serial", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": ErrInvalidSerial}).Warning("Auditing hardware")
+		log.WithFields(log.Fields{"operation": "reading serial", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": ErrInvalidSerial}).Warning("auditing hardware")
 		return nil, ErrInvalidSerial
 	}
 
 	discrete.BmcType, err = bmc.BmcType()
 	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading bmc type", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+		log.WithFields(log.Fields{"operation": "reading bmc type", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
 	}
 
 	discrete.BmcVersion, err = bmc.BmcVersion()
 	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading bmc version", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+		log.WithFields(log.Fields{"operation": "reading bmc version", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
 	}
 
 	discrete.Model, err = bmc.Model()
 	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading model", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+		log.WithFields(log.Fields{"operation": "reading model", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
 	}
 
 	discrete.Nics, err = bmc.Nics()
 	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading nics", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+		log.WithFields(log.Fields{"operation": "reading nics", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
 	}
 
 	discrete.BiosVersion, err = bmc.BiosVersion()
 	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading bios version", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+		log.WithFields(log.Fields{"operation": "reading bios version", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
 	}
 
 	discrete.Processor, discrete.ProcessorCount, discrete.ProcessorCoreCount, discrete.ProcessorThreadCount, err = bmc.CPU()
 	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading cpu", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+		log.WithFields(log.Fields{"operation": "reading cpu", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
 	}
 
 	discrete.Memory, err = bmc.Memory()
 	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading memory", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+		log.WithFields(log.Fields{"operation": "reading memory", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
 	}
 
 	discrete.Status, err = bmc.Status()
 	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading status", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+		log.WithFields(log.Fields{"operation": "reading status", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
 	}
 
 	discrete.Name, err = bmc.Name()
 	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading name", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+		log.WithFields(log.Fields{"operation": "reading name", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
 	}
 
 	discrete.TempC, err = bmc.TempC()
 	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading thermal data", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+		log.WithFields(log.Fields{"operation": "reading thermal data", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
 	}
 
 	discrete.PowerKw, err = bmc.PowerKw()
 	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading power usage data", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+		log.WithFields(log.Fields{"operation": "reading power usage data", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
 	}
 
 	discrete.BmcLicenceType, discrete.BmcLicenceStatus, err = bmc.License()
 	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading license data", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+		log.WithFields(log.Fields{"operation": "reading license data", "ip": discrete.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
 	}
 
 	scans := []model.ScannedPort{}
@@ -357,57 +357,62 @@ func (c *Connection) chassis(ch BmcChassis) (chassis *model.Chassis, err error) 
 	chassis.BmcAddress = c.host
 	chassis.Name, err = ch.Name()
 	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading name", "ip": chassis.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+		log.WithFields(log.Fields{"operation": "reading name", "ip": chassis.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
 	}
 
 	chassis.Serial, err = ch.Serial()
 	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading serial", "ip": chassis.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+		log.WithFields(log.Fields{"operation": "reading serial", "ip": chassis.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
 	}
 
 	chassis.Model, err = ch.Model()
 	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading model", "ip": chassis.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+		log.WithFields(log.Fields{"operation": "reading model", "ip": chassis.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
 	}
 
 	chassis.PowerKw, err = ch.PowerKw()
 	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading power usage", "ip": chassis.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+		log.WithFields(log.Fields{"operation": "reading power usage", "ip": chassis.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
 	}
 
 	chassis.TempC, err = ch.TempC()
 	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading thermal data", "ip": chassis.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+		log.WithFields(log.Fields{"operation": "reading thermal data", "ip": chassis.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
 	}
 
 	chassis.Status, err = ch.Status()
 	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading status", "ip": chassis.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+		log.WithFields(log.Fields{"operation": "reading status", "ip": chassis.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
 	}
 
 	chassis.FwVersion, err = ch.FwVersion()
 	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading firmware version", "ip": chassis.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+		log.WithFields(log.Fields{"operation": "reading firmware version", "ip": chassis.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
 	}
 
 	chassis.PowerSupplyCount, err = ch.PowerSupplyCount()
 	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading psu count", "ip": chassis.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+		log.WithFields(log.Fields{"operation": "reading psu count", "ip": chassis.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
 	}
 
 	chassis.PassThru, err = ch.PassThru()
 	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading passthru", "ip": chassis.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+		log.WithFields(log.Fields{"operation": "reading passthru", "ip": chassis.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
 	}
 
 	chassis.Blades, err = ch.Blades()
 	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading blades", "ip": chassis.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+		log.WithFields(log.Fields{"operation": "reading blades", "ip": chassis.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
 	}
 
 	chassis.StorageBlades, err = ch.StorageBlades()
 	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading blades", "ip": chassis.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("Auditing hardware")
+		log.WithFields(log.Fields{"operation": "reading storage blades", "ip": chassis.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
+	}
+
+	chassis.Nics, err = ch.Nics()
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "reading nics", "ip": chassis.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
 	}
 
 	db := storage.InitDB()

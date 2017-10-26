@@ -13,10 +13,10 @@ import (
 )
 
 var (
-	notifyChange := make(chan string)
+	notifyChange chan string
 )
 
-func collect(input <-chan string, source string, db *gorm.DB) {
+func collect(input <-chan string, source *string, db *gorm.DB) {
 	bmcUser := viper.GetString("bmc_user")
 	bmcPass := viper.GetString("bmc_pass")
 
@@ -27,7 +27,7 @@ func collect(input <-chan string, source string, db *gorm.DB) {
 			continue
 		}
 
-		if c.HwType() == Blade && source == "service" {
+		if c.HwType() == Blade && *source == "service" {
 			log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType()}).Debug("we don't want to scan blades directly since the chassis does it for us")
 			continue
 		}
@@ -156,11 +156,12 @@ func DataCollection(ips []string, source string) {
 		}(cc, &source, db, &wg)
 	}
 
-	go func(notification <-chan string)
-	 	for callback := range notification {
-		err := assetNotify(callback)
-		if err != nil {
-			log.WithFields(log.Fields{"operation": "ServerDB callback", "url": callback, "error": err}).Error("sending ServerDB callback")
+	go func(notification <-chan string) {
+		for callback := range notification {
+			err := assetNotify(callback)
+			if err != nil {
+				log.WithFields(log.Fields{"operation": "ServerDB callback", "url": callback, "error": err}).Error("sending ServerDB callback")
+			}
 		}
 	}(notifyChange)
 
