@@ -9,12 +9,17 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"gitlab.booking.com/infra/dora/model"
 	"gitlab.booking.com/infra/dora/storage"
+)
+
+var (
+	macFinder = regexp.MustCompile("([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})")
 )
 
 // DellCMC is the entry of the json exposed by dell
@@ -665,18 +670,22 @@ func NewDellCmcReader(ip *string, username *string, password *string) (chassis *
 	return &DellCmcReader{ip: ip, username: username, password: password, cmcJSON: dellCMC}, err
 }
 
+// Name returns the hostname of the machine
 func (d *DellCmcReader) Name() (name string, err error) {
 	return d.cmcJSON.DellChassis.DellChassisGroupMemberHealthBlob.DellChassisStatus.CHASSISName, err
 }
 
+// Model returns the device model
 func (d *DellCmcReader) Model() (model string, err error) {
 	return strings.TrimSpace(d.cmcJSON.DellChassis.DellChassisGroupMemberHealthBlob.DellChassisStatus.ROChassisProductname), err
 }
 
+// Serial returns the device serial
 func (d *DellCmcReader) Serial() (serial string, err error) {
 	return strings.ToLower(d.cmcJSON.DellChassis.DellChassisGroupMemberHealthBlob.DellChassisStatus.ROChassisServiceTag), err
 }
 
+// PowerKw returns the current power usage in Kw
 func (d *DellCmcReader) PowerKw() (power float64, err error) {
 	p, err := strconv.Atoi(strings.TrimRight(d.cmcJSON.DellChassis.DellChassisGroupMemberHealthBlob.DellPsuStatus.AcPower, " W"))
 	if err != nil {
@@ -685,6 +694,7 @@ func (d *DellCmcReader) PowerKw() (power float64, err error) {
 	return float64(p) / 1000.00, err
 }
 
+// TempC returns the current temperature of the machine
 func (d *DellCmcReader) TempC() (temp int, err error) {
 	payload, err := httpGetDell(d.ip, "json?method=temp-sensors", d.username, d.password)
 	if err != nil {
@@ -705,6 +715,7 @@ func (d *DellCmcReader) TempC() (temp int, err error) {
 	return temp, err
 }
 
+// Status returns health string status from the bmc
 func (d *DellCmcReader) Status() (status string, err error) {
 	if d.cmcJSON.DellChassis.DellChassisGroupMemberHealthBlob.DellCMCStatus.CMCActiveError == "No Errors" {
 		status = "OK"
@@ -714,14 +725,37 @@ func (d *DellCmcReader) Status() (status string, err error) {
 	return status, err
 }
 
+// PowerSupplyCount returns the total count of the power supply
 func (d *DellCmcReader) PowerSupplyCount() (count int, err error) {
 	return d.cmcJSON.DellChassis.DellChassisGroupMemberHealthBlob.DellPsuStatus.PsuCount, err
 }
 
+// FwVersion returns the current firmware version of the bmc
 func (d *DellCmcReader) FwVersion() (version string, err error) {
 	return d.cmcJSON.DellChassis.DellChassisGroupMemberHealthBlob.DellChassisStatus.ROCmcFwVersionString, err
 }
 
+// Nics returns all found Nics in the device
+func (d *DellCmcReader) Nics() (nics []*model.Nic, err error) {
+	payload, err := httpGetDell(d.ip, "cmc_status?cat=C01&tab=T11&id=P31", d.username, d.password)
+	if err != nil {
+		return nics, err
+	}
+
+	mac := macFinder.FindString(string(payload))
+	if mac != "" {
+		nics = make([]*model.Nic, 0)
+		n := &model.Nic{
+			Name:       "OA1",
+			MacAddress: strings.ToLower(mac),
+		}
+		nics = append(nics, n)
+	}
+
+	return nics, err
+}
+
+// PassThru returns the type of switch we have for this chassis
 func (d *DellCmcReader) PassThru() (passthru string, err error) {
 	passthru = "1G"
 	for _, dellBlade := range d.cmcJSON.DellChassis.DellChassisGroupMemberHealthBlob.DellBlades {

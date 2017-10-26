@@ -28,7 +28,7 @@ type HpBlade struct {
 	HpPower         *HpPower `xml:" POWER,omitempty"`
 	Status          string   `xml:" STATUS,omitempty"`
 	Spn             string   `xml:" SPN,omitempty"`
-	HpTemps         *HpTemps `xml:" TEMPS,omitempty"`
+	HpTemp          *HpTemp  `xml:" TEMPS>TEMP,omitempty"`
 	BladeRomVer     string   `xml:" BLADEROMVER,omitempty"`
 	AssociatedBlade string   `xml:" ASSOCIATEDBLADE,omitempty"`
 }
@@ -41,15 +41,16 @@ type HpBay struct {
 // HpInfra2 is the data retrieved from the chassis xml interface that contains all components
 type HpInfra2 struct {
 	Addr           string          `xml:" ADDR,omitempty"`
-	HpBlades       *HpBlades       `xml:" BLADES,omitempty"`
-	HpSwitches     *HpSwitches     `xml:" SWITCHES,omitempty"`
+	HpBlades       []*HpBlade      `xml:" BLADES>BLADE,omitempty"`
+	HpSwitches     []*HpSwitch     `xml:" SWITCHES>SWITCH,omitempty"`
 	HpChassisPower *HpChassisPower `xml:" POWER,omitempty"`
 	Status         string          `xml:" STATUS,omitempty"`
-	HpTemps        *HpTemps        `xml:" TEMPS,omitempty"`
+	HpTemp         *HpTemp         `xml:" TEMPS>TEMP,omitempty"`
 	EnclSn         string          `xml:" ENCL_SN,omitempty"`
 	Pn             string          `xml:" PN,omitempty"`
 	Encl           string          `xml:" ENCL,omitempty"`
 	Rack           string          `xml:" RACK,omitempty"`
+	HpManagers     []*HpManager    `xml:" MANAGERS>MANAGER,omitempty"`
 }
 
 // HpMP contains the firmware version and the model of the chassis or blade
@@ -59,19 +60,9 @@ type HpMP struct {
 	Fwri string `xml:" FWRI,omitempty"`
 }
 
-// HpSwitches contains all the switches we have within the chassis
-type HpSwitches struct {
-	HpSwitch []*HpSwitch `xml:" SWITCH,omitempty"`
-}
-
 // HpSwitch contains the type of the switch
 type HpSwitch struct {
 	Spn string `xml:" SPN,omitempty"`
-}
-
-// HpBlades contains all the blades we have within the chassis
-type HpBlades struct {
-	HpBlade []*HpBlade `xml:" BLADE,omitempty"`
 }
 
 // HpPower contains the power information of a blade
@@ -91,6 +82,14 @@ type HpRimp struct {
 	HpMP     *HpMP     `xml:" MP,omitempty"`
 }
 
+// HpManager hold the information of the manager board of the chassis
+type HpManager struct {
+	MgmtIPAddr string `xml:" MGMTIPADDR,omitempty"`
+	MacAddr    string `xml:" MACADDR,omitempty"`
+	Status     string `xml:" STATUS,omitempty"`
+	Name       string `xml:" NAME,omitempty"`
+}
+
 // HpPowersupply contains the data of the power supply of the chassis
 type HpPowersupply struct {
 	Status string `xml:" STATUS,omitempty"`
@@ -100,11 +99,6 @@ type HpPowersupply struct {
 type HpTemp struct {
 	C    int    `xml:" C,omitempty" json:"C,omitempty"`
 	Desc string `xml:" DESC,omitempty"`
-}
-
-// HpTemps contains the thermal data of a chassis or blade
-type HpTemps struct {
-	HpTemp *HpTemp `xml:" TEMP,omitempty"`
 }
 
 // HpRimpBlade is the entry data structure for the blade when queries directly
@@ -589,37 +583,62 @@ func NewHpChassisReader(ip *string, username *string, password *string) (chassis
 	return &HpChassisReader{ip: ip, username: username, password: password, hpRimp: hpRimp, client: client}, err
 }
 
+// Name returns the hostname of the machine
 func (h *HpChassisReader) Name() (name string, err error) {
 	return h.hpRimp.HpInfra2.Encl, err
 }
 
+// Model returns the device model
 func (h *HpChassisReader) Model() (model string, err error) {
 	return h.hpRimp.HpMP.Pn, err
 }
 
+// Serial returns the device serial
 func (h *HpChassisReader) Serial() (serial string, err error) {
 	return strings.ToLower(strings.TrimSpace(h.hpRimp.HpInfra2.EnclSn)), err
 }
 
+// PowerKw returns the current power usage in Kw
 func (h *HpChassisReader) PowerKw() (power float64, err error) {
 	return h.hpRimp.HpInfra2.HpChassisPower.PowerConsumed / 1000.00, err
 }
 
+// TempC returns the current temperature of the machine
 func (h *HpChassisReader) TempC() (temp int, err error) {
-	return h.hpRimp.HpInfra2.HpTemps.HpTemp.C, err
+	return h.hpRimp.HpInfra2.HpTemp.C, err
 }
 
+// Nics returns all found Nics in the device
+func (h *HpChassisReader) Nics() (nics []*model.Nic, err error) {
+	for _, manager := range h.hpRimp.HpInfra2.HpManagers {
+		if nics == nil {
+			nics = make([]*model.Nic, 0)
+		}
+
+		n := &model.Nic{
+			Name:       manager.Name,
+			MacAddress: manager.MacAddr,
+		}
+		nics = append(nics, n)
+	}
+
+	return nics, err
+}
+
+// Status returns health string status from the bmc
 func (h *HpChassisReader) Status() (status string, err error) {
 	return h.hpRimp.HpInfra2.Status, err
 }
 
+// FwVersion returns the current firmware version of the bmc
 func (h *HpChassisReader) FwVersion() (version string, err error) {
 	return h.hpRimp.HpMP.Fwri, err
 }
 
+// PassThru returns the type of switch we have for this chassis
 func (h *HpChassisReader) PassThru() (passthru string, err error) {
 	passthru = "1G"
-	for _, hpswitch := range h.hpRimp.HpInfra2.HpSwitches.HpSwitch {
+	for _, hpswitch := range h.hpRimp.HpInfra2.HpSwitches {
 		if strings.Contains(hpswitch.Spn, "10G") {
 			passthru = "10G"
 		}
@@ -628,6 +647,7 @@ func (h *HpChassisReader) PassThru() (passthru string, err error) {
 	return passthru, err
 }
 
+// PowerSupplyCount returns the total count of the power supply
 func (h *HpChassisReader) PowerSupplyCount() (count int, err error) {
 	return len(h.hpRimp.HpInfra2.HpChassisPower.HpPowersupply), err
 }
@@ -636,7 +656,7 @@ func (h *HpChassisReader) PowerSupplyCount() (count int, err error) {
 func (h *HpChassisReader) StorageBlades() (storageBlades []*model.StorageBlade, err error) {
 	if h.hpRimp.HpInfra2.HpBlades != nil {
 		db := storage.InitDB()
-		for _, hpBlade := range h.hpRimp.HpInfra2.HpBlades.HpBlade {
+		for _, hpBlade := range h.hpRimp.HpInfra2.HpBlades {
 			if hpBlade.Type == "STORAGE" {
 				storageBlade := model.StorageBlade{}
 				storageBlade.Serial = strings.ToLower(strings.TrimSpace(hpBlade.Bsn))
@@ -648,7 +668,7 @@ func (h *HpChassisReader) StorageBlades() (storageBlades []*model.StorageBlade, 
 				storageBlade.BladePosition = hpBlade.HpBay.Connection
 				storageBlade.Status = hpBlade.Status
 				storageBlade.PowerKw = hpBlade.HpPower.PowerConsumed / 1000.00
-				storageBlade.TempC = hpBlade.HpTemps.HpTemp.C
+				storageBlade.TempC = hpBlade.HpTemp.C
 				storageBlade.Vendor = HP
 				storageBlade.FwVersion = hpBlade.BladeRomVer
 				storageBlade.Model = hpBlade.Spn
@@ -670,7 +690,7 @@ func (h *HpChassisReader) Blades() (blades []*model.Blade, err error) {
 	name, _ := h.Name()
 	if h.hpRimp.HpInfra2.HpBlades != nil {
 		db := storage.InitDB()
-		for _, hpBlade := range h.hpRimp.HpInfra2.HpBlades.HpBlade {
+		for _, hpBlade := range h.hpRimp.HpInfra2.HpBlades {
 			if hpBlade.Type == "SERVER" {
 				blade := model.Blade{}
 
@@ -691,7 +711,7 @@ func (h *HpChassisReader) Blades() (blades []*model.Blade, err error) {
 					blade.Serial = nb.Serial
 				}
 				blade.PowerKw = hpBlade.HpPower.PowerConsumed / 1000.00
-				blade.TempC = hpBlade.HpTemps.HpTemp.C
+				blade.TempC = hpBlade.HpTemp.C
 				blade.Vendor = HP
 				blade.Model = hpBlade.Spn
 				blade.Name = hpBlade.Name
