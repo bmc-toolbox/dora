@@ -3,6 +3,7 @@ package model
 import (
 	"time"
 
+	"github.com/kr/pretty"
 	"github.com/manyminds/api2go/jsonapi"
 )
 
@@ -69,4 +70,13 @@ func (s StorageBlade) GetReferencedIDs() []jsonapi.ReferenceID {
 			Relationship: jsonapi.ToOneRelationship,
 		},
 	}
+}
+
+// Diff compare to objects and return list of string with their differences
+func (s *StorageBlade) Diff(storageBlade *StorageBlade) (differences []string) {
+	for _, diff := range pretty.Diff(s, storageBlade) {
+		differences = append(differences, diff)
+	}
+
+	return differences
 }
