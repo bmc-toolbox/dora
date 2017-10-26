@@ -34,12 +34,27 @@ func (c ChassisStorage) GetAll(offset string, limit string) (count int, chassis 
 // GetAllWithAssociations returns all Chassis with their relationships
 func (c ChassisStorage) GetAllWithAssociations(offset string, limit string) (count int, chassis []model.Chassis, err error) {
 	if offset != "" && limit != "" {
-		if err = c.db.Order("serial asc").Preload("Blades").Find(&chassis).Error; err != nil {
+		if err = c.db.Order("serial asc").Preload("Blades").Preload("StorageBlades").Preload("Nics").Find(&chassis).Error; err != nil {
 			return count, chassis, err
 		}
 		c.db.Model(&model.Chassis{}).Order("serial asc").Count(&count)
 	} else {
-		if err = c.db.Order("serial asc").Preload("Blades").Find(&chassis).Error; err != nil {
+		if err = c.db.Order("serial asc").Preload("Blades").Preload("StorageBlades").Preload("Nics").Find(&chassis).Error; err != nil {
+			return count, chassis, err
+		}
+	}
+	return count, chassis, err
+}
+
+// GetAllByNicsID retrieve chassis by nicsID
+func (c ChassisStorage) GetAllByNicsID(offset string, limit string, macAddresses []string) (count int, chassis []model.Chassis, err error) {
+	if offset != "" && limit != "" {
+		if err = c.db.Limit(limit).Offset(offset).Joins("INNER JOIN nic ON nic.chassis_serial = chassis.serial").Where("nic.mac_address in (?)", macAddresses).Find(&chassis).Error; err != nil {
+			return count, chassis, err
+		}
+		c.db.Model(&model.Chassis{}).Joins("INNER JOIN nic ON nic.chassis_serial = chassis.serial").Where("nic.mac_address in (?)", macAddresses).Count(&count)
+	} else {
+		if err = c.db.Joins("INNER JOIN nic ON nic.chassis_serial = chassis.serial").Where("nic.mac_address in (?)", macAddresses).Find(&chassis).Error; err != nil {
 			return count, chassis, err
 		}
 	}
@@ -48,7 +63,7 @@ func (c ChassisStorage) GetAllWithAssociations(offset string, limit string) (cou
 
 // GetOne Chassis
 func (c ChassisStorage) GetOne(serial string) (chassis model.Chassis, err error) {
-	if err = c.db.Where("serial = ?", serial).Preload("Blades").Preload("StorageBlades").First(&chassis).Error; err != nil {
+	if err = c.db.Where("serial = ?", serial).Preload("Blades").Preload("StorageBlades").Preload("Nics").First(&chassis).Error; err != nil {
 		return chassis, err
 	}
 	return chassis, err

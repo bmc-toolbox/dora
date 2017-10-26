@@ -53,7 +53,19 @@ func (n NicResource) queryAndCountAllWrapper(r api2go.Request) (count int, nics 
 		return count, nics, err
 	}
 
-	if !hasBlade {
+	chassisID, hasChassis := r.QueryParams["chassisID"]
+	if hasChassis {
+		count, nics, err = n.NicStorage.GetAllByChassisID(offset, limit, chassisID)
+		return count, nics, err
+	}
+
+	discreteID, hasDiscrete := r.QueryParams["discretesID"]
+	if hasChassis {
+		count, nics, err = n.NicStorage.GetAllByDiscreteID(offset, limit, discreteID)
+		return count, nics, err
+	}
+
+	if !hasBlade && !hasChassis && !hasDiscrete {
 		count, nics, err = n.NicStorage.GetAll(offset, limit)
 		if err != nil {
 			return count, nics, err
