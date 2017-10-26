@@ -150,10 +150,10 @@ func DataCollection(ips []string, source string) {
 
 	wg.Add(concurrency)
 	for i := 0; i < concurrency; i++ {
-		go func(input <-chan string, db *gorm.DB, wg *sync.WaitGroup) {
+		go func(input <-chan string, source *string, db *gorm.DB, wg *sync.WaitGroup) {
 			defer wg.Done()
-			collect(input, db)
-		}(cc, db, &wg)
+			collect(input, source, db)
+		}(cc, &source, db, &wg)
 	}
 
 	go func(notification <-chan string)
