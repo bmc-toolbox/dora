@@ -4,13 +4,8 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io/ioutil"
-	"sort"
-	"strings"
-
-	"github.com/kr/pretty"
 
 	log "github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 	"gitlab.booking.com/infra/dora/model"
 	"gitlab.booking.com/infra/dora/storage"
 )
@@ -476,59 +471,4 @@ func (c *Connection) Collect() (i interface{}, err error) {
 	}
 
 	return i, ErrVendorUnknown
-}
-
-func notifyServerChanges(blade *model.Blade, existingData *model.Blade) {
-	hasDiff := true
-	if len(blade.Nics) == len(existingData.Nics) {
-		count := 0
-		for _, nic := range blade.Nics {
-			for _, enic := range existingData.Nics {
-				if nic.MacAddress == enic.MacAddress {
-					count++
-				}
-			}
-		}
-
-		if count == len(blade.Nics) {
-			hasDiff = false
-		}
-	}
-
-	if !hasDiff {
-		sort.Slice(blade.Nics, func(i, j int) bool {
-			switch strings.Compare(blade.Nics[i].MacAddress, blade.Nics[j].MacAddress) {
-			case -1:
-				return true
-			case 1:
-				return false
-			}
-			return blade.Nics[i].MacAddress > blade.Nics[j].MacAddress
-		})
-
-		sort.Slice(existingData.Nics, func(i, j int) bool {
-			switch strings.Compare(existingData.Nics[i].MacAddress, existingData.Nics[j].MacAddress) {
-			case -1:
-				return true
-			case 1:
-				return false
-			}
-			return existingData.Nics[i].MacAddress > existingData.Nics[j].MacAddress
-		})
-
-		for _, diff := range pretty.Diff(blade, existingData) {
-			if strings.Contains(diff, "UpdatedAt") || strings.Contains(diff, "].BladeSerial") || strings.Contains(diff, "PowerKw") || strings.Contains(diff, "TempC") || strings.Contains(diff, "ChassisSerial: \"\"") {
-				continue
-			}
-			hasDiff = true
-		}
-	}
-
-	if hasDiff {
-		callback := fmt.Sprintf("%s/blades/%s", viper.GetString("url"), blade.Serial)
-		err := assetNotify(callback)
-		if err != nil {
-			log.WithFields(log.Fields{"operation": "serverdb callback", "url": callback, "error": err}).Error("Sending ServerDB callback")
-		}
-	}
 }

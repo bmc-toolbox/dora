@@ -1,8 +1,10 @@
 package model
 
 import (
+	"strings"
 	"time"
 
+	"github.com/kr/pretty"
 	"github.com/manyminds/api2go/jsonapi"
 )
 
@@ -80,3 +82,20 @@ func (n Nic) GetReferencedIDs() []jsonapi.ReferenceID {
 	}
 	return []jsonapi.ReferenceID{}
 }
+
+// Diff compare to objects and return list of string with their differences
+func (n *Nic) Diff(nic *Nic) (differences []string) {
+	for _, diff := range pretty.Diff(n, nic) {
+		if !strings.Contains(diff, "UpdatedAt.") {
+			differences = append(differences, diff)
+		}
+	}
+
+	return differences
+}
+
+type byMacAddress []*Nic
+
+func (b byMacAddress) Len() int           { return len(b) }
+func (b byMacAddress) Swap(i, j int)      { b[i], b[j] = b[j], b[i] }
+func (b byMacAddress) Less(i, j int) bool { return b[i].MacAddress < b[j].MacAddress }

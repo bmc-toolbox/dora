@@ -63,7 +63,7 @@ func (c ChassisStorage) GetAllByNicsID(offset string, limit string, macAddresses
 
 // GetOne Chassis
 func (c ChassisStorage) GetOne(serial string) (chassis model.Chassis, err error) {
-	if err = c.db.Where("serial = ?", serial).Preload("Blades").Preload("StorageBlades").Preload("Nics").First(&chassis).Error; err != nil {
+	if err = c.db.Where("serial = ?", serial).Preload("Blades").Preload("Blades.Nics").Preload("StorageBlades").Preload("Nics").First(&chassis).Error; err != nil {
 		return chassis, err
 	}
 	return chassis, err

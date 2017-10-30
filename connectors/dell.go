@@ -243,6 +243,23 @@ type IDracTemp struct {
 	IsFreshAirCompliant int `json:"is_fresh_air_compliant"`
 }
 
+// DellCMCWWN is the structure used to render the data when querying /json?method=blades-wwn-info
+type DellCMCWWN struct {
+	SlotMacWwn struct {
+		SlotMacWwnList map[string]DellCMCWWNBlade `json:"slot_mac_wwn_list"`
+	} `json:"slot_mac_wwn"`
+}
+
+// DellCMCWWNBlade contains the blade structure used by DellCMCWWN
+type DellCMCWWNBlade struct {
+	BladeSlotName     string `json:"bladeSlotName"`
+	IsFullHeight      int    `json:"is_full_height"`
+	IsNotDoubleHeight struct {
+		IsInstalled string `json:"isInstalled"`
+		PortFMAC    string `json:"portFMAC"`
+	} `json:"is_not_double_height"`
+}
+
 // IDracReader holds the status and properties of a connection to an iDrac device
 type IDracReader struct {
 	ip             *string
@@ -395,7 +412,7 @@ func (i *IDracReader) Nics() (nics []*model.Nic, err error) {
 
 						n := &model.Nic{
 							Name:       data[0],
-							MacAddress: data[1],
+							MacAddress: strings.ToLower(data[1]),
 						}
 						nics = append(nics, n)
 					} else {
@@ -412,7 +429,7 @@ func (i *IDracReader) Nics() (nics []*model.Nic, err error) {
 
 					n := &model.Nic{
 						Name:       "bmc",
-						MacAddress: property.Value,
+						MacAddress: strings.ToLower(property.Value),
 					}
 					nics = append(nics, n)
 				}
@@ -666,6 +683,20 @@ func NewDellCmcReader(ip *string, username *string, password *string) (chassis *
 	if dellCMC.DellChassis == nil {
 		return chassis, ErrUnableToReadData
 	}
+
+	//
+	// payload, err = httpGetDell(ip, "json?method=blades-wwn-info", username, password)
+	// if err != nil {
+	// 	return chassis, err
+	// }
+
+	// dellCMCWWN := &DellCMCWWN{}
+	// err = json.Unmarshal(payload, dellCMCWWN)
+	// if err != nil {
+	// 	DumpInvalidPayload(*ip, payload)
+	// 	return chassis, err
+	// }
+	// fmt.Printf("%v", dellCMCWWN)
 
 	return &DellCmcReader{ip: ip, username: username, password: password, cmcJSON: dellCMC}, err
 }

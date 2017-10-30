@@ -1,6 +1,7 @@
 package model
 
 import (
+	"strings"
 	"time"
 
 	"github.com/kr/pretty"
@@ -75,8 +76,16 @@ func (s StorageBlade) GetReferencedIDs() []jsonapi.ReferenceID {
 // Diff compare to objects and return list of string with their differences
 func (s *StorageBlade) Diff(storageBlade *StorageBlade) (differences []string) {
 	for _, diff := range pretty.Diff(s, storageBlade) {
-		differences = append(differences, diff)
+		if !strings.Contains(diff, "UpdatedAt.") && !strings.Contains(diff, "PowerKw") && !strings.Contains(diff, "TempC") {
+			differences = append(differences, diff)
+		}
 	}
 
 	return differences
 }
+
+type byStorageBladeSerial []*StorageBlade
+
+func (b byStorageBladeSerial) Len() int           { return len(b) }
+func (b byStorageBladeSerial) Swap(i, j int)      { b[i], b[j] = b[j], b[i] }
+func (b byStorageBladeSerial) Less(i, j int) bool { return b[i].Serial < b[j].Serial }

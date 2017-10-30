@@ -45,56 +45,21 @@ func collect(input <-chan string, source *string, db *gorm.DB) {
 				continue
 			}
 
-			bladeStorage := storage.NewBladeStorage(db)
-			existingBlades := make(map[*model.Blade]*model.Blade)
-			for _, blade := range chassis.Blades {
-				existingBlade, err := bladeStorage.GetOne(blade.Serial)
-				if err != nil && err != gorm.ErrRecordNotFound {
-					log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType(), "error": err}).Error("collecting data")
-				} else {
-					existingBlades[blade] = &existingBlade
-				}
+			chassisStorage := storage.NewChassisStorage(db)
+			existingData, err := chassisStorage.GetOne(chassis.Serial)
+			if err != nil && err != gorm.ErrRecordNotFound {
+				log.WithFields(log.Fields{"operation": "store", "ip": host, "type": c.HwType(), "error": err}).Error("collecting data")
+				continue
 			}
 
-			chassisStorage := storage.NewChassisStorage(db)
 			_, err = chassisStorage.UpdateOrCreate(chassis)
 			if err != nil {
 				log.WithFields(log.Fields{"operation": "store", "ip": host, "type": c.HwType(), "error": err}).Error("collecting data")
 				continue
 			}
 
-			for blade, existingBlade := range existingBlades {
-				notifyServerChanges(blade, existingBlade)
-			}
-
-			count, serials, err := chassisStorage.RemoveOldBladesRefs(chassis)
-			if err != nil {
-				log.WithFields(log.Fields{"operation": "cleanup", "ip": host, "type": c.HwType(), "error": err}).Error("collecting data")
-				continue
-			} else if count > 0 {
-				for _, serial := range serials {
-					log.WithFields(log.Fields{"operation": "cleanup", "ip": host, "type": c.HwType(), "chassis": chassis.Serial, "serial": serial}).Info("blade has been remove from chassis")
-				}
-				callback := fmt.Sprintf("%s/chassis/%s", viper.GetString("url"), chassis.Serial)
-				err := assetNotify(callback)
-				if err != nil {
-					log.WithFields(log.Fields{"operation": "serverdb callback", "url": callback, "error": err}).Error("Sending ServerDB callback")
-				}
-			}
-
-			count, serials, err = chassisStorage.RemoveOldStorageBladesRefs(chassis)
-			if err != nil {
-				log.WithFields(log.Fields{"operation": "cleanup", "ip": host, "type": c.HwType(), "error": err}).Error("collecting data")
-				continue
-			} else if count > 0 {
-				for _, serial := range serials {
-					log.WithFields(log.Fields{"operation": "cleanup", "ip": host, "type": c.HwType(), "chassis": chassis.Serial, "serial": serial}).Info("storage blade has been remove from chassis")
-				}
-				callback := fmt.Sprintf("%s/chassis/%s", viper.GetString("url"), chassis.Serial)
-				err := assetNotify(callback)
-				if err != nil {
-					log.WithFields(log.Fields{"operation": "serverdb callback", "url": callback, "error": err}).Error("sending ServerDB callback")
-				}
+			for _, line := range chassis.Diff(&existingData) {
+				fmt.Println(line)
 			}
 		case *model.Blade:
 			blade := data.(*model.Blade)
@@ -105,17 +70,19 @@ func collect(input <-chan string, source *string, db *gorm.DB) {
 			bladeStorage := storage.NewBladeStorage(db)
 			existingData, err := bladeStorage.GetOne(blade.Serial)
 			if err != nil && err != gorm.ErrRecordNotFound {
-				log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType(), "error": err}).Error("collecting data")
+				log.WithFields(log.Fields{"operation": "store", "ip": host, "type": c.HwType(), "error": err}).Error("collecting data")
 				continue
 			}
 
 			_, err = bladeStorage.UpdateOrCreate(blade)
 			if err != nil {
-				log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType(), "error": err}).Error("collecting data")
+				log.WithFields(log.Fields{"operation": "store", "ip": host, "type": c.HwType(), "error": err}).Error("collecting data")
 				continue
 			}
 
-			fmt.Println(blade.Diff(&existingData))
+			for _, line := range blade.Diff(&existingData) {
+				fmt.Println(line)
+			}
 		case *model.Discrete:
 			discrete := data.(*model.Discrete)
 			if discrete == nil {
@@ -125,17 +92,19 @@ func collect(input <-chan string, source *string, db *gorm.DB) {
 			discreteStorage := storage.NewDiscreteStorage(db)
 			existingData, err := discreteStorage.GetOne(discrete.Serial)
 			if err != nil && err != gorm.ErrRecordNotFound {
-				log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType(), "error": err}).Error("collecting data")
+				log.WithFields(log.Fields{"operation": "store", "ip": host, "type": c.HwType(), "error": err}).Error("collecting data")
 				continue
 			}
 
 			_, err = discreteStorage.UpdateOrCreate(discrete)
 			if err != nil {
-				log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType(), "error": err}).Error("collecting data")
+				log.WithFields(log.Fields{"operation": "store", "ip": host, "type": c.HwType(), "error": err}).Error("collecting data")
 				continue
 			}
 
-			fmt.Println(discrete.Diff(&existingData))
+			for _, line := range discrete.Diff(&existingData) {
+				fmt.Println(line)
+			}
 		}
 	}
 }
@@ -158,10 +127,11 @@ func DataCollection(ips []string, source string) {
 
 	go func(notification <-chan string) {
 		for callback := range notification {
-			err := assetNotify(callback)
-			if err != nil {
-				log.WithFields(log.Fields{"operation": "ServerDB callback", "url": callback, "error": err}).Error("sending ServerDB callback")
-			}
+			fmt.Println(callback)
+			// err := assetNotify(callback)
+			// if err != nil {
+			// 	log.WithFields(log.Fields{"operation": "ServerDB callback", "url": callback, "error": err}).Error("sending ServerDB callback")
+			// }
 		}
 	}(notifyChange)
 

@@ -95,32 +95,36 @@ func (c Chassis) GetReferencedIDs() []jsonapi.ReferenceID {
 
 // Diff compare to objects and return list of string with their differences
 func (c *Chassis) Diff(chassis *Chassis) (differences []string) {
+	if len(c.StorageBlades) != len(chassis.StorageBlades) {
+		return []string{"Number of StorageBlades is different"}
+	}
+
+	if len(c.Blades) != len(chassis.Blades) {
+		return []string{"Number of Blades is different"}
+	}
+
 	if len(c.Nics) != len(chassis.Nics) {
 		return []string{"Number of Nics is different"}
 	}
 
-	sort.Slice(c.Nics, func(i, j int) bool {
-		switch strings.Compare(c.Nics[i].MacAddress, c.Nics[j].MacAddress) {
-		case -1:
-			return true
-		case 1:
-			return false
-		}
-		return c.Nics[i].MacAddress > c.Nics[j].MacAddress
-	})
+	sort.Sort(byStorageBladeSerial(c.StorageBlades))
+	sort.Sort(byStorageBladeSerial(chassis.StorageBlades))
 
-	sort.Slice(chassis.Nics, func(i, j int) bool {
-		switch strings.Compare(chassis.Nics[i].MacAddress, chassis.Nics[j].MacAddress) {
-		case -1:
-			return true
-		case 1:
-			return false
-		}
-		return chassis.Nics[i].MacAddress > chassis.Nics[j].MacAddress
-	})
+	sort.Sort(byBladeSerial(c.Blades))
+	sort.Sort(byBladeSerial(chassis.Blades))
+
+	for id := range c.Blades {
+		sort.Sort(byMacAddress(c.Blades[id].Nics))
+		sort.Sort(byMacAddress(chassis.Blades[id].Nics))
+	}
+
+	sort.Sort(byMacAddress(c.Nics))
+	sort.Sort(byMacAddress(chassis.Nics))
 
 	for _, diff := range pretty.Diff(c, chassis) {
-		differences = append(differences, diff)
+		if !strings.Contains(diff, "UpdatedAt.") && !strings.Contains(diff, "PowerKw") && !strings.Contains(diff, "TempC") {
+			differences = append(differences, diff)
+		}
 	}
 
 	return differences

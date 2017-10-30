@@ -112,29 +112,20 @@ func (b *Blade) Diff(blade *Blade) (differences []string) {
 		return []string{"Number of Nics is different"}
 	}
 
-	sort.Slice(b.Nics, func(i, j int) bool {
-		switch strings.Compare(b.Nics[i].MacAddress, b.Nics[j].MacAddress) {
-		case -1:
-			return true
-		case 1:
-			return false
-		}
-		return b.Nics[i].MacAddress > b.Nics[j].MacAddress
-	})
-
-	sort.Slice(blade.Nics, func(i, j int) bool {
-		switch strings.Compare(blade.Nics[i].MacAddress, blade.Nics[j].MacAddress) {
-		case -1:
-			return true
-		case 1:
-			return false
-		}
-		return blade.Nics[i].MacAddress > blade.Nics[j].MacAddress
-	})
+	sort.Sort(byMacAddress(b.Nics))
+	sort.Sort(byMacAddress(blade.Nics))
 
 	for _, diff := range pretty.Diff(b, blade) {
-		differences = append(differences, diff)
+		if !strings.Contains(diff, "UpdatedAt.") && !strings.Contains(diff, "PowerKw") && !strings.Contains(diff, "TempC") {
+			differences = append(differences, diff)
+		}
 	}
 
 	return differences
 }
+
+type byBladeSerial []*Blade
+
+func (b byBladeSerial) Len() int           { return len(b) }
+func (b byBladeSerial) Swap(i, j int)      { b[i], b[j] = b[j], b[i] }
+func (b byBladeSerial) Less(i, j int) bool { return b[i].Serial < b[j].Serial }

@@ -80,28 +80,13 @@ func (d *Discrete) Diff(discrete *Discrete) (differences []string) {
 		return []string{"Number of Nics is different"}
 	}
 
-	sort.Slice(d.Nics, func(i, j int) bool {
-		switch strings.Compare(d.Nics[i].MacAddress, d.Nics[j].MacAddress) {
-		case -1:
-			return true
-		case 1:
-			return false
-		}
-		return d.Nics[i].MacAddress > d.Nics[j].MacAddress
-	})
-
-	sort.Slice(discrete.Nics, func(i, j int) bool {
-		switch strings.Compare(discrete.Nics[i].MacAddress, discrete.Nics[j].MacAddress) {
-		case -1:
-			return true
-		case 1:
-			return false
-		}
-		return discrete.Nics[i].MacAddress > discrete.Nics[j].MacAddress
-	})
+	sort.Sort(byMacAddress(d.Nics))
+	sort.Sort(byMacAddress(discrete.Nics))
 
 	for _, diff := range pretty.Diff(d, discrete) {
-		differences = append(differences, diff)
+		if !strings.Contains(diff, "UpdatedAt.") && !strings.Contains(diff, "PowerKw") && !strings.Contains(diff, "TempC") {
+			differences = append(differences, diff)
+		}
 	}
 
 	return differences
