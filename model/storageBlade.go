@@ -10,11 +10,11 @@ import (
 
 /* READ THIS BEFORE CHANGING THE SCHEMA
 
-To make the magic of dynamic filtering work, we need to define each json field matching the database collumn name
+To make the magic of dynamic filtering work, we need to define each json field matching the database column name
 
 */
 
-// StorageBlade contains all the storage blade information we will expose across diferent vendors
+// StorageBlade contains all the storage blade information we will expose across different vendors
 type StorageBlade struct {
 	Serial        string    `json:"serial" gorm:"primary_key"`
 	FwVersion     string    `json:"fw_version"`

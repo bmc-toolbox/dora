@@ -10,7 +10,7 @@ import (
 
 /* READ THIS BEFORE CHANGING THE SCHEMA
 
-To make the magic of dynamic filtering work, we need to define each json field matching the database collumn name
+To make the magic of dynamic filtering work, we need to define each json field matching the database column name
 
 */
 

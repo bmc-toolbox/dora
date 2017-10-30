@@ -129,12 +129,3 @@ func (c *Chassis) Diff(chassis *Chassis) (differences []string) {
 
 	return differences
 }
-
-// // GetReferencedStructs to satisfy the jsonapi.MarhsalIncludedRelations interface
-// func (c Chassis) GetReferencedStructs() []jsonapi.MarshalIdentifier {
-// 	result := []jsonapi.MarshalIdentifier{}
-// 	result = append(result, blade...)
-// 	result = append(result, storageBlade...)
-// 	result = append(result, nic...)
-// 	return result
-// }
