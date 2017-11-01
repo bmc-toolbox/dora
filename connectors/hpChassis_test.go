@@ -2588,12 +2588,14 @@ func TestHpChassisTempC(t *testing.T) {
 func TestHpChassisNics(t *testing.T) {
 	expectedAnswer := []*model.Nic{
 		&model.Nic{
-			MacAddress: "1c:98:ec:1f:82:73",
-			Name:       "OA-1C98EC1F8273",
+			MacAddress:    "1c:98:ec:1f:82:73",
+			Name:          "OA-1C98EC1F8273",
+			ChassisSerial: "cz372137h3",
 		},
 		&model.Nic{
-			MacAddress: "94:18:82:72:e9:f5",
-			Name:       "OA-94188272E9F5",
+			MacAddress:    "94:18:82:72:e9:f5",
+			Name:          "OA-94188272E9F5",
+			ChassisSerial: "cz372137h3",
 		},
 	}
 
@@ -2608,12 +2610,67 @@ func TestHpChassisNics(t *testing.T) {
 	}
 
 	if len(nics) != len(expectedAnswer) {
-		t.Errorf("Expected %v nics: found %v nics", len(nics), len(expectedAnswer))
+		t.Fatalf("Expected %v nics: found %v nics", len(nics), len(expectedAnswer))
 	}
 
 	for pos, nic := range nics {
-		if nic.MacAddress != expectedAnswer[pos].MacAddress || nic.Name != expectedAnswer[pos].Name {
+		if nic.MacAddress != expectedAnswer[pos].MacAddress || nic.Name != expectedAnswer[pos].Name || nic.ChassisSerial != expectedAnswer[pos].ChassisSerial {
 			t.Errorf("Expected answer %v: found %v", expectedAnswer[pos], nic)
+		}
+	}
+
+	hpChassisTeardown()
+}
+
+func TestHpChassisPsu(t *testing.T) {
+	expectedAnswer := []*model.Psu{
+		&model.Psu{
+			Serial:        "5drca0ahl610qj",
+			CapacityKw:    2.65,
+			Status:        "OK",
+			PowerKw:       0.263,
+			ChassisSerial: "cz372137h3",
+		},
+		&model.Psu{
+			Serial:        "5drca0ahl610qe",
+			CapacityKw:    2.65,
+			Status:        "OK",
+			PowerKw:       0.263,
+			ChassisSerial: "cz372137h3",
+		},
+		&model.Psu{
+			Serial:        "5drca0ahl610q0",
+			CapacityKw:    2.65,
+			Status:        "OK",
+			PowerKw:       0.263,
+			ChassisSerial: "cz372137h3",
+		},
+		&model.Psu{
+			Serial:        "5drca0ahl610pw",
+			CapacityKw:    2.65,
+			Status:        "OK",
+			PowerKw:       0.263,
+			ChassisSerial: "cz372137h3",
+		},
+	}
+
+	chassis, err := hpChassisSetup()
+	if err != nil {
+		t.Fatalf("Found errors during the test hpChassisSetup %v", err)
+	}
+
+	psus, err := chassis.Psus()
+	if err != nil {
+		t.Fatalf("Found errors calling chassis.Psus %v", err)
+	}
+
+	if len(psus) != len(expectedAnswer) {
+		t.Fatalf("Expected %v psus: found %v psus", len(psus), len(expectedAnswer))
+	}
+
+	for pos, psu := range psus {
+		if psu.Serial != expectedAnswer[pos].Serial || psu.CapacityKw != expectedAnswer[pos].CapacityKw || psu.PowerKw != expectedAnswer[pos].PowerKw || psu.Status != expectedAnswer[pos].Status || psu.ChassisSerial != expectedAnswer[pos].ChassisSerial {
+			t.Errorf("Expected answer %v: found %v", expectedAnswer[pos], psu)
 		}
 	}
 
