@@ -385,11 +385,6 @@ func (c *Connection) chassis(ch BmcChassis) (chassis *model.Chassis, err error) 
 		log.WithFields(log.Fields{"operation": "reading firmware version", "ip": chassis.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
 	}
 
-	chassis.PowerSupplyCount, err = ch.PowerSupplyCount()
-	if err != nil {
-		log.WithFields(log.Fields{"operation": "reading psu count", "ip": chassis.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
-	}
-
 	chassis.PassThru, err = ch.PassThru()
 	if err != nil {
 		log.WithFields(log.Fields{"operation": "reading passthru", "ip": chassis.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
@@ -408,6 +403,11 @@ func (c *Connection) chassis(ch BmcChassis) (chassis *model.Chassis, err error) 
 	chassis.Nics, err = ch.Nics()
 	if err != nil {
 		log.WithFields(log.Fields{"operation": "reading nics", "ip": chassis.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
+	}
+
+	chassis.Psus, err = ch.Psus()
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "reading psus", "ip": chassis.BmcAddress, "vendor": c.Vendor(), "type": c.HwType(), "error": err}).Warning("auditing hardware")
 	}
 
 	db := storage.InitDB()

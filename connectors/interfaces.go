@@ -30,9 +30,9 @@ type BmcChassis interface {
 	Nics() ([]*model.Nic, error)
 	PassThru() (string, error)
 	PowerKw() (float64, error)
-	PowerSupplyCount() (int, error)
 	Serial() (string, error)
 	Status() (string, error)
+	Psus() ([]*model.Psu, error)
 	StorageBlades() ([]*model.StorageBlade, error)
 	TempC() (int, error)
 }
