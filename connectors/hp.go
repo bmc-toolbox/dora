@@ -76,10 +76,10 @@ type HpManager struct {
 
 // HpPowersupply contains the data of the power supply of the chassis
 type HpPowersupply struct {
-	Sn           string `xml:" SN,omitempty"`
-	Status       string `xml:" STATUS,omitempty"`
-	Capacity     int    `xml:" CAPACITY,omitempty"`
-	ActualOutput int    `xml:" ACTUALOUTPUT,omitempty"`
+	Sn           string  `xml:" SN,omitempty"`
+	Status       string  `xml:" STATUS,omitempty"`
+	Capacity     float64 `xml:" CAPACITY,omitempty"`
+	ActualOutput float64 `xml:" ACTUALOUTPUT,omitempty"`
 }
 
 // HpTemp contains the thermal data of a chassis or blade
