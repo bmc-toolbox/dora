@@ -26,6 +26,7 @@ type Chassis struct {
 	Blades           []*Blade        `json:"-" gorm:"ForeignKey:ChassisSerial"`
 	StorageBlades    []*StorageBlade `json:"-" gorm:"ForeignKey:ChassisSerial"`
 	Nics             []*Nic          `json:"-" gorm:"ForeignKey:ChassisSerial"`
+	Psus             []*Psu          `json:"-" gorm:"ForeignKey:ChassisSerial"`
 	TempC            int             `json:"temp_c"`
 	PowerSupplyCount int             `json:"power_supply_count"`
 	PassThru         string          `json:"pass_thru"`
@@ -60,6 +61,11 @@ func (c Chassis) GetReferences() []jsonapi.Reference {
 			Name:         "nics",
 			Relationship: jsonapi.ToManyRelationship,
 		},
+		{
+			Type:         "psus",
+			Name:         "psus",
+			Relationship: jsonapi.ToManyRelationship,
+		},
 	}
 }
 
@@ -87,6 +93,14 @@ func (c Chassis) GetReferencedIDs() []jsonapi.ReferenceID {
 			ID:           nic.GetID(),
 			Type:         "nics",
 			Name:         "nics",
+			Relationship: jsonapi.ToManyRelationship,
+		})
+	}
+	for _, psu := range c.Psus {
+		result = append(result, jsonapi.ReferenceID{
+			ID:           psu.GetID(),
+			Type:         "psus",
+			Name:         "psus",
 			Relationship: jsonapi.ToManyRelationship,
 		})
 	}

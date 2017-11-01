@@ -30,6 +30,7 @@ type Discrete struct {
 	BmcLicenceStatus     string    `json:"bmc_licence_status"`
 	BmcAuth              bool      `json:"bmc_auth"`
 	Nics                 []*Nic    `json:"-" gorm:"ForeignKey:DiscreteSerial"`
+	Psus                 []*Psu    `json:"-" gorm:"ForeignKey:DiscreteSerial"`
 	Model                string    `json:"model"`
 	TempC                int       `json:"temp_c"`
 	PowerKw              float64   `json:"power_kw"`
@@ -56,6 +57,11 @@ func (d Discrete) GetReferences() []jsonapi.Reference {
 			Name:         "nics",
 			Relationship: jsonapi.ToManyRelationship,
 		},
+		{
+			Type:         "psus",
+			Name:         "psus",
+			Relationship: jsonapi.ToManyRelationship,
+		},
 	}
 }
 
@@ -67,6 +73,15 @@ func (d Discrete) GetReferencedIDs() []jsonapi.ReferenceID {
 			ID:           nic.GetID(),
 			Type:         "nics",
 			Name:         "nics",
+			Relationship: jsonapi.ToManyRelationship,
+		})
+	}
+
+	for _, psu := range d.Psus {
+		result = append(result, jsonapi.ReferenceID{
+			ID:           psu.GetID(),
+			Type:         "psus",
+			Name:         "psus",
 			Relationship: jsonapi.ToManyRelationship,
 		})
 	}

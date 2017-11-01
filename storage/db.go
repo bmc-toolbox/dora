@@ -38,6 +38,7 @@ func InitDB() *gorm.DB {
 		&model.Nic{},
 		&model.StorageBlade{},
 		&model.ScannedPort{},
+		&model.Psu{},
 	)
 
 	return db
