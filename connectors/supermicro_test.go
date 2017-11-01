@@ -156,6 +156,10 @@ func TestSupermicroSerial(t *testing.T) {
 	}
 
 	answer, err := bmc.Serial()
+	if err != nil {
+		t.Fatalf("Found errors calling bmc.Serial %v", err)
+	}
+
 	if answer != expectedAnswer {
 		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
 	}
@@ -172,6 +176,10 @@ func TestSupermicroModel(t *testing.T) {
 	}
 
 	answer, err := bmc.Model()
+	if err != nil {
+		t.Fatalf("Found errors calling bmc.Model %v", err)
+	}
+
 	if answer != expectedAnswer {
 		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
 	}
@@ -188,6 +196,10 @@ func TestSupermicroBmcType(t *testing.T) {
 	}
 
 	answer, err := bmc.BmcType()
+	if err != nil {
+		t.Fatalf("Found errors calling bmc.BmcType %v", err)
+	}
+
 	if answer != expectedAnswer {
 		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
 	}
@@ -204,6 +216,10 @@ func TestSupermicroBmcVersion(t *testing.T) {
 	}
 
 	answer, err := bmc.BmcVersion()
+	if err != nil {
+		t.Fatalf("Found errors calling bmc.BmcVersion %v", err)
+	}
+
 	if answer != expectedAnswer {
 		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
 	}
@@ -220,6 +236,10 @@ func TestSupermicroName(t *testing.T) {
 	}
 
 	answer, err := bmc.Name()
+	if err != nil {
+		t.Fatalf("Found errors calling bmc.Name %v", err)
+	}
+
 	if answer != expectedAnswer {
 		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
 	}
@@ -228,7 +248,7 @@ func TestSupermicroName(t *testing.T) {
 }
 
 func TestSupermicroStatus(t *testing.T) {
-	expectedAnswer := "Not supported"
+	expectedAnswer := "NotSupported"
 
 	bmc, err := smSetup()
 	if err != nil {
@@ -236,6 +256,10 @@ func TestSupermicroStatus(t *testing.T) {
 	}
 
 	answer, err := bmc.Status()
+	if err != nil {
+		t.Fatalf("Found errors calling bmc.Status %v", err)
+	}
+
 	if answer != expectedAnswer {
 		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
 	}
@@ -252,6 +276,10 @@ func TestSupermicroMemory(t *testing.T) {
 	}
 
 	answer, err := bmc.Memory()
+	if err != nil {
+		t.Fatalf("Found errors calling bmc.Memory %v", err)
+	}
+
 	if answer != expectedAnswer {
 		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
 	}
@@ -271,6 +299,10 @@ func TestSupermicroCPU(t *testing.T) {
 	}
 
 	cpuType, cpuCount, core, ht, err := bmc.CPU()
+	if err != nil {
+		t.Fatalf("Found errors calling bmc.CPU %v", err)
+	}
+
 	if cpuType != expectedAnswerCPUType {
 		t.Errorf("Expected cpuType answer %v: found %v", expectedAnswerCPUType, cpuType)
 	}
@@ -299,6 +331,10 @@ func TestSupermicroBiosVersion(t *testing.T) {
 	}
 
 	answer, err := bmc.BiosVersion()
+	if err != nil {
+		t.Fatalf("Found errors calling bmc.BiosVersion %v", err)
+	}
+
 	if answer != expectedAnswer {
 		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
 	}
@@ -315,6 +351,10 @@ func TestSupermicroPowerKW(t *testing.T) {
 	}
 
 	answer, err := bmc.PowerKw()
+	if err != nil {
+		t.Fatalf("Found errors calling bmc.PowerKW %v", err)
+	}
+
 	if answer != expectedAnswer {
 		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
 	}
@@ -331,6 +371,10 @@ func TestSupermicroTempC(t *testing.T) {
 	}
 
 	answer, err := bmc.TempC()
+	if err != nil {
+		t.Fatalf("Found errors calling bmc.Temp %v", err)
+	}
+
 	if answer != expectedAnswer {
 		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
 	}
@@ -360,6 +404,10 @@ func TestSupermicroNics(t *testing.T) {
 	}
 
 	nics, err := bmc.Nics()
+	if err != nil {
+		t.Fatalf("Found errors calling bmc.Nics %v", err)
+	}
+
 	for pos, nic := range nics {
 		if nic.MacAddress != expectedAnswer[pos].MacAddress || nic.Name != expectedAnswer[pos].Name {
 			t.Errorf("Expected answer %v: found %v", expectedAnswer[pos], nic)
@@ -379,6 +427,10 @@ func TestSupermicroLicense(t *testing.T) {
 	}
 
 	name, licType, err := bmc.License()
+	if err != nil {
+		t.Fatalf("Found errors calling bmc.License %v", err)
+	}
+
 	if name != expectedName {
 		t.Errorf("Expected name %v: found %v", expectedName, name)
 	}
