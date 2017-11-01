@@ -77,16 +77,41 @@ func (h *HpChassisReader) TempC() (temp int, err error) {
 	return h.hpRimp.HpInfra2.HpTemp.C, err
 }
 
+// Psus returns a list of psus installed on the device
+func (h *HpChassisReader) Psus() (psus []*model.Psu, err error) {
+	serial, _ := h.Serial()
+
+	for _, psu := range h.hpRimp.HpInfra2.HpChassisPower.HpPowersupply {
+		if psus == nil {
+			psus = make([]*model.Psu, 0)
+		}
+
+		p := &model.Psu{
+			Serial:        strings.ToLower(psu.Sn),
+			Status:        psu.Status,
+			PowerKw:       psu.ActualOutput / 1000.00,
+			CapacityKw:    psu.Capacity / 1000.00,
+			ChassisSerial: serial,
+		}
+		psus = append(psus, p)
+	}
+
+	return psus, err
+}
+
 // Nics returns all found Nics in the device
 func (h *HpChassisReader) Nics() (nics []*model.Nic, err error) {
+	serial, _ := h.Serial()
+
 	for _, manager := range h.hpRimp.HpInfra2.HpManagers {
 		if nics == nil {
 			nics = make([]*model.Nic, 0)
 		}
 
 		n := &model.Nic{
-			Name:       manager.Name,
-			MacAddress: strings.ToLower(manager.MacAddr),
+			Name:          manager.Name,
+			MacAddress:    strings.ToLower(manager.MacAddr),
+			ChassisSerial: serial,
 		}
 		nics = append(nics, n)
 	}
@@ -116,20 +141,16 @@ func (h *HpChassisReader) PassThru() (passthru string, err error) {
 	return passthru, err
 }
 
-// PowerSupplyCount returns the total count of the power supply
-func (h *HpChassisReader) PowerSupplyCount() (count int, err error) {
-	return len(h.hpRimp.HpInfra2.HpChassisPower.HpPowersupply), err
-}
-
 // StorageBlades returns all StorageBlades found in this chassis
 func (h *HpChassisReader) StorageBlades() (storageBlades []*model.StorageBlade, err error) {
 	if h.hpRimp.HpInfra2.HpBlades != nil {
+		chassisSerial, _ := h.Serial()
 		db := storage.InitDB()
 		for _, hpBlade := range h.hpRimp.HpInfra2.HpBlades {
 			if hpBlade.Type == "STORAGE" {
 				storageBlade := model.StorageBlade{}
 				storageBlade.Serial = strings.ToLower(strings.TrimSpace(hpBlade.Bsn))
-				chassisSerial, _ := h.Serial()
+
 				if storageBlade.Serial == "" || storageBlade.Serial == "[unknown]" || storageBlade.Serial == "0000000000" {
 					log.WithFields(log.Fields{"operation": "connection", "ip": *h.ip, "position": storageBlade.BladePosition, "type": "chassis", "chassis_serial": chassisSerial, "error": ErrInvalidSerial}).Error("Auditing blade")
 					continue
@@ -141,6 +162,7 @@ func (h *HpChassisReader) StorageBlades() (storageBlades []*model.StorageBlade, 
 				storageBlade.Vendor = HP
 				storageBlade.FwVersion = hpBlade.BladeRomVer
 				storageBlade.Model = hpBlade.Spn
+				storageBlade.ChassisSerial = chassisSerial
 
 				blade := model.Blade{}
 				db.Where("chassis_serial = ? and blade_position = ?", chassisSerial, hpBlade.AssociatedBlade).First(&blade)
@@ -158,14 +180,15 @@ func (h *HpChassisReader) StorageBlades() (storageBlades []*model.StorageBlade, 
 func (h *HpChassisReader) Blades() (blades []*model.Blade, err error) {
 	name, _ := h.Name()
 	if h.hpRimp.HpInfra2.HpBlades != nil {
+		chassisSerial, _ := h.Serial()
 		db := storage.InitDB()
 		for _, hpBlade := range h.hpRimp.HpInfra2.HpBlades {
 			if hpBlade.Type == "SERVER" {
 				blade := model.Blade{}
-
 				blade.BladePosition = hpBlade.HpBay.Connection
 				blade.Status = hpBlade.Status
 				blade.Serial = strings.ToLower(strings.TrimSpace(hpBlade.Bsn))
+				blade.ChassisSerial = chassisSerial
 
 				if blade.Serial == "" || blade.Serial == "[unknown]" || blade.Serial == "0000000000" {
 					nb := model.Blade{}
@@ -179,6 +202,7 @@ func (h *HpChassisReader) Blades() (blades []*model.Blade, err error) {
 					blade.Status = "Require Reseat"
 					blade.Serial = nb.Serial
 				}
+
 				blade.PowerKw = hpBlade.HpPower.PowerConsumed / 1000.00
 				blade.TempC = hpBlade.HpTemp.C
 				blade.Vendor = HP
