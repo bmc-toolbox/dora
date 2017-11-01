@@ -54,6 +54,7 @@ func RunGin(port int, debug bool) {
 	nicStorage := storage.NewNicStorage(db)
 	storageBladeStorage := storage.NewStorageBladeStorage(db)
 	scannedPortStorage := storage.NewScannedPortStorage(db)
+	psuStorage := storage.NewPsuStorage(db)
 
 	api.AddResource(model.Chassis{}, resource.ChassisResource{ChassisStorage: chassisStorage})
 	api.AddResource(model.Blade{}, resource.BladeResource{BladeStorage: bladeStorage})
@@ -61,6 +62,7 @@ func RunGin(port int, debug bool) {
 	api.AddResource(model.StorageBlade{}, resource.StorageBladeResource{StorageBladeStorage: storageBladeStorage})
 	api.AddResource(model.Nic{}, resource.NicResource{NicStorage: nicStorage})
 	api.AddResource(model.ScannedPort{}, resource.ScannedPortResource{ScannedPortStorage: scannedPortStorage})
+	api.AddResource(model.Psu{}, resource.PsuResource{PsuStorage: psuStorage})
 
 	r.GET("/", func(c *gin.Context) {
 		c.HTML(200, "doc.tmpl", gin.H{})

@@ -143,6 +143,8 @@ func TestSupermicroLogin(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unable to login: %v", err)
 	}
+
+	smTeardown()
 }
 
 func TestSupermicroSerial(t *testing.T) {
@@ -157,6 +159,8 @@ func TestSupermicroSerial(t *testing.T) {
 	if answer != expectedAnswer {
 		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
 	}
+
+	smTeardown()
 }
 
 func TestSupermicroModel(t *testing.T) {
@@ -171,6 +175,8 @@ func TestSupermicroModel(t *testing.T) {
 	if answer != expectedAnswer {
 		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
 	}
+
+	smTeardown()
 }
 
 func TestSupermicroBmcType(t *testing.T) {
@@ -185,6 +191,8 @@ func TestSupermicroBmcType(t *testing.T) {
 	if answer != expectedAnswer {
 		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
 	}
+
+	smTeardown()
 }
 
 func TestSupermicroBmcVersion(t *testing.T) {
@@ -199,6 +207,8 @@ func TestSupermicroBmcVersion(t *testing.T) {
 	if answer != expectedAnswer {
 		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
 	}
+
+	smTeardown()
 }
 
 func TestSupermicroName(t *testing.T) {
@@ -213,6 +223,8 @@ func TestSupermicroName(t *testing.T) {
 	if answer != expectedAnswer {
 		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
 	}
+
+	smTeardown()
 }
 
 func TestSupermicroStatus(t *testing.T) {
@@ -227,6 +239,8 @@ func TestSupermicroStatus(t *testing.T) {
 	if answer != expectedAnswer {
 		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
 	}
+
+	smTeardown()
 }
 
 func TestSupermicroMemory(t *testing.T) {
@@ -241,6 +255,8 @@ func TestSupermicroMemory(t *testing.T) {
 	if answer != expectedAnswer {
 		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
 	}
+
+	smTeardown()
 }
 
 func TestSupermicroCPU(t *testing.T) {
@@ -270,6 +286,8 @@ func TestSupermicroCPU(t *testing.T) {
 	if ht != expectedAnswerHyperthread {
 		t.Errorf("Expected ht answer %v: found %v", expectedAnswerHyperthread, ht)
 	}
+
+	smTeardown()
 }
 
 func TestSupermicroBiosVersion(t *testing.T) {
@@ -284,6 +302,8 @@ func TestSupermicroBiosVersion(t *testing.T) {
 	if answer != expectedAnswer {
 		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
 	}
+
+	smTeardown()
 }
 
 func TestSupermicroPowerKW(t *testing.T) {
@@ -298,6 +318,8 @@ func TestSupermicroPowerKW(t *testing.T) {
 	if answer != expectedAnswer {
 		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
 	}
+
+	smTeardown()
 }
 
 func TestSupermicroTempC(t *testing.T) {
@@ -312,6 +334,8 @@ func TestSupermicroTempC(t *testing.T) {
 	if answer != expectedAnswer {
 		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
 	}
+
+	smTeardown()
 }
 
 func TestSupermicroNics(t *testing.T) {
@@ -341,6 +365,8 @@ func TestSupermicroNics(t *testing.T) {
 			t.Errorf("Expected answer %v: found %v", expectedAnswer[pos], nic)
 		}
 	}
+
+	smTeardown()
 }
 
 func TestSupermicroLicense(t *testing.T) {
@@ -360,4 +386,6 @@ func TestSupermicroLicense(t *testing.T) {
 	if licType != expectedLicType {
 		t.Errorf("Expected name %v: found %v", expectedLicType, licType)
 	}
+
+	smTeardown()
 }
