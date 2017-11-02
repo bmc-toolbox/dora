@@ -1,23 +1,5 @@
 package connectors
 
-import (
-	"bytes"
-	"encoding/json"
-	"encoding/xml"
-	"fmt"
-	"io"
-	"io/ioutil"
-	"net/http"
-	"net/url"
-	"regexp"
-	"strconv"
-	"strings"
-
-	log "github.com/sirupsen/logrus"
-	"gitlab.booking.com/infra/dora/model"
-	"gitlab.booking.com/infra/dora/storage"
-)
-
 // DellCMC is the entry of the json exposed by dell
 // We don't need to use an maps[string] with DellChassis, because we don't have clusters
 type DellCMC struct {

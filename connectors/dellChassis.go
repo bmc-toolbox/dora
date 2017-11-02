@@ -131,12 +131,15 @@ func (d *DellCmcReader) Nics() (nics []*model.Nic, err error) {
 		return nics, err
 	}
 
+	serial, _ := d.Serial()
+
 	mac := macFinder.FindString(string(payload))
 	if mac != "" {
 		nics = make([]*model.Nic, 0)
 		n := &model.Nic{
-			Name:       "OA1",
-			MacAddress: strings.ToLower(mac),
+			Name:          "OA1",
+			MacAddress:    strings.ToLower(mac),
+			ChassisSerial: serial,
 		}
 		nics = append(nics, n)
 	}

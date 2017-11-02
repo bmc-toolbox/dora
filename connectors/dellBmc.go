@@ -9,13 +9,11 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"regexp"
 	"strconv"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"gitlab.booking.com/infra/dora/model"
-	"gitlab.booking.com/infra/dora/storage"
 )
 
 // IDracReader holds the status and properties of a connection to an iDrac device
