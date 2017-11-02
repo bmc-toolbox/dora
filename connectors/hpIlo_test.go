@@ -135,6 +135,7 @@ var (
 		"/json/power_summary": []byte(`{"hostpwr_state":"ON","last_avg_pwr_accum":143,"last_5min_avg":141,"last_5min_peak":148,"_24hr_average":139,"_24hr_peak":167,"_24hr_min":138,"_24hr_max_cap":0,"_24hr_max_temp":13,"_20min_average":143,"_20min_peak":149,"_20min_min":140,"_20min_max_cap":0,"max_measured_wattage":283,"min_measured_wattage":0,"volts":229,"power_cap":0,"power_cap_mode":"off","power_regulator_mode":"max","power_supply_capacity":1000,"power_supply_input_power":145,"num_valid_history_samples":288,"num_valid_fast_history_samples":120,"powerreg":1}`),
 		"/json/health_temperature": []byte(`{"hostpwr_state":"ON","in_post":11,"temperature":[{"label":"01-Inlet Ambient","xposition":15,"yposition":0,"location":"Ambient","status":"OP_STATUS_OK","currentreading":13,"caution":42,"critical":50,"temp_unit":"Celsius"},{"label":"02-CPU 1","xposition":11,"yposition":5,"location":"CPU","status":"OP_STATUS_OK","currentreading":40,"caution":70,"critical":0,"temp_unit":"Celsius"},{"label":"03-CPU 2","xposition":4,"yposition":5,"location":"CPU","status":"OP_STATUS_OK","currentreading":40,"caution":70,"critical":0,"temp_unit":"Celsius"},{"label":"04-P1 DIMM 1-6","xposition":9,"yposition":5,"location":"Memory","status":"OP_STATUS_OK","currentreading":28,"caution":89,"critical":0,"temp_unit":"Celsius"},{"label":"05-P1 DIMM 7-12","xposition":14,"yposition":5,"location":"Memory","status":"OP_STATUS_OK","currentreading":31,"caution":89,"critical":0,"temp_unit":"Celsius"},{"label":"06-P2 DIMM 1-6","xposition":1,"yposition":5,"location":"Memory","status":"OP_STATUS_OK","currentreading":22,"caution":89,"critical":0,"temp_unit":"Celsius"},{"label":"07-P2 DIMM 7-12","xposition":6,"yposition":5,"location":"Memory","status":"OP_STATUS_OK","currentreading":28,"caution":89,"critical":0,"temp_unit":"Celsius"},{"label":"08-HD Max","xposition":10,"yposition":0,"location":"System","status":"OP_STATUS_OK","currentreading":35,"caution":60,"critical":0,"temp_unit":"Celsius"},{"label":"09-Exp Bay Drive","xposition":12,"yposition":0,"location":"System","status":"OP_STATUS_ABSENT","currentreading":0,"caution":75,"critical":0,"temp_unit":"Celsius"},{"label":"10-Chipset","xposition":13,"yposition":10,"location":"System","status":"OP_STATUS_OK","currentreading":37,"caution":105,"critical":0,"temp_unit":"Celsius"},{"label":"11-PS 1 Inlet","xposition":1,"yposition":10,"location":"Power Supply","status":"OP_STATUS_OK","currentreading":18,"caution":0,"critical":0,"temp_unit":"Celsius"},{"label":"12-PS 2 Inlet","xposition":4,"yposition":10,"location":"Power Supply","status":"OP_STATUS_OK","currentreading":25,"caution":0,"critical":0,"temp_unit":"Celsius"},{"label":"13-VR P1","xposition":10,"yposition":1,"location":"System","status":"OP_STATUS_OK","currentreading":35,"caution":115,"critical":120,"temp_unit":"Celsius"},{"label":"14-VR P2","xposition":4,"yposition":1,"location":"System","status":"OP_STATUS_OK","currentreading":33,"caution":115,"critical":120,"temp_unit":"Celsius"},{"label":"15-VR P1 Mem","xposition":9,"yposition":1,"location":"System","status":"OP_STATUS_OK","currentreading":25,"caution":115,"critical":120,"temp_unit":"Celsius"},{"label":"16-VR P1 Mem","xposition":13,"yposition":1,"location":"System","status":"OP_STATUS_OK","currentreading":27,"caution":115,"critical":120,"temp_unit":"Celsius"},{"label":"17-VR P2 Mem","xposition":2,"yposition":1,"location":"System","status":"OP_STATUS_OK","currentreading":26,"caution":115,"critical":120,"temp_unit":"Celsius"},{"label":"18-VR P2 Mem","xposition":6,"yposition":1,"location":"System","status":"OP_STATUS_OK","currentreading":25,"caution":115,"critical":120,"temp_unit":"Celsius"},{"label":"19-PS 1 Internal","xposition":1,"yposition":13,"location":"Power Supply","status":"OP_STATUS_OK","currentreading":40,"caution":0,"critical":0,"temp_unit":"Celsius"},{"label":"20-PS 2 Internal","xposition":4,"yposition":13,"location":"Power Supply","status":"OP_STATUS_OK","currentreading":40,"caution":0,"critical":0,"temp_unit":"Celsius"},{"label":"21-PCI 1","xposition":13,"yposition":13,"location":"I/O Board","status":"OP_STATUS_ABSENT","currentreading":0,"caution":100,"critical":0,"temp_unit":"Celsius"},{"label":"22-PCI 2","xposition":13,"yposition":13,"location":"I/O Board","status":"OP_STATUS_ABSENT","currentreading":0,"caution":100,"critical":0,"temp_unit":"Celsius"},{"label":"23-PCI 3","xposition":13,"yposition":13,"location":"I/O Board","status":"OP_STATUS_ABSENT","currentreading":0,"caution":100,"critical":0,"temp_unit":"Celsius"},{"label":"24-PCI 4","xposition":5,"yposition":12,"location":"I/O Board","status":"OP_STATUS_ABSENT","currentreading":0,"caution":100,"critical":0,"temp_unit":"Celsius"},{"label":"25-PCI 5","xposition":5,"yposition":12,"location":"I/O Board","status":"OP_STATUS_ABSENT","currentreading":0,"caution":100,"critical":0,"temp_unit":"Celsius"},{"label":"26-PCI 6","xposition":5,"yposition":12,"location":"I/O Board","status":"OP_STATUS_ABSENT","currentreading":0,"caution":100,"critical":0,"temp_unit":"Celsius"},{"label":"27-HD Controller","xposition":8,"yposition":8,"location":"I/O Board","status":"OP_STATUS_OK","currentreading":55,"caution":100,"critical":0,"temp_unit":"Celsius"},{"label":"28-LOM Card","xposition":14,"yposition":14,"location":"I/O Board","status":"OP_STATUS_OK","currentreading":70,"caution":100,"critical":0,"temp_unit":"Celsius"},{"label":"29-LOM","xposition":7,"yposition":14,"location":"System","status":"OP_STATUS_ABSENT","currentreading":0,"caution":100,"critical":0,"temp_unit":"Celsius"},{"label":"30-Front Ambient","xposition":9,"yposition":0,"location":"Ambient","status":"OP_STATUS_OK","currentreading":22,"caution":65,"critical":0,"temp_unit":"Celsius"},{"label":"31-PCI 1 Zone.","xposition":13,"yposition":13,"location":"I/O Board","status":"OP_STATUS_OK","currentreading":25,"caution":70,"critical":75,"temp_unit":"Celsius"},{"label":"32-PCI 2 Zone.","xposition":13,"yposition":13,"location":"I/O Board","status":"OP_STATUS_OK","currentreading":26,"caution":70,"critical":75,"temp_unit":"Celsius"},{"label":"33-PCI 3 Zone.","xposition":13,"yposition":13,"location":"I/O Board","status":"OP_STATUS_OK","currentreading":26,"caution":70,"critical":75,"temp_unit":"Celsius"},{"label":"34-PCI 4 Zone","xposition":5,"yposition":12,"location":"I/O Board","status":"OP_STATUS_ABSENT","currentreading":0,"caution":70,"critical":75,"temp_unit":"Celsius"},{"label":"35-PCI 5 Zone","xposition":5,"yposition":12,"location":"I/O Board","status":"OP_STATUS_ABSENT","currentreading":0,"caution":70,"critical":75,"temp_unit":"Celsius"},{"label":"36-PCI 6 Zone","xposition":5,"yposition":12,"location":"I/O Board","status":"OP_STATUS_ABSENT","currentreading":0,"caution":70,"critical":75,"temp_unit":"Celsius"},{"label":"37-HD Cntlr Zone","xposition":11,"yposition":7,"location":"I/O Board","status":"OP_STATUS_OK","currentreading":36,"caution":75,"critical":0,"temp_unit":"Celsius"},{"label":"38-I/O Zone","xposition":14,"yposition":11,"location":"System","status":"OP_STATUS_OK","currentreading":29,"caution":75,"critical":80,"temp_unit":"Celsius"},{"label":"39-P/S 2 Zone","xposition":3,"yposition":7,"location":"System","status":"OP_STATUS_OK","currentreading":29,"caution":70,"critical":0,"temp_unit":"Celsius"},{"label":"40-Battery Zone","xposition":7,"yposition":10,"location":"System","status":"OP_STATUS_OK","currentreading":28,"caution":75,"critical":80,"temp_unit":"Celsius"},{"label":"41-iLO Zone","xposition":9,"yposition":14,"location":"System","status":"OP_STATUS_OK","currentreading":31,"caution":90,"critical":95,"temp_unit":"Celsius"},{"label":"42-Rear HD Max","xposition":9,"yposition":14,"location":"System","status":"OP_STATUS_ABSENT","currentreading":0,"caution":60,"critical":0,"temp_unit":"Celsius"},{"label":"43-Storage Batt","xposition":5,"yposition":1,"location":"System","status":"OP_STATUS_OK","currentreading":17,"caution":60,"critical":0,"temp_unit":"Celsius"},{"label":"44-Fuse","xposition":3,"yposition":14,"location":"Power Supply","status":"OP_STATUS_OK","currentreading":28,"caution":100,"critical":0,"temp_unit":"Celsius"}]}`),
 		"/json/license": []byte(`{"key":"3353M-XKMML-D7H3P-XV794-3DXMM","name":"iLO Advanced","type":"Perpetual","expires":"","seats":0}`),
+		"/json/power_supplies": []byte(`{"supplies":[{"unhealthy":0,"enabled":1,"mismatch":0,"ps_bay":1,"ps_present":"PS_YES","ps_condition":"PS_OK","ps_error_code":"PS_GOOD_IN_USE","ps_ipdu_capable":"PS_NO","ps_hotplug_capable":"PS_YES","ps_model":"720478-B21","ps_spare":"754377-001","ps_serial_num":"5DMWA0CLL9E56R","ps_max_cap_watts":500,"ps_fw_ver":"1.00","ps_input_volts":230,"ps_output_watts":73,"avg":72,"max":74,"supply":true,"bbu":false,"charge":0,"age":0,"battery_health":0},{"unhealthy":0,"enabled":1,"mismatch":0,"ps_bay":2,"ps_present":"PS_YES","ps_condition":"PS_OK","ps_error_code":"PS_GOOD_IN_USE","ps_ipdu_capable":"PS_NO","ps_hotplug_capable":"PS_YES","ps_model":"720478-B21","ps_spare":"754377-001","ps_serial_num":"5DMWA0CLL9E5SU","ps_max_cap_watts":500,"ps_fw_ver":"1.00","ps_input_volts":228,"ps_output_watts":70,"avg":70,"max":72,"supply":true,"bbu":false,"charge":0,"age":0,"battery_health":0}],"present_power_reading":143}`),
 	}
 )
 
@@ -484,6 +485,47 @@ func TestHpIloLicense(t *testing.T) {
 
 	if licType != expectedLicType {
 		t.Errorf("Expected name %v: found %v", expectedLicType, licType)
+	}
+
+	hpIloTeardown()
+}
+
+func TestHpIloPsu(t *testing.T) {
+	expectedAnswer := []*model.Psu{
+		&model.Psu{
+			Serial:        "5dmwa0cll9e56r",
+			CapacityKw:    0.5,
+			Status:        "OK",
+			PowerKw:       0.073,
+			DiscreteSerial: "cz3605020d",
+		},
+		&model.Psu{
+			Serial:        "5dmwa0cll9e5su",
+			CapacityKw:    0.5,
+			Status:        "OK",
+			PowerKw:       0.07,
+			DiscreteSerial: "cz3605020d",
+		},
+	}
+
+	bmc, err := hpIloSetup()
+	if err != nil {
+		t.Fatalf("Found errors during the test hpChassisSetup %v", err)
+	}
+
+	psus, err := bmc.Psus()
+	if err != nil {
+		t.Fatalf("Found errors calling chassis.Psus %v", err)
+	}
+
+	if len(psus) != len(expectedAnswer) {
+		t.Fatalf("Expected %v psus: found %v psus", len(expectedAnswer), len(psus))
+	}
+
+	for pos, psu := range psus {
+		if psu.Serial != expectedAnswer[pos].Serial || psu.CapacityKw != expectedAnswer[pos].CapacityKw || psu.PowerKw != expectedAnswer[pos].PowerKw || psu.Status != expectedAnswer[pos].Status || psu.DiscreteSerial != expectedAnswer[pos].DiscreteSerial {
+			t.Errorf("Expected answer %v: found %v", expectedAnswer[pos], psu)
+		}
 	}
 
 	hpIloTeardown()

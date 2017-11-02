@@ -191,3 +191,33 @@ type HpIloLicense struct {
 	Name string `json:"name"`
 	Type string `json:"type"`
 }
+
+// HpIloPowerSupply holds the information of power supplies exposed via ilo
+type HpIloPowerSupply struct {
+	Supplies []struct {
+		Unhealthy        int    `json:"unhealthy"`
+		Enabled          int    `json:"enabled"`
+		Mismatch         int    `json:"mismatch"`
+		PsBay            int    `json:"ps_bay"`
+		PsPresent        string `json:"ps_present"`
+		PsCondition      string `json:"ps_condition"`
+		PsErrorCode      string `json:"ps_error_code"`
+		PsIpduCapable    string `json:"ps_ipdu_capable"`
+		PsHotplugCapable string `json:"ps_hotplug_capable"`
+		PsModel          string `json:"ps_model"`
+		PsSpare          string `json:"ps_spare"`
+		PsSerialNum      string `json:"ps_serial_num"`
+		PsMaxCapWatts    int    `json:"ps_max_cap_watts"`
+		PsFwVer          string `json:"ps_fw_ver"`
+		PsInputVolts     int    `json:"ps_input_volts"`
+		PsOutputWatts    int    `json:"ps_output_watts"`
+		Avg              int    `json:"avg"`
+		Max              int    `json:"max"`
+		Supply           bool   `json:"supply"`
+		Bbu              bool   `json:"bbu"`
+		Charge           int    `json:"charge"`
+		Age              int    `json:"age"`
+		BatteryHealth    int    `json:"battery_health"`
+	} `json:"supplies"`
+	PresentPowerReading int `json:"present_power_reading"`
+}

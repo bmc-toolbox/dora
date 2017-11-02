@@ -2665,7 +2665,7 @@ func TestHpChassisPsu(t *testing.T) {
 	}
 
 	if len(psus) != len(expectedAnswer) {
-		t.Fatalf("Expected %v psus: found %v psus", len(psus), len(expectedAnswer))
+		t.Fatalf("Expected %v psus: found %v psus", len(expectedAnswer), len(psus))
 	}
 
 	for pos, psu := range psus {

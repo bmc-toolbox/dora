@@ -330,6 +330,47 @@ func (i *IloReader) License() (name string, licType string, err error) {
 	return hpIloLicense.Name, hpIloLicense.Type, err
 }
 
+// Psus returns a list of psus installed on the device
+func (i *IloReader) Psus() (psus []*model.Psu, err error) {
+	payload, err := i.get("json/power_supplies")
+	if err != nil {
+		return psus, err
+	}
+
+	serial, _ := i.Serial()
+
+	hpIloPowerSupply := &HpIloPowerSupply{}
+	err = json.Unmarshal(payload, hpIloPowerSupply)
+	if err != nil {
+		DumpInvalidPayload(*i.ip, payload)
+		return psus, err
+	}
+
+	for _, psu := range hpIloPowerSupply.Supplies {
+		if psus == nil {
+			psus = make([]*model.Psu, 0)
+		}
+		var status string
+		if psu.PsCondition == "PS_OK" {
+			status = "OK"
+		} else {
+			status = psu.PsCondition
+		}
+
+		p := &model.Psu{
+			Serial:         strings.ToLower(psu.PsSerialNum),
+			Status:         status,
+			PowerKw:        float64(psu.PsOutputWatts) / 1000.00,
+			CapacityKw:     float64(psu.PsMaxCapWatts) / 1000.00,
+			DiscreteSerial: serial,
+		}
+
+		psus = append(psus, p)
+	}
+
+	return psus, err
+}
+
 // Logout logs out and close the iLo connection
 func (i *IloReader) Logout() (err error) {
 	log.WithFields(log.Fields{"step": "Ilo Connection HP", "ip": *i.ip}).Debug("Logout from iLO")
