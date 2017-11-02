@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	chassisAnswers = map[string][]byte{
+	hpChassisAnswers = map[string][]byte{
 		"/xmldata": []byte(`
 			<RIMP>
 				<MP>
@@ -2400,9 +2400,10 @@ func hpChassisSetup() (r *HpChassisReader, err error) {
 	username := "super"
 	password := "test"
 
-	for url, answer := range chassisAnswers {
+	for url := range hpChassisAnswers {
+		url := url
 		mux.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
-			w.Write(answer)
+			w.Write(hpChassisAnswers[url])
 		})
 	}
 
