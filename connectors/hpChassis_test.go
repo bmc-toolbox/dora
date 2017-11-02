@@ -2610,7 +2610,7 @@ func TestHpChassisNics(t *testing.T) {
 	}
 
 	if len(nics) != len(expectedAnswer) {
-		t.Fatalf("Expected %v nics: found %v nics", len(nics), len(expectedAnswer))
+		t.Fatalf("Expected %v nics: found %v nics", len(expectedAnswer), len(nics))
 	}
 
 	for pos, nic := range nics {
