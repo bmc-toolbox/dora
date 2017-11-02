@@ -408,6 +408,10 @@ func TestSupermicroNics(t *testing.T) {
 		t.Fatalf("Found errors calling bmc.Nics %v", err)
 	}
 
+	if len(nics) != len(expectedAnswer) {
+		t.Fatalf("Expected %v nics: found %v nics", len(expectedAnswer), len(nics))
+	}
+
 	for pos, nic := range nics {
 		if nic.MacAddress != expectedAnswer[pos].MacAddress || nic.Name != expectedAnswer[pos].Name {
 			t.Errorf("Expected answer %v: found %v", expectedAnswer[pos], nic)
