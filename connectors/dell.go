@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -295,17 +296,106 @@ type IDracTemp struct {
 
 // DellCMCWWN is the structure used to render the data when querying /json?method=blades-wwn-info
 type DellCMCWWN struct {
-	SlotMacWwn struct {
-		SlotMacWwnList map[string]DellCMCWWNBlade `json:"slot_mac_wwn_list"`
-	} `json:"slot_mac_wwn"`
+	SlotMacWwn DellCMCSlotMacWwn `json:"slot_mac_wwn"`
 }
 
 // DellCMCWWNBlade contains the blade structure used by DellCMCWWN
 type DellCMCWWNBlade struct {
 	BladeSlotName     string `json:"bladeSlotName"`
-	IsFullHeight      int    `json:"is_full_height"`
 	IsNotDoubleHeight struct {
 		IsInstalled string `json:"isInstalled"`
 		PortFMAC    string `json:"portFMAC"`
 	} `json:"is_not_double_height"`
+}
+
+// DellCMCSlotMacWwn contains index of blade by position inside of the chassis
+type DellCMCSlotMacWwn struct {
+	SlotMacWwnList map[int]DellCMCWWNBlade `json:"-"`
+}
+
+// UnmarshalJSON custom unmarshalling for this "special" data structure
+func (d *DellCMCSlotMacWwn) UnmarshalJSON(data []byte) error {
+	d.SlotMacWwnList = make(map[int]DellCMCWWNBlade, 0)
+	var slotMacWwn map[string]json.RawMessage
+	if err := json.Unmarshal(data, &slotMacWwn); err != nil {
+		return err
+	}
+
+	if data, ok := slotMacWwn["slot_mac_wwn_list"]; ok {
+		var slotMacWwnList map[string]json.RawMessage
+		if err := json.Unmarshal(data, &slotMacWwnList); err != nil {
+			return err
+		}
+
+		for slot, slotData := range slotMacWwnList {
+			if pos, err := strconv.Atoi(slot); err == nil {
+				var blade map[string]json.RawMessage
+				if err := json.Unmarshal(slotData, &blade); err != nil {
+					return err
+				}
+
+				b := DellCMCWWNBlade{}
+				for key, value := range blade {
+					switch key {
+					case "bladeSlotName":
+						if err := json.Unmarshal(value, &b.BladeSlotName); err != nil {
+							return err
+						}
+					case "is_not_double_height":
+						if err := json.Unmarshal(value, &b.IsNotDoubleHeight); err != nil {
+							return err
+						}
+					}
+				}
+				d.SlotMacWwnList[pos] = b
+			}
+		}
+
+	}
+
+	// rfct := reflect.ValueOf(d).Elem()
+	// rfctType := rfct.Type()
+
+	// // TODO(jumartinez): Juliano of the future, if you know by the time a better way of
+	// //                   doing this. Please refactor it!!.
+	// for key, value := range jsonMapping {
+	// 	for i := 0; i < rfctType.NumField(); i++ {
+	// 		if strings.HasPrefix(key, "psu_") {
+	// 			p := DellPsuData{}
+	// 			err := json.Unmarshal(value, &p)
+	// 			if err != nil {
+	// 				return err
+	// 			}
+	// 			p.PsuPosition = key
+	// 			d.Psus = append(d.Psus, p)
+	// 			break
+	// 		} else if key == rfctType.Field(i).Tag.Get("json") {
+	// 			var data interface{}
+	// 			err := json.Unmarshal(value, &data)
+	// 			if err != nil {
+	// 				return err
+	// 			}
+
+	// 			name := rfctType.Field(i).Name
+	// 			f := reflect.Indirect(rfct).FieldByName(name)
+
+	// 			switch f.Kind() {
+	// 			case reflect.String:
+	// 				f.SetString(data.(string))
+	// 			case reflect.Int64:
+	// 				d := int64(data.(float64))
+	// 				if !f.OverflowInt(d) {
+	// 					f.SetInt(d)
+	// 				}
+	// 			}
+	// 			break
+	// 		}
+	// 	}
+	// }
+
+	// sort.Slice(d.Psus, func(i, j int) bool {
+	// 	return d.Psus[i].PsuPosition < d.Psus[j].PsuPosition
+	// })
+
+	return nil
 }

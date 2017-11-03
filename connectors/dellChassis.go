@@ -23,6 +23,7 @@ type DellCmcReader struct {
 	password *string
 	cmcJSON  *DellCMC
 	cmcTemp  *DellCMCTemp
+	cmcWWN   *DellCMCWWN
 }
 
 // NewDellCmcReader returns a connection to DellCmcReader
@@ -43,21 +44,19 @@ func NewDellCmcReader(ip *string, username *string, password *string) (chassis *
 		return chassis, ErrUnableToReadData
 	}
 
-	//
-	// payload, err = httpGetDell(ip, "json?method=blades-wwn-info", username, password)
-	// if err != nil {
-	// 	return chassis, err
-	// }
+	payload, err = httpGetDell(ip, "json?method=blades-wwn-info", username, password)
+	if err != nil {
+		return chassis, err
+	}
 
-	// dellCMCWWN := &DellCMCWWN{}
-	// err = json.Unmarshal(payload, dellCMCWWN)
-	// if err != nil {
-	// 	DumpInvalidPayload(*ip, payload)
-	// 	return chassis, err
-	// }
-	// fmt.Printf("%v", dellCMCWWN)
+	dellCMCWWN := &DellCMCWWN{}
+	err = json.Unmarshal(payload, dellCMCWWN)
+	if err != nil {
+		DumpInvalidPayload(*ip, payload)
+		return chassis, err
+	}
 
-	return &DellCmcReader{ip: ip, username: username, password: password, cmcJSON: dellCMC}, err
+	return &DellCmcReader{ip: ip, username: username, password: password, cmcJSON: dellCMC, cmcWWN: dellCMCWWN}, err
 }
 
 // Name returns the hostname of the machine
@@ -288,6 +287,14 @@ func (d *DellCmcReader) Blades() (blades []*model.Blade, err error) {
 			blade.BmcAddress = idracURL
 			blade.BmcVersion = dellBlade.BladeUSCVer
 
+			if bmcData, ok := d.cmcWWN.SlotMacWwn.SlotMacWwnList[blade.BladePosition]; ok {
+				n := &model.Nic{
+					Name:       "bmc",
+					MacAddress: strings.ToLower(bmcData.IsNotDoubleHeight.PortFMAC),
+				}
+				blade.Nics = append(blade.Nics, n)
+			}
+
 			for _, nic := range dellBlade.Nics {
 				if nic.BladeNicName == "" {
 					log.WithFields(log.Fields{"operation": "connection", "ip": *d.ip, "position": blade.BladePosition, "type": "chassis", "chassis_serial": chassisSerial, "error": "Network card information missing, please verify"}).Error("Auditing blade")
@@ -332,11 +339,6 @@ func (d *DellCmcReader) Blades() (blades []*model.Blade, err error) {
 							blade.Processor, blade.ProcessorCount, blade.ProcessorCoreCount, blade.ProcessorThreadCount, err = idrac.CPU()
 							if err != nil {
 								log.WithFields(log.Fields{"operation": "reading cpu data", "ip": blade.BmcAddress, "name": blade.Name, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
-							}
-
-							blade.Nics, err = idrac.Nics()
-							if err != nil {
-								log.WithFields(log.Fields{"operation": "reading nics", "ip": blade.BmcAddress, "name": blade.Name, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
 							}
 
 							blade.Memory, err = idrac.Memory()
