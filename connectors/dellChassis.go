@@ -2,6 +2,7 @@ package connectors
 
 import (
 	"encoding/json"
+	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -115,7 +116,7 @@ func (d *DellCmcReader) Status() (status string, err error) {
 }
 
 // PowerSupplyCount returns the total count of the power supply
-func (d *DellCmcReader) PowerSupplyCount() (count int, err error) {
+func (d *DellCmcReader) PowerSupplyCount() (count int64, err error) {
 	return d.cmcJSON.DellChassis.DellChassisGroupMemberHealthBlob.DellPsuStatus.PsuCount, err
 }
 
@@ -163,6 +164,45 @@ func (d *DellCmcReader) PassThru() (passthru string, err error) {
 		}
 	}
 	return passthru, err
+}
+
+// Psus returns a list of psus installed on the device
+func (d *DellCmcReader) Psus() (psus []*model.Psu, err error) {
+	serial, _ := d.Serial()
+	for _, psu := range d.cmcJSON.DellChassis.DellChassisGroupMemberHealthBlob.DellPsuStatus.Psus {
+		if psu.PsuPresent == 0 {
+			continue
+		}
+
+		i, err := strconv.ParseFloat(strings.TrimSuffix(psu.PsuAcCurrent, " A"), 64)
+		if err != nil {
+			return psus, err
+		}
+
+		e, err := strconv.ParseFloat(psu.PsuAcVolts, 64)
+		if err != nil {
+			return psus, err
+		}
+
+		var status string
+		if psu.PsuActiveError == "No Errors" {
+			status = "OK"
+		} else {
+			status = psu.PsuActiveError
+		}
+
+		p := &model.Psu{
+			Serial:        fmt.Sprintf("%s_%s", serial, psu.PsuPosition),
+			CapacityKw:    float64(psu.PsuCapacity) / 1000.00,
+			PowerKw:       (i * e) / 1000.00,
+			Status:        status,
+			ChassisSerial: serial,
+		}
+
+		psus = append(psus, p)
+	}
+
+	return psus, err
 }
 
 // StorageBlades returns all StorageBlades found in this chassis

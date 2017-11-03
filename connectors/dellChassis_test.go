@@ -554,57 +554,57 @@ func TestDellChassisNics(t *testing.T) {
 	dellChassisTeardown()
 }
 
-// func TestDellChassisPsu(t *testing.T) {
-// 	expectedAnswer := []*model.Psu{
-// 		&model.Psu{
-// 			Serial:        "5drca0ahl610qj",
-// 			CapacityKw:    2.65,
-// 			Status:        "OK",
-// 			PowerKw:       0.263,
-// 			ChassisSerial: "cz372137h3",
-// 		},
-// 		&model.Psu{
-// 			Serial:        "5drca0ahl610qe",
-// 			CapacityKw:    2.65,
-// 			Status:        "OK",
-// 			PowerKw:       0.263,
-// 			ChassisSerial: "cz372137h3",
-// 		},
-// 		&model.Psu{
-// 			Serial:        "5drca0ahl610q0",
-// 			CapacityKw:    2.65,
-// 			Status:        "OK",
-// 			PowerKw:       0.263,
-// 			ChassisSerial: "cz372137h3",
-// 		},
-// 		&model.Psu{
-// 			Serial:        "5drca0ahl610pw",
-// 			CapacityKw:    2.65,
-// 			Status:        "OK",
-// 			PowerKw:       0.263,
-// 			ChassisSerial: "cz372137h3",
-// 		},
-// 	}
+func TestDellChassisPsu(t *testing.T) {
+	expectedAnswer := []*model.Psu{
+		&model.Psu{
+			Serial:        "51f3dk2_psu_1",
+			CapacityKw:    2.7,
+			Status:        "OK",
+			PowerKw:       0.184,
+			ChassisSerial: "51f3dk2",
+		},
+		&model.Psu{
+			Serial:        "51f3dk2_psu_2",
+			CapacityKw:    2.7,
+			Status:        "OK",
+			PowerKw:       0.20862,
+			ChassisSerial: "51f3dk2",
+		},
+		&model.Psu{
+			Serial:        "51f3dk2_psu_5",
+			CapacityKw:    2.7,
+			Status:        "OK",
+			PowerKw:       0.20772000000000002,
+			ChassisSerial: "51f3dk2",
+		},
+		&model.Psu{
+			Serial:        "51f3dk2_psu_6",
+			CapacityKw:    2.7,
+			Status:        "OK",
+			PowerKw:       0.25278,
+			ChassisSerial: "51f3dk2",
+		},
+	}
 
-// 	chassis, err := dellChassisSetup()
-// 	if err != nil {
-// 		t.Fatalf("Found errors during the test dellChassisSetup %v", err)
-// 	}
+	chassis, err := dellChassisSetup()
+	if err != nil {
+		t.Fatalf("Found errors during the test dellChassisSetup %v", err)
+	}
 
-// 	psus, err := chassis.Psus()
-// 	if err != nil {
-// 		t.Fatalf("Found errors calling chassis.Psus %v", err)
-// 	}
+	psus, err := chassis.Psus()
+	if err != nil {
+		t.Fatalf("Found errors calling chassis.Psus %v", err)
+	}
 
-// 	if len(psus) != len(expectedAnswer) {
-// 		t.Fatalf("Expected %v psus: found %v psus", len(expectedAnswer), len(psus))
-// 	}
+	if len(psus) != len(expectedAnswer) {
+		t.Fatalf("Expected %v psus: found %v psus", len(expectedAnswer), len(psus))
+	}
 
-// 	for pos, psu := range psus {
-// 		if psu.Serial != expectedAnswer[pos].Serial || psu.CapacityKw != expectedAnswer[pos].CapacityKw || psu.PowerKw != expectedAnswer[pos].PowerKw || psu.Status != expectedAnswer[pos].Status || psu.ChassisSerial != expectedAnswer[pos].ChassisSerial {
-// 			t.Errorf("Expected answer %v: found %v", expectedAnswer[pos], psu)
-// 		}
-// 	}
+	for pos, psu := range psus {
+		if psu.Serial != expectedAnswer[pos].Serial || psu.CapacityKw != expectedAnswer[pos].CapacityKw || psu.PowerKw != expectedAnswer[pos].PowerKw || psu.Status != expectedAnswer[pos].Status || psu.ChassisSerial != expectedAnswer[pos].ChassisSerial {
+			t.Errorf("Expected answer %v: found %v", expectedAnswer[pos], psu)
+		}
+	}
 
-// 	dellChassisTeardown()
-// }
+	dellChassisTeardown()
+}
