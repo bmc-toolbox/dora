@@ -9,6 +9,7 @@ type Bmc interface {
 	BmcVersion() (string, error)
 	CPU() (string, int, int, int, error)
 	License() (string, string, error)
+	IsBlade() (bool, error)
 	Login() error
 	Logout() error
 	Memory() (int, error)
