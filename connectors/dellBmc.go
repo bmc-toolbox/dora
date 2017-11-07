@@ -412,12 +412,12 @@ func (i *IDracReader) Logout() (err error) {
 
 // IsBlade returns if the current hardware is a blade or not
 func (i *IDracReader) IsBlade() (isBlade bool, err error) {
-	psus, err := i.Psus()
+	model, err := i.Model()
 	if err != nil {
 		return isBlade, err
 	}
 
-	if psus == nil {
+	if strings.HasPrefix(model, "PowerEdge M") {
 		isBlade = true
 	}
 

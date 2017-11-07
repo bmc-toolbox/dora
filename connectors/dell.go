@@ -370,3 +370,15 @@ func (d *DellCMCSlotMacWwn) UnmarshalJSON(data []byte) error {
 
 	return nil
 }
+
+// DellHwDetection used to render the content of session?aimGetProp=hostname,gui_str_title_bar,OEMHostName,fwVersion,sysDesc
+type DellHwDetection struct {
+	AimGetProp struct {
+		Hostname       string `json:"hostname"`
+		GuiStrTitleBar string `json:"gui_str_title_bar"`
+		OEMHostName    string `json:"OEMHostName"`
+		FwVersion      string `json:"fwVersion"`
+		SysDesc        string `json:"sysDesc"`
+		Status         string `json:"status"`
+	} `json:"aimGetProp"`
+}
