@@ -353,49 +353,5 @@ func (d *DellCMCSlotMacWwn) UnmarshalJSON(data []byte) error {
 
 	}
 
-	// rfct := reflect.ValueOf(d).Elem()
-	// rfctType := rfct.Type()
-
-	// // TODO(jumartinez): Juliano of the future, if you know by the time a better way of
-	// //                   doing this. Please refactor it!!.
-	// for key, value := range jsonMapping {
-	// 	for i := 0; i < rfctType.NumField(); i++ {
-	// 		if strings.HasPrefix(key, "psu_") {
-	// 			p := DellPsuData{}
-	// 			err := json.Unmarshal(value, &p)
-	// 			if err != nil {
-	// 				return err
-	// 			}
-	// 			p.PsuPosition = key
-	// 			d.Psus = append(d.Psus, p)
-	// 			break
-	// 		} else if key == rfctType.Field(i).Tag.Get("json") {
-	// 			var data interface{}
-	// 			err := json.Unmarshal(value, &data)
-	// 			if err != nil {
-	// 				return err
-	// 			}
-
-	// 			name := rfctType.Field(i).Name
-	// 			f := reflect.Indirect(rfct).FieldByName(name)
-
-	// 			switch f.Kind() {
-	// 			case reflect.String:
-	// 				f.SetString(data.(string))
-	// 			case reflect.Int64:
-	// 				d := int64(data.(float64))
-	// 				if !f.OverflowInt(d) {
-	// 					f.SetInt(d)
-	// 				}
-	// 			}
-	// 			break
-	// 		}
-	// 	}
-	// }
-
-	// sort.Slice(d.Psus, func(i, j int) bool {
-	// 	return d.Psus[i].PsuPosition < d.Psus[j].PsuPosition
-	// })
-
 	return nil
 }
