@@ -170,8 +170,8 @@ type HpPowerSummary struct {
 	PowerSupplyInputPower int    `json:"power_supply_input_power"`
 }
 
-// HpHelthTemperature is the struct used to render the data from https://$ip/json/health_temperature, it contains the information about the thermal status of the machine
-type HpHelthTemperature struct {
+// HpHealthTemperature is the struct used to render the data from https://$ip/json/health_temperature, it contains the information about the thermal status of the machine
+type HpHealthTemperature struct {
 	HostpwrState string           `json:"hostpwr_state"`
 	InPost       int              `json:"in_post"`
 	Temperature  []*HpTemperature `json:"temperature"`
