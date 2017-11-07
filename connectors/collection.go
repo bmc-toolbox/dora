@@ -27,10 +27,7 @@ func collect(input <-chan string, source *string, db *gorm.DB) {
 			continue
 		}
 
-		if c.HwType() == Blade && *source == "service" {
-			log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType()}).Debug("we don't want to scan blades directly since the chassis does it for us")
-			continue
-		}
+		// TODO: Avoid double scanning blades
 
 		data, err := c.Collect()
 		if err != nil {
@@ -58,9 +55,12 @@ func collect(input <-chan string, source *string, db *gorm.DB) {
 				continue
 			}
 
-			for _, line := range chassis.Diff(&existingData) {
-				fmt.Println(line)
+			if len(chassis.Diff(&existingData)) != 0 {
+				notifyChange <- fmt.Sprintf("%s/%s/%s", viper.GetString("url"), "chassis", chassis.Serial)
 			}
+			// for _, line := range chassis.Diff(&existingData) {
+			// 	fmt.Println(line)
+			// }
 		case *model.Blade:
 			blade := data.(*model.Blade)
 			if blade == nil {
@@ -80,9 +80,12 @@ func collect(input <-chan string, source *string, db *gorm.DB) {
 				continue
 			}
 
-			for _, line := range blade.Diff(&existingData) {
-				fmt.Println(line)
+			if len(blade.Diff(&existingData)) != 0 {
+				notifyChange <- fmt.Sprintf("%s/%s/%s", viper.GetString("url"), "blades", blade.Serial)
 			}
+			// for _, line := range blade.Diff(&existingData) {
+			// 	fmt.Println(line)
+			// }
 		case *model.Discrete:
 			discrete := data.(*model.Discrete)
 			if discrete == nil {
@@ -102,9 +105,12 @@ func collect(input <-chan string, source *string, db *gorm.DB) {
 				continue
 			}
 
-			for _, line := range discrete.Diff(&existingData) {
-				fmt.Println(line)
+			if len(discrete.Diff(&existingData)) != 0 {
+				notifyChange <- fmt.Sprintf("%s/%s/%s", viper.GetString("url"), "discretes", discrete.Serial)
 			}
+			// for _, line := range discrete.Diff(&existingData) {
+			// 	fmt.Println(line)
+			// }
 		}
 	}
 }
@@ -125,13 +131,13 @@ func DataCollection(ips []string, source string) {
 		}(cc, &source, db, &wg)
 	}
 
+	notifyChange = make(chan string)
 	go func(notification <-chan string) {
 		for callback := range notification {
-			fmt.Println(callback)
-			// err := assetNotify(callback)
-			// if err != nil {
-			// 	log.WithFields(log.Fields{"operation": "ServerDB callback", "url": callback, "error": err}).Error("sending ServerDB callback")
-			// }
+			err := assetNotify(callback)
+			if err != nil {
+				log.WithFields(log.Fields{"operation": "ServerDB callback", "url": callback, "error": err}).Error("sending ServerDB callback")
+			}
 		}
 	}(notifyChange)
 

@@ -1,9 +1,12 @@
 package connectors
 
 import (
+	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"gitlab.booking.com/infra/dora/model"
@@ -60,14 +63,14 @@ func (c *Connection) detect() (err error) {
 	if err != nil {
 		return err
 	}
+	payload, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode == 200 {
 		log.WithFields(log.Fields{"step": "connection", "host": c.host, "data": "It seems to be HP"}).Debug("Detecting vendor")
-
-		payload, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return err
-		}
 
 		iloXMLC := &HpRimp{}
 		err = xml.Unmarshal(payload, iloXMLC)
@@ -85,7 +88,6 @@ func (c *Connection) detect() (err error) {
 		iloXML := &HpRimpBlade{}
 		err = xml.Unmarshal(payload, iloXML)
 		if err != nil {
-			fmt.Println(err)
 			return err
 		}
 
@@ -104,21 +106,40 @@ func (c *Connection) detect() (err error) {
 		return err
 	}
 
-	resp, err = client.Get(fmt.Sprintf("https://%s/data/login", c.host))
+	resp, err = client.Get(fmt.Sprintf("https://%s/session?aimGetProp=hostname,gui_str_title_bar,OEMHostName,fwVersion,sysDesc", c.host))
 	if err != nil {
 		return err
 	}
 
-	if resp.StatusCode == 200 {
-		c.vendor = Dell
-		c.hwtype = Blade
+	payload, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 
+	if resp.StatusCode == 200 {
+		dellJSON := &DellHwDetection{}
+		err = json.Unmarshal(payload, dellJSON)
+		if err != nil {
+			return err
+		}
+
+		c.vendor = Dell
+
+		if strings.HasPrefix(dellJSON.AimGetProp.SysDesc, "PowerEdge M") {
+			c.hwtype = Blade
+		} else {
+			c.hwtype = Discrete
+		}
+
+		return err
+	}
 	resp, err = client.Get(fmt.Sprintf("https://%s/cgi-bin/webcgi/login", c.host))
 	if err != nil {
 		return err
 	}
+	io.Copy(ioutil.Discard, resp.Body)
+	defer resp.Body.Close()
 
 	if resp.StatusCode == 200 {
 		c.vendor = Dell
@@ -130,6 +151,8 @@ func (c *Connection) detect() (err error) {
 	if err != nil {
 		return err
 	}
+	io.Copy(ioutil.Discard, resp.Body)
+	defer resp.Body.Close()
 
 	if resp.StatusCode == 200 {
 		c.vendor = Supermicro
@@ -426,48 +449,55 @@ func (c *Connection) chassis(ch BmcChassis) (chassis *model.Chassis, err error) 
 
 // Collect collects all relevant data of the current hardwand and returns the populated object
 func (c *Connection) Collect() (i interface{}, err error) {
-	if c.vendor == HP && c.hwtype == Blade {
-		ilo, err := NewIloReader(&c.host, &c.username, &c.password)
-		if err != nil {
-			return i, err
+	switch c.Vendor() {
+	case HP:
+		if c.HwType() == Blade {
+			ilo, err := NewIloReader(&c.host, &c.username, &c.password)
+			if err != nil {
+				return i, err
+			}
+			return c.blade(ilo)
+		} else if c.HwType() == Discrete {
+			ilo, err := NewIloReader(&c.host, &c.username, &c.password)
+			if err != nil {
+				return i, err
+			}
+			return c.blade(ilo)
+		} else if c.HwType() == Chassis {
+			c7000, err := NewHpChassisReader(&c.host, &c.username, &c.password)
+			if err != nil {
+				return i, err
+			}
+			return c.chassis(c7000)
 		}
-		return c.blade(ilo)
-	} else if c.vendor == HP && c.hwtype == Discrete {
-		ilo, err := NewIloReader(&c.host, &c.username, &c.password)
-		if err != nil {
-			return i, err
+	case Dell:
+		if c.HwType() == Blade {
+			idrac, err := NewIDracReader(&c.host, &c.username, &c.password)
+			if err != nil {
+				return i, err
+			}
+			return c.blade(idrac)
+		} else if c.HwType() == Discrete {
+			idrac, err := NewIDracReader(&c.host, &c.username, &c.password)
+			if err != nil {
+				return i, err
+			}
+			return c.discrete(idrac)
+		} else if c.HwType() == Chassis {
+			m1000e, err := NewDellCmcReader(&c.host, &c.username, &c.password)
+			if err != nil {
+				return i, err
+			}
+			return c.chassis(m1000e)
 		}
-		return c.blade(ilo)
-	} else if c.vendor == Dell && c.hwtype == Blade {
-		idrac, err := NewIDracReader(&c.host, &c.username, &c.password)
-		if err != nil {
-			return i, err
+	case Supermicro:
+		if c.HwType() == Discrete {
+			smBmc, err := NewSupermicroReader(&c.host, &c.username, &c.password)
+			if err != nil {
+				return i, err
+			}
+			return c.discrete(smBmc)
 		}
-		return c.blade(idrac)
-	} else if c.vendor == Dell && c.hwtype == Discrete {
-		idrac, err := NewIDracReader(&c.host, &c.username, &c.password)
-		if err != nil {
-			return i, err
-		}
-		return c.discrete(idrac)
-	} else if c.vendor == HP && c.hwtype == Chassis {
-		c7000, err := NewHpChassisReader(&c.host, &c.username, &c.password)
-		if err != nil {
-			return i, err
-		}
-		return c.chassis(c7000)
-	} else if c.vendor == Dell && c.hwtype == Chassis {
-		m1000e, err := NewDellCmcReader(&c.host, &c.username, &c.password)
-		if err != nil {
-			return i, err
-		}
-		return c.chassis(m1000e)
-	} else if c.vendor == Supermicro && c.hwtype == Discrete {
-		smBmc, err := NewSupermicroReader(&c.host, &c.username, &c.password)
-		if err != nil {
-			return i, err
-		}
-		return c.discrete(smBmc)
 	}
 
 	return i, ErrVendorUnknown
