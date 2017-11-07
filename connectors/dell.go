@@ -83,13 +83,14 @@ type DellBlade struct {
 	BladeSerialNum      string              `json:"bladeSerialNum"`
 }
 
-// DellPsuStatus contains the information and power usage of the pdus
+// DellPsuStatus contains the information and power usage of the psus
 type DellPsuStatus struct {
 	AcPower  string        `json:"acPower"`
 	PsuCount int64         `json:"psuCount"`
 	Psus     []DellPsuData `json:"-"`
 }
 
+// DellPsuData contains information of the psu
 type DellPsuData struct {
 	PsuPosition    string `json:"-"`
 	PsuCapacity    int    `json:"psuCapacity"`
@@ -209,6 +210,21 @@ type IDracRoot struct {
 	FwVersion        string                 `xml:"fwVersion"`
 	SysDesc          string                 `xml:"sysDesc"`
 	Powermonitordata *IDracPowermonitordata `xml:"powermonitordata,omitempty"`
+	PsSensorList     []*IDracPsSensor       `xml:"psSensorList>sensor,omitempty"`
+}
+
+// IDracPsSensorList contains a list of psu sensors
+type IDracPsSensorList struct {
+}
+
+// IDracPsSensor contains the information regarding the psu devices
+type IDracPsSensor struct {
+	FwVersion    string `xml:" fwVersion,omitempty"`
+	InputWattage int    `xml:" inputWattage,omitempty"`
+	MaxWattage   int    `xml:" maxWattage,omitempty"`
+	Name         string `xml:" name,omitempty"`
+	SensorHealth int    `xml:" sensorHealth,omitempty"`
+	SensorStatus int    `xml:" sensorStatus,omitempty"`
 }
 
 // IDracPowermonitordata contains the power consumption data for the iDrac
@@ -225,7 +241,6 @@ type IDracPresentReading struct {
 type IDracReading struct {
 	ProbeName string `xml:" probeName,omitempty"`
 	Reading   string `xml:" reading"`
-	//Text             string            `xml:",chardata" json:",omitempty"`
 }
 
 // DellSVMInventory is the struct used to collect data from "https://$ip/sysmgmt/2012/server/inventory/software"
