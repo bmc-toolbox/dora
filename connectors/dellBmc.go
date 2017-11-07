@@ -328,23 +328,20 @@ func (i *IDracReader) License() (name string, licType string, err error) {
 
 // Memory return the total amount of memory of the server
 func (i *IDracReader) Memory() (mem int, err error) {
-	extraHeaders := &map[string]string{
-		"X_SYSMGMT_OPTIMIZE": "true",
+	for _, component := range i.iDracInventory.Component {
+		if component.Classname == "DCIM_SystemView" {
+			for _, property := range component.Properties {
+				if property.Name == "SysMemTotalSize" && property.Type == "uint32" {
+					size, err := strconv.Atoi(property.Value)
+					if err != nil {
+						return mem, err
+					}
+					return size / 1024, err
+				}
+			}
+		}
 	}
-
-	payload, err := i.get("sysmgmt/2012/server/memory", extraHeaders)
-	if err != nil {
-		return mem, err
-	}
-
-	dellBladeMemory := &DellBladeMemoryEndpoint{}
-	err = json.Unmarshal(payload, dellBladeMemory)
-	if err != nil {
-		DumpInvalidPayload(*i.ip, payload)
-		return mem, err
-	}
-
-	return dellBladeMemory.Memory.Capacity / 1024, err
+	return mem, err
 }
 
 // TempC returns the current temperature of the machine
@@ -411,4 +408,61 @@ func (i *IDracReader) Logout() (err error) {
 	defer resp.Body.Close()
 
 	return err
+}
+
+// IsBlade returns if the current hardware is a blade or not
+func (i *IDracReader) IsBlade() (isBlade bool, err error) {
+	psus, err := i.Psus()
+	if err != nil {
+		return isBlade, err
+	}
+
+	if psus == nil {
+		isBlade = true
+	}
+
+	return isBlade, err
+}
+
+// Psus returns a list of psus installed on the device
+func (i *IDracReader) Psus() (psus []*model.Psu, err error) {
+	payload, err := i.get("data?get=powerSupplies", nil)
+	if err != nil {
+		return psus, err
+	}
+
+	iDracRoot := &IDracRoot{}
+	err = xml.Unmarshal(payload, iDracRoot)
+	if err != nil {
+		DumpInvalidPayload(*i.ip, payload)
+		return psus, err
+	}
+
+	serial, _ := i.Serial()
+
+	for _, psu := range iDracRoot.PsSensorList {
+		if psus == nil {
+			psus = make([]*model.Psu, 0)
+		}
+		var status string
+		if psu.SensorHealth == 2 {
+			status = "OK"
+		} else {
+			status = "BROKEN"
+		}
+
+		// TODO(jumartinez): We also need to parse the power consumption data and expose it here
+		//                   I am not sure we need it at all.
+		p := &model.Psu{
+			Serial:         fmt.Sprintf("%s_%s", serial, strings.Split(psu.Name, " ")[0]),
+			Status:         status,
+			PowerKw:        0.00,
+			CapacityKw:     float64(psu.MaxWattage) / 1000.00,
+			DiscreteSerial: serial,
+		}
+
+		psus = append(psus, p)
+	}
+
+	return psus, err
 }
