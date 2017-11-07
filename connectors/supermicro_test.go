@@ -445,3 +445,23 @@ func TestSupermicroLicense(t *testing.T) {
 
 	smTeardown()
 }
+
+func TestSupermicroIsBlade(t *testing.T) {
+	expectedAnswer := false
+
+	bmc, err := smSetup()
+	if err != nil {
+		t.Fatalf("Found errors during the test smSetup %v", err)
+	}
+
+	answer, err := bmc.IsBlade()
+	if err != nil {
+		t.Fatalf("Found errors calling bmc.IsBlade %v", err)
+	}
+
+	if answer != expectedAnswer {
+		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
+	}
+
+	smTeardown()
+}

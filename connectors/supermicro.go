@@ -412,6 +412,11 @@ func (s *SupermicroReader) TempC() (temp int, err error) {
 	return temp, err
 }
 
+// IsBlade returns if the current hardware is a blade or not
+func (s *SupermicroReader) IsBlade() (isBlade bool, err error) {
+	return false, err
+}
+
 // Nics returns all found Nics in the device
 func (s *SupermicroReader) Nics() (nics []*model.Nic, err error) {
 	ipmi, err := s.query("GENERIC_INFO.XML=(0,0)")
