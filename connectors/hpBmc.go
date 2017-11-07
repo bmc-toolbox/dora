@@ -270,14 +270,14 @@ func (i *IloReader) TempC() (temp int, err error) {
 		return temp, err
 	}
 
-	hpHelthTemperature := &HpHelthTemperature{}
-	err = json.Unmarshal(payload, hpHelthTemperature)
+	hpHealthTemperature := &HpHealthTemperature{}
+	err = json.Unmarshal(payload, hpHealthTemperature)
 	if err != nil {
 		DumpInvalidPayload(*i.ip, payload)
 		return temp, err
 	}
 
-	for _, item := range hpHelthTemperature.Temperature {
+	for _, item := range hpHealthTemperature.Temperature {
 		if item.Location == "Ambient" {
 			return item.Currentreading, err
 		}
@@ -391,4 +391,15 @@ func (i *IloReader) Logout() (err error) {
 	defer resp.Body.Close()
 
 	return err
+}
+
+// IsBlade returns if the current hardware is a blade or not
+func (i *IloReader) IsBlade() (isBlade bool, err error) {
+	if i.hpRimpBlade.HpBladeBlade != nil {
+		isBlade = true
+	} else {
+		isBlade = false
+	}
+
+	return isBlade, err
 }
