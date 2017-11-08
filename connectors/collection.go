@@ -27,7 +27,7 @@ func collect(input <-chan string, source *string, db *gorm.DB) {
 			continue
 		}
 
-		if c.HwType() == Blade != *source == "cli-with-force" {
+		if c.HwType() == Blade && *source != "cli-with-force" {
 			log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType()}).Debug("we don't want to scan blades directly since the chassis does it for us")
 			continue
 		}
