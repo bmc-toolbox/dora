@@ -4,15 +4,12 @@ import (
 	"bytes"
 	"crypto/tls"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"net/http/cookiejar"
-	"net/url"
 	"os"
 	"path"
-	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -47,81 +44,9 @@ func buildClient() (client *http.Client, err error) {
 	return client, err
 }
 
-func httpGetDell(hostname *string, endpoint string, username *string, password *string) (payload []byte, err error) {
-	log.WithFields(log.Fields{"step": "ChassisConnections Dell", "hostname": *hostname}).Debug("Requesting data from BMC")
-
-	form := url.Values{}
-	form.Add("user", *username)
-	form.Add("password", *password)
-
-	u, err := url.Parse(fmt.Sprintf("https://%s/cgi-bin/webcgi/login", *hostname))
-	if err != nil {
-		return payload, err
-	}
-
-	req, err := http.NewRequest("POST", u.String(), strings.NewReader(form.Encode()))
-	if err != nil {
-		return payload, err
-	}
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-
-	client, err := buildClient()
-	if err != nil {
-		return payload, err
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return payload, err
-	}
-	defer resp.Body.Close()
-
-	auth, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return payload, err
-	}
-
-	if strings.Contains(string(auth), "Try Again") {
-		return nil, ErrLoginFailed
-	}
-
-	if resp.StatusCode == 404 {
-		return payload, ErrPageNotFound
-	}
-
-	resp, err = client.Get(fmt.Sprintf("https://%s/cgi-bin/webcgi/%s", *hostname, endpoint))
-	if err != nil {
-		return payload, err
-	}
-	defer resp.Body.Close()
-
-	payload, err = ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return payload, err
-	}
-
-	resp, err = client.Get(fmt.Sprintf("https://%s/cgi-bin/webcgi/logout", *hostname))
-	if err != nil {
-		return payload, err
-	}
-	io.Copy(ioutil.Discard, resp.Body)
-	defer resp.Body.Close()
-
-	if resp.StatusCode == 404 {
-		return payload, ErrPageNotFound
-	}
-
-	// Dell has a really shitty consistency of the data type returned, here we fix what's possible
-	payload = bytes.Replace(payload, []byte("\"bladeTemperature\":-1"), []byte("\"bladeTemperature\":\"0\""), -1)
-	payload = bytes.Replace(payload, []byte("\"nic\": [],"), []byte("\"nic\": {},"), -1)
-	payload = bytes.Replace(payload, []byte("N\\/A"), []byte("0"), -1)
-
-	return payload, err
-}
-
 // DumpInvalidPayload is here to help identify unknown or broken payload messages
 func DumpInvalidPayload(name string, payload []byte) (err error) {
-	// TODO: We need to also add the reference for this payload or it's useless
+	// TODO(jumartinez): We need to also add the reference for this payload or it's useless
 	if viper.GetBool("collector.dump_invalid_payloads") {
 		log.WithFields(log.Fields{"operation": "dump invalid payload", "name": name}).Info("dump invalid payload")
 
