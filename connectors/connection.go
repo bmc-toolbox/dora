@@ -371,6 +371,12 @@ func (c *Connection) discrete(bmc Bmc) (discrete *model.Discrete, err error) {
 }
 
 func (c *Connection) chassis(ch BmcChassis) (chassis *model.Chassis, err error) {
+	err = ch.Login()
+	if err != nil {
+		return chassis, err
+	}
+	defer ch.Logout()
+
 	chassis = &model.Chassis{}
 
 	chassis.Vendor = c.Vendor()
