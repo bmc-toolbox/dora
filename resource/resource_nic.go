@@ -60,7 +60,7 @@ func (n NicResource) queryAndCountAllWrapper(r api2go.Request) (count int, nics 
 	}
 
 	discreteID, hasDiscrete := r.QueryParams["discretesID"]
-	if hasChassis {
+	if hasDiscrete {
 		count, nics, err = n.NicStorage.GetAllByDiscreteID(offset, limit, discreteID)
 		return count, nics, err
 	}
