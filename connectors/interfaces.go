@@ -8,8 +8,8 @@ type Bmc interface {
 	BmcType() (string, error)
 	BmcVersion() (string, error)
 	CPU() (string, int, int, int, error)
-	License() (string, string, error)
 	IsBlade() (bool, error)
+	License() (string, string, error)
 	Login() error
 	Logout() error
 	Memory() (int, error)
@@ -26,14 +26,16 @@ type Bmc interface {
 type BmcChassis interface {
 	Blades() ([]*model.Blade, error)
 	FwVersion() (string, error)
+	Login() error
+	Logout() error
 	Model() (string, error)
 	Name() (string, error)
 	Nics() ([]*model.Nic, error)
 	PassThru() (string, error)
 	PowerKw() (float64, error)
+	Psus() ([]*model.Psu, error)
 	Serial() (string, error)
 	Status() (string, error)
-	Psus() ([]*model.Psu, error)
 	StorageBlades() ([]*model.StorageBlade, error)
 	TempC() (int, error)
 }
