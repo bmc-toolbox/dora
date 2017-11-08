@@ -54,7 +54,7 @@ func (p PsuResource) queryAndCountAllWrapper(r api2go.Request) (count int, psus 
 	}
 
 	discreteID, hasDiscrete := r.QueryParams["discretesID"]
-	if hasChassis {
+	if hasDiscrete {
 		count, psus, err = p.PsuStorage.GetAllByDiscreteID(offset, limit, discreteID)
 		return count, psus, err
 	}
