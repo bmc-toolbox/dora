@@ -98,6 +98,13 @@ func initConfig() {
 	viper.SetDefault("scanner.nmap", "/usr/bin/nmap")
 	viper.SetDefault("scanner.concurrency", 100)
 
+	hostname, err := os.Hostname()
+	if err != nil {
+		fmt.Printf("Unable to find my hostname: %s", err)
+	}
+
+	viper.SetDefault("scanner.scanned_by", hostname)
+
 	viper.AutomaticEnv() // read in environment variables that match
 
 	// If a config file is found, read it in.

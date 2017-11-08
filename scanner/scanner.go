@@ -75,7 +75,7 @@ func LoadSubnetsFromKea(content []byte) (subnets []*ToScan) {
 				if strings.HasSuffix(option.Data, keaDomainNameSuffix) {
 					_, ipv4Net, err := net.ParseCIDR(subnet.Subnet)
 					if err != nil {
-						log.WithFields(log.Fields{"operation": "subnet parsing", "error": err}).Warn("Scanning networks")
+						log.WithFields(log.Fields{"operation": "subnet parsing"}).Warn(err)
 						continue
 					}
 					toScan := &ToScan{
@@ -92,10 +92,7 @@ func LoadSubnetsFromKea(content []byte) (subnets []*ToScan) {
 }
 
 func scan(input <-chan ToScan, db *gorm.DB) {
-	hostname, err := os.Hostname()
-	if err != nil {
-		log.WithFields(log.Fields{"operation": "scanning", "error": err}).Warn("Scanning networks")
-	}
+	ScannedBy := viper.GetString("scanner.scanned_by")
 
 	for subnet := range input {
 		scanType := ""
@@ -106,20 +103,21 @@ func scan(input <-chan ToScan, db *gorm.DB) {
 		case "tcp":
 			scanType = "-sT"
 		default:
-			log.WithFields(log.Fields{"operation": "scanning", "error": ErrInvalidProtocol}).Warn("Scanning networks")
+			log.WithFields(log.Fields{"operation": "scanning network", "subnet": subnet.CIDR, "protocol": subnet.Protocol}).Warn(ErrInvalidProtocol)
 			continue
 		}
 
-		log.WithFields(log.Fields{"operation": "scanning ip", "subnet": subnet.CIDR, "protocol": subnet.Protocol}).Info("Scanning networks")
+		log.WithFields(log.Fields{"operation": "scanning network", "subnet": subnet.CIDR, "protocol": subnet.Protocol}).Info("Scanning network")
 		cmd := exec.Command("sudo", "nmap", "-oX", "-", scanType, subnet.CIDR, "--max-parallelism=100", "-p", subnet.Ports)
 		content, err := cmd.Output()
 		if err != nil {
-			log.WithFields(log.Fields{"operation": "scanning", "error": err}).Error("Scanning networks")
+			log.WithFields(log.Fields{"operation": "scanning network", "subnet": subnet.CIDR, "protocol": subnet.Protocol}).Error(err)
+			continue
 		}
 
 		nmap, err := nmapParse(content)
 		if err != nil {
-			log.WithFields(log.Fields{"operation": "scanning", "error": err}).Error("Scanning networks")
+			log.WithFields(log.Fields{"operation": "scanning network", "subnet": subnet.CIDR, "protocol": subnet.Protocol}).Error(err)
 			continue
 		}
 		for _, host := range nmap.Hosts {
@@ -131,12 +129,12 @@ func scan(input <-chan ToScan, db *gorm.DB) {
 					Port:      port.PortID,
 					State:     port.State.State,
 					Protocol:  port.Protocol,
-					ScannedBy: hostname,
+					ScannedBy: ScannedBy,
 				}
 				sp.ID = sp.GenID()
 
 				if err = db.Save(&sp).Error; err != nil {
-					log.WithFields(log.Fields{"operation": "scanning port", "error": err, "hosts": sp.Port, "port": sp.Port}).Error("Scanning networks")
+					log.WithFields(log.Fields{"operation": "scanning host", "subnet": subnet.CIDR, "host": ip, "port": sp.Port}).Error(err)
 				}
 			}
 		}
@@ -157,7 +155,7 @@ func ReadKeaConfig() (content []byte, err error) {
 func LoadSubnets(source string, subnetsToScan []string, site []string) (subnets []*ToScan) {
 	content, err := ReadKeaConfig()
 	if err != nil {
-		log.WithFields(log.Fields{"operation": "loading subnets", "error": err}).Error("Scanning networks")
+		log.WithFields(log.Fields{"operation": "loading subnets"}).Error(err)
 		os.Exit(1)
 	}
 
