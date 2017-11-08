@@ -60,7 +60,7 @@ func NewIloReader(ip *string, username *string, password *string) (ilo *IloReade
 
 // Login initiates the connection to an iLO device
 func (i *IloReader) Login() (err error) {
-	log.WithFields(log.Fields{"step": "Ilo Connection HP", "ip": *i.ip}).Debug("Connecting to iLO")
+	log.WithFields(log.Fields{"step": "bmc connection", "vendor": HP, "ip": *i.ip}).Debug("connecting to bmc")
 
 	data := fmt.Sprintf("{\"method\":\"login\", \"user_login\":\"%s\", \"password\":\"%s\" }", *i.username, *i.password)
 
@@ -94,7 +94,7 @@ func (i *IloReader) Login() (err error) {
 
 // get calls a given json endpoint of the ilo and returns the data
 func (i *IloReader) get(endpoint string) (payload []byte, err error) {
-	log.WithFields(log.Fields{"step": "Ilo Connection HP", "ip": *i.ip, "endpoint": endpoint}).Debug("Retrieving data from iLO")
+	log.WithFields(log.Fields{"step": "bmc connection", "vendor": HP, "ip": *i.ip, "endpoint": endpoint}).Debug("retrieving data from bmc")
 
 	resp, err := i.client.Get(fmt.Sprintf("https://%s/%s", *i.ip, endpoint))
 	if err != nil {
@@ -373,7 +373,7 @@ func (i *IloReader) Psus() (psus []*model.Psu, err error) {
 
 // Logout logs out and close the iLo connection
 func (i *IloReader) Logout() (err error) {
-	log.WithFields(log.Fields{"step": "Ilo Connection HP", "ip": *i.ip}).Debug("Logout from iLO")
+	log.WithFields(log.Fields{"step": "bmc connection", "vendor": HP, "ip": *i.ip}).Debug("logout from bmc")
 
 	data := []byte(`{"method":"logout"}`)
 

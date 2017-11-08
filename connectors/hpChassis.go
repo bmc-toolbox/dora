@@ -52,6 +52,16 @@ func NewHpChassisReader(ip *string, username *string, password *string) (chassis
 	return &HpChassisReader{ip: ip, username: username, password: password, hpRimp: hpRimp, client: client}, err
 }
 
+// Login initiates the connection to a chassis device
+func (h *HpChassisReader) Login() (err error) {
+	return err
+}
+
+// Logout logs out and close the chassis connection
+func (h *HpChassisReader) Logout() (err error) {
+	return err
+}
+
 // Name returns the hostname of the machine
 func (h *HpChassisReader) Name() (name string, err error) {
 	return h.hpRimp.HpInfra2.Encl, err

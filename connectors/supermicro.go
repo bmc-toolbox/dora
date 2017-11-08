@@ -148,7 +148,7 @@ func NewSupermicroReader(ip *string, username *string, password *string) (sm *Su
 
 // Login initiates the connection to an iLO device
 func (s *SupermicroReader) Login() (err error) {
-	log.WithFields(log.Fields{"step": "BMC Connection Supermicro", "ip": *s.ip}).Debug("Connecting to BMC")
+	log.WithFields(log.Fields{"step": "bmc connection", "vendor": Supermicro, "ip": *s.ip}).Debug("connecting to bmc")
 
 	data := fmt.Sprintf("name=%s&pwd=%s", *s.username, *s.password)
 	req, err := http.NewRequest("POST", fmt.Sprintf("https://%s/cgi/login.cgi", *s.ip), bytes.NewBufferString(data))
@@ -181,7 +181,7 @@ func (s *SupermicroReader) Login() (err error) {
 
 func (s *SupermicroReader) query(requestType string) (ipmi *SupermicroIPMI, err error) {
 	bmcURL := fmt.Sprintf("https://%s/cgi/ipmi.cgi", *s.ip)
-	log.WithFields(log.Fields{"step": "BMC Connection Supermicro", "ip": *s.ip, "url": bmcURL}).Debug("Retrieving data via BMC")
+	log.WithFields(log.Fields{"step": "bmc connection", "vendor": Supermicro, "ip": *s.ip}).Debug("retrieving data from bmc")
 
 	req, err := http.NewRequest("POST", bmcURL, bytes.NewBufferString(requestType))
 	if err != nil {
@@ -223,7 +223,7 @@ func (s *SupermicroReader) query(requestType string) (ipmi *SupermicroIPMI, err 
 // Logout logs out of the bmc
 func (s *SupermicroReader) Logout() (err error) {
 	bmcURL := fmt.Sprintf("https://%s/cgi/logout.cgi", *s.ip)
-	log.WithFields(log.Fields{"step": "BMC Connection Supermicro", "ip": *s.ip, "url": bmcURL}).Debug("Logout from BMC")
+	log.WithFields(log.Fields{"step": "bmc connection", "vendor": Supermicro, "ip": *s.ip}).Debug("logout from bmc")
 
 	req, err := http.NewRequest("POST", bmcURL, nil)
 	if err != nil {

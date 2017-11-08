@@ -37,9 +37,9 @@ func NewIDracReader(ip *string, username *string, password *string) (iDrac *IDra
 	return &IDracReader{ip: ip, username: username, password: password, client: client}, err
 }
 
-// Login initiates the connection to an iLO device
+// Login initiates the connection to a bmc device
 func (i *IDracReader) Login() (err error) {
-	log.WithFields(log.Fields{"step": "iDrac Connection Dell", "ip": *i.ip}).Debug("Connecting to iDrac")
+	log.WithFields(log.Fields{"step": "bmc connection", "vendor": Dell, "ip": *i.ip}).Debug("connecting to bmc")
 
 	data := fmt.Sprintf("user=%s&password=%s", *i.username, *i.password)
 	req, err := http.NewRequest("POST", fmt.Sprintf("https://%s/data/login", *i.ip), bytes.NewBufferString(data))
@@ -111,7 +111,7 @@ func (i *IDracReader) loadHwData() (err error) {
 
 // get calls a given json endpoint of the ilo and returns the data
 func (i *IDracReader) get(endpoint string, extraHeaders *map[string]string) (payload []byte, err error) {
-	log.WithFields(log.Fields{"step": "iDrac Connection Dell", "ip": *i.ip, "endpoint": endpoint}).Debug("Retrieving data from iDrac")
+	log.WithFields(log.Fields{"step": "bmc connection", "vendor": Dell, "ip": *i.ip, "endpoint": endpoint}).Debug("retrieving data from bmc")
 
 	bmcURL := fmt.Sprintf("https://%s", *i.ip)
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/%s", bmcURL, endpoint), nil)
@@ -172,7 +172,11 @@ func (i *IDracReader) Nics() (nics []*model.Nic, err error) {
 						}
 						nics = append(nics, n)
 					} else {
-						log.WithFields(log.Fields{"operation": "connection", "ip": *i.ip, "type": "blade", "error": "Invalid network card, please review"}).Error("Auditing blade")
+						if isBlade, _ := i.IsBlade(); isBlade {
+							log.WithFields(log.Fields{"operation": "connection", "ip": *i.ip, "type": Blade}).Error("invalid network card, please review")
+						} else {
+							log.WithFields(log.Fields{"operation": "connection", "ip": *i.ip, "type": Discrete}).Error("invalid network card, please review")
+						}
 					}
 				}
 			}
@@ -396,9 +400,9 @@ func (i *IDracReader) CPU() (cpu string, cpuCount int, coreCount int, hyperthrea
 	return cpu, cpuCount, coreCount, hyperthreadCount, err
 }
 
-// Logout logs out and close the iLo connection
+// Logout logs out and close the bmc connection
 func (i *IDracReader) Logout() (err error) {
-	log.WithFields(log.Fields{"step": "iDrac Connection Dell", "ip": *i.ip}).Debug("Logout from iDrac")
+	log.WithFields(log.Fields{"step": "bmc connection", "vendor": Dell, "ip": *i.ip}).Debug("logout from bmc")
 
 	resp, err := i.client.Get(fmt.Sprintf("https://%s/data/logout", *i.ip))
 	if err != nil {
