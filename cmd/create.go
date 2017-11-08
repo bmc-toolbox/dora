@@ -31,18 +31,34 @@ site:
    - all 
 bmc_user: Priest
 bmc_pass: Wololo
+notify_api_user: Priest
+notify_api_key: Wololo
+notify_url: https://serverdb-201.lhr4.example.com
+url: http://example.com/dora/v1
 database_type: postgres
 database_options: host=0.0.0.0 user=postgres port=32768 dbname=postgres password=mysecretpassword
 
 api:
 	http_server_port: 8000
-	dump_invalid_payloads: true
-	dump_invalid_payload_path: /tmp/dora/dumps
+
 
 collector:
 	concurrency: 60
+	dump_invalid_payloads: true
+	dump_invalid_payload_path: /tmp/dora/dumps
+
+	default_usernames:
+    dell:
+      - username: root
+		password: calvin
+		
+	hp:
+	  - username: admin
+	    password: admin
+
 
 scanner:
+	scanned_by: anomalia
 	concurrency: 100
 	kea_config: /etc/kea/kea.conf
 	nmap: /usr/local/bin/nmap
