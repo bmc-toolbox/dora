@@ -1,8 +1,12 @@
 package connectors
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -21,6 +25,7 @@ type DellCmcReader struct {
 	ip       *string
 	username *string
 	password *string
+	client   *http.Client
 	cmcJSON  *DellCMC
 	cmcTemp  *DellCMCTemp
 	cmcWWN   *DellCMCWWN
@@ -28,35 +33,122 @@ type DellCmcReader struct {
 
 // NewDellCmcReader returns a connection to DellCmcReader
 func NewDellCmcReader(ip *string, username *string, password *string) (chassis *DellCmcReader, err error) {
-	payload, err := httpGetDell(ip, "json?method=groupinfo", username, password)
+	return &DellCmcReader{ip: ip, username: username, password: password}, err
+}
+
+// Login initiates the connection to a chassis device
+func (d *DellCmcReader) Login() (err error) {
+	log.WithFields(log.Fields{"step": "chassis connection", "vendor": Dell, "ip": *d.ip}).Debug("connecting to chassis")
+
+	form := url.Values{}
+	form.Add("user", *d.username)
+	form.Add("password", *d.password)
+
+	u, err := url.Parse(fmt.Sprintf("https://%s/cgi-bin/webcgi/login", *d.ip))
 	if err != nil {
-		return chassis, err
+		return err
 	}
 
-	dellCMC := &DellCMC{}
-	err = json.Unmarshal(payload, dellCMC)
+	req, err := http.NewRequest("POST", u.String(), strings.NewReader(form.Encode()))
 	if err != nil {
-		DumpInvalidPayload(*ip, payload)
-		return chassis, err
+		return err
 	}
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
-	if dellCMC.DellChassis == nil {
-		return chassis, ErrUnableToReadData
-	}
-
-	payload, err = httpGetDell(ip, "json?method=blades-wwn-info", username, password)
+	d.client, err = buildClient()
 	if err != nil {
-		return chassis, err
+		return err
 	}
 
-	dellCMCWWN := &DellCMCWWN{}
-	err = json.Unmarshal(payload, dellCMCWWN)
+	resp, err := d.client.Do(req)
 	if err != nil {
-		DumpInvalidPayload(*ip, payload)
-		return chassis, err
+		return err
+	}
+	defer resp.Body.Close()
+
+	auth, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
 	}
 
-	return &DellCmcReader{ip: ip, username: username, password: password, cmcJSON: dellCMC, cmcWWN: dellCMCWWN}, err
+	if strings.Contains(string(auth), "Try Again") {
+		return ErrLoginFailed
+	}
+
+	if resp.StatusCode == 404 {
+		return ErrPageNotFound
+	}
+
+	err = d.loadHwData()
+	if err != nil {
+		return err
+	}
+
+	return err
+}
+
+func (d *DellCmcReader) loadHwData() (err error) {
+	payload, err := d.get("json?method=groupinfo")
+	if err != nil {
+		return err
+	}
+
+	d.cmcJSON = &DellCMC{}
+	err = json.Unmarshal(payload, d.cmcJSON)
+	if err != nil {
+		DumpInvalidPayload(*d.ip, payload)
+		return err
+	}
+
+	if d.cmcJSON.DellChassis == nil {
+		return ErrUnableToReadData
+	}
+
+	payload, err = d.get("json?method=blades-wwn-info")
+	if err != nil {
+		return err
+	}
+
+	d.cmcWWN = &DellCMCWWN{}
+	err = json.Unmarshal(payload, d.cmcWWN)
+	if err != nil {
+		DumpInvalidPayload(*d.ip, payload)
+		return err
+	}
+
+	return err
+}
+
+// Logout logs out and close the chassis connection
+func (d *DellCmcReader) Logout() (err error) {
+	_, err = d.get(fmt.Sprintf("https://%s/cgi-bin/webcgi/logout", *d.ip))
+	return err
+}
+
+func (d *DellCmcReader) get(endpoint string) (payload []byte, err error) {
+	log.WithFields(log.Fields{"step": "chassis connection", "vendor": Dell, "ip": *d.ip, "endpoint": endpoint}).Debug("retrieving data from chassis")
+
+	resp, err := d.client.Get(fmt.Sprintf("https://%s/cgi-bin/webcgi/%s", *d.ip, endpoint))
+	if err != nil {
+		return payload, err
+	}
+	defer resp.Body.Close()
+
+	payload, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return payload, err
+	}
+
+	if resp.StatusCode == 404 {
+		return payload, ErrPageNotFound
+	}
+
+	// Dell has a really shitty consistency of the data type returned, here we fix what's possible
+	payload = bytes.Replace(payload, []byte("\"bladeTemperature\":-1"), []byte("\"bladeTemperature\":\"0\""), -1)
+	payload = bytes.Replace(payload, []byte("\"nic\": [],"), []byte("\"nic\": {},"), -1)
+	payload = bytes.Replace(payload, []byte("N\\/A"), []byte("0"), -1)
+
+	return payload, err
 }
 
 // Name returns the hostname of the machine
@@ -85,7 +177,7 @@ func (d *DellCmcReader) PowerKw() (power float64, err error) {
 
 // TempC returns the current temperature of the machine
 func (d *DellCmcReader) TempC() (temp int, err error) {
-	payload, err := httpGetDell(d.ip, "json?method=temp-sensors", d.username, d.password)
+	payload, err := d.get("json?method=temp-sensors")
 	if err != nil {
 		return temp, err
 	}
@@ -126,7 +218,7 @@ func (d *DellCmcReader) FwVersion() (version string, err error) {
 
 // Nics returns all found Nics in the device
 func (d *DellCmcReader) Nics() (nics []*model.Nic, err error) {
-	payload, err := httpGetDell(d.ip, "cmc_status?cat=C01&tab=T11&id=P31", d.username, d.password)
+	payload, err := d.get("cmc_status?cat=C01&tab=T11&id=P31")
 	if err != nil {
 		return nics, err
 	}

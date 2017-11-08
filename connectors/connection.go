@@ -172,6 +172,7 @@ func NewConnection(username string, password string, host string) (c *Connection
 	return c, err
 }
 
+// TODO(jumartinez): Merge blade and discrete collection
 func (c *Connection) blade(bmc Bmc) (blade *model.Blade, err error) {
 	err = bmc.Login()
 	if err != nil {

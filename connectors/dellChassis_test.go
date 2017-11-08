@@ -355,6 +355,11 @@ func dellChassisSetup() (r *DellCmcReader, err error) {
 		return r, err
 	}
 
+	err = r.Login()
+	if err != nil {
+		return r, err
+	}
+
 	return r, err
 }
 
