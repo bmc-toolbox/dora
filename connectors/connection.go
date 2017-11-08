@@ -52,7 +52,7 @@ func (c *Connection) HwType() (hwtype string) {
 }
 
 func (c *Connection) detect() (err error) {
-	log.WithFields(log.Fields{"step": "connection", "host": c.host}).Info("Detecting vendor")
+	log.WithFields(log.Fields{"step": "connection", "host": c.host}).Debug("detecting vendor")
 
 	client, err := buildClient()
 	if err != nil {
@@ -70,8 +70,6 @@ func (c *Connection) detect() (err error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode == 200 {
-		log.WithFields(log.Fields{"step": "connection", "host": c.host, "data": "It seems to be HP"}).Debug("Detecting vendor")
-
 		iloXMLC := &HpRimp{}
 		err = xml.Unmarshal(payload, iloXMLC)
 		if err != nil {
@@ -79,7 +77,7 @@ func (c *Connection) detect() (err error) {
 		}
 
 		if iloXMLC.HpInfra2 != nil {
-			log.WithFields(log.Fields{"step": "connection", "host": c.host, "data": "It's a chassis"}).Debug("Detecting vendor")
+			log.WithFields(log.Fields{"step": "connection", "host": c.host, "vendor": HP}).Debug("it's a chassis")
 			c.vendor = HP
 			c.hwtype = Chassis
 			return err
@@ -92,12 +90,12 @@ func (c *Connection) detect() (err error) {
 		}
 
 		if iloXML.HpBladeBlade != nil {
-			log.WithFields(log.Fields{"step": "connection", "host": c.host, "data": "It's a blade"}).Debug("Detecting vendor")
+			log.WithFields(log.Fields{"step": "connection", "host": c.host, "vendor": HP}).Debug("it's a blade")
 			c.vendor = HP
 			c.hwtype = Blade
 			return err
 		} else if iloXML.HpMP != nil && iloXML.HpBladeBlade == nil {
-			log.WithFields(log.Fields{"step": "connection", "host": c.host, "data": "It's a discrete"}).Debug("Detecting vendor")
+			log.WithFields(log.Fields{"step": "connection", "host": c.host, "vendor": HP}).Debug("it's a discrete")
 			c.vendor = HP
 			c.hwtype = Discrete
 			return err
@@ -127,8 +125,10 @@ func (c *Connection) detect() (err error) {
 		c.vendor = Dell
 
 		if strings.HasPrefix(dellJSON.AimGetProp.SysDesc, "PowerEdge M") {
+			log.WithFields(log.Fields{"step": "connection", "host": c.host, "vendor": Dell}).Debug("it's a blade")
 			c.hwtype = Blade
 		} else {
+			log.WithFields(log.Fields{"step": "connection", "host": c.host, "vendor": Dell}).Debug("it's a discrete")
 			c.hwtype = Discrete
 		}
 
@@ -142,6 +142,7 @@ func (c *Connection) detect() (err error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode == 200 {
+		log.WithFields(log.Fields{"step": "connection", "host": c.host, "vendor": Dell}).Debug("it's a chassis")
 		c.vendor = Dell
 		c.hwtype = Chassis
 		return err
@@ -155,6 +156,7 @@ func (c *Connection) detect() (err error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode == 200 {
+		log.WithFields(log.Fields{"step": "connection", "host": c.host, "vendor": Supermicro}).Debug("it's a discrete")
 		c.vendor = Supermicro
 		c.hwtype = Discrete
 		return err
