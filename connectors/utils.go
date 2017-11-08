@@ -95,7 +95,7 @@ func assetNotify(callback string) (err error) {
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Authorization", authHeader)
 
-	log.WithFields(log.Fields{"operation": "notify", "callback": callback}).Info("notifying ServerDB")
+	log.WithFields(log.Fields{"operation": "notify", "callback": callback}).Debug("notifying ServerDB")
 
 	resp, err := client.Do(req)
 	if err != nil {
