@@ -400,7 +400,7 @@ func (c *Connection) chassis(ch BmcChassis) (chassis *model.Chassis, err error) 
 	defer ch.Logout()
 
 	chassis = &model.Chassis{}
-
+	chassis.BmcAuth = true
 	chassis.Vendor = c.Vendor()
 	chassis.BmcAddress = c.host
 	chassis.Name, err = ch.Name()
