@@ -26,6 +26,8 @@ const (
 	Dell = "Dell"
 	// Supermicro is the constant that defines the vendor Supermicro
 	Supermicro = "Supermicro"
+	// Cloudline is the constant that defines the cloudlines
+	Cloudline = "Cloudline"
 	// Common is the constant of thinks we could use across multiple vendors
 	Common = "Common"
 	// Unknown is the constant that defines Unknowns vendors
@@ -59,7 +61,21 @@ func (c *Connection) detect() (err error) {
 		return err
 	}
 
-	resp, err := client.Get(fmt.Sprintf("https://%s/xmldata?item=all", c.host))
+	resp, err := client.Get(fmt.Sprintf("http://%s/res/ok.png", c.host))
+	if err != nil {
+		return err
+	}
+	io.Copy(ioutil.Discard, resp.Body)
+	defer resp.Body.Close()
+
+	if resp.StatusCode == 200 {
+		log.WithFields(log.Fields{"step": "connection", "host": c.host, "vendor": Cloudline}).Debug("it's a discrete")
+		c.vendor = Cloudline
+		c.hwtype = Discrete
+		return ErrVendorNotSupported
+	}
+
+	resp, err = client.Get(fmt.Sprintf("https://%s/xmldata?item=all", c.host))
 	if err != nil {
 		return err
 	}

@@ -19,4 +19,6 @@ var (
 	ErrRedFishEndPoint500 = errors.New("We've received 500 calling this endpoint")
 	// ErrUnableToReadData is returned when we fail to read data from a chassis or bmc
 	ErrUnableToReadData = errors.New("Unable to read data from this device")
+	// ErrVendorNotSupported is returned when we are able to identify a vendor but we won't support it
+	ErrVendorNotSupported = errors.New("Vendor not supported")
 )
