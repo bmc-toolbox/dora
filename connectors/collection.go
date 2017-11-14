@@ -174,6 +174,6 @@ func DataCollection(ips []string, source string) {
 		}
 	}
 
-	close(cc)
 	wg.Wait()
+	close(cc)
 }

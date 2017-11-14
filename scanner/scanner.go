@@ -233,6 +233,6 @@ func ScanNetworks(subnetsToScan []string, site []string) {
 		cc <- t
 	}
 
-	close(cc)
 	wg.Wait()
+	close(cc)
 }
