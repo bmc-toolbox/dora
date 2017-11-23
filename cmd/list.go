@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"gitlab.booking.com/go/dora/scanner"
 )
 
@@ -33,8 +34,12 @@ usage: dora scan list
        dora scan list 192.168.0.1
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		for _, subnet := range scanner.ListSubnets(args) {
-			fmt.Printf("subnet: %s site: %s\n", subnet.CIDR, subnet.Site)
+		if len(args) == 0 {
+			args = append(args, "all")
+		}
+
+		for _, subnet := range scanner.ListSubnets(args, viper.GetStringSlice("site")) {
+			fmt.Printf("subnet:%s site:%s\n", subnet.CIDR, subnet.Site)
 		}
 	},
 }

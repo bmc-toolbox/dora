@@ -17,6 +17,7 @@ package cmd
 import (
 	"fmt"
 	"net"
+	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -43,7 +44,7 @@ usage: dora scan
 				_, _, err := net.ParseCIDR(subnet)
 				if err != nil {
 					fmt.Println(err)
-					continue
+					os.Exit(1)
 				}
 				subnets = append(subnets, subnet)
 			}
