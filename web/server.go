@@ -8,9 +8,9 @@ import (
 	"github.com/GeertJohan/go.rice"
 	"github.com/manyminds/api2go"
 	"github.com/manyminds/api2go-adapter/gingonic"
-	"gitlab.booking.com/infra/dora/model"
-	"gitlab.booking.com/infra/dora/resource"
-	"gitlab.booking.com/infra/dora/storage"
+	"gitlab.booking.com/go/dora/model"
+	"gitlab.booking.com/go/dora/resource"
+	"gitlab.booking.com/go/dora/storage"
 
 	gin "gopkg.in/gin-gonic/gin.v1"
 )

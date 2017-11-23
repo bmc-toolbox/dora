@@ -18,7 +18,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"gitlab.booking.com/infra/dora/scanner"
+	"gitlab.booking.com/go/dora/scanner"
 )
 
 // listCmd represents the list command

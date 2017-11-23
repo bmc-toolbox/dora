@@ -7,7 +7,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/spf13/viper"
-	"gitlab.booking.com/infra/dora/model"
+	"gitlab.booking.com/go/dora/model"
 )
 
 var (

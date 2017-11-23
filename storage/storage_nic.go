@@ -2,7 +2,7 @@ package storage
 
 import (
 	"github.com/jinzhu/gorm"
-	"gitlab.booking.com/infra/dora/model"
+	"gitlab.booking.com/go/dora/model"
 )
 
 // NewNicStorage initializes the storage

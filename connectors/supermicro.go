@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	log "github.com/sirupsen/logrus"
-	"gitlab.booking.com/infra/dora/model"
+	"gitlab.booking.com/go/dora/model"
 )
 
 // SupermicroIPMI is the base structure that holds the information on queries to https://$ip/cgi/ipmi.cgi

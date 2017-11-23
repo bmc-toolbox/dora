@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	log "github.com/sirupsen/logrus"
-	"gitlab.booking.com/infra/dora/model"
-	"gitlab.booking.com/infra/dora/storage"
+	"gitlab.booking.com/go/dora/model"
+	"gitlab.booking.com/go/dora/storage"
 )
 
 // HpChassisReader holds the status and properties of a connection to a BladeSystem device

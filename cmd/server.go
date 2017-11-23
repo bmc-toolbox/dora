@@ -21,9 +21,9 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"gitlab.booking.com/infra/dora/connectors"
-	"gitlab.booking.com/infra/dora/scanner"
-	"gitlab.booking.com/infra/dora/web"
+	"gitlab.booking.com/go/dora/connectors"
+	"gitlab.booking.com/go/dora/scanner"
+	"gitlab.booking.com/go/dora/web"
 )
 
 var port int

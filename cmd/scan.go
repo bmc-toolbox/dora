@@ -20,7 +20,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"gitlab.booking.com/infra/dora/scanner"
+	"gitlab.booking.com/go/dora/scanner"
 )
 
 // scanCmd represents the scan command

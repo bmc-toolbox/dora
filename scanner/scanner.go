@@ -12,8 +12,8 @@ import (
 	"github.com/jinzhu/gorm"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"gitlab.booking.com/infra/dora/model"
-	"gitlab.booking.com/infra/dora/storage"
+	"gitlab.booking.com/go/dora/model"
+	"gitlab.booking.com/go/dora/storage"
 )
 
 const (
@@ -108,8 +108,7 @@ func scan(input <-chan ToScan, db *gorm.DB) {
 		}
 
 		log.WithFields(log.Fields{"operation": "scanning network", "subnet": subnet.CIDR, "protocol": subnet.Protocol}).Info("Scanning network")
-		cmd := exec.Command("sudo", "nmap", "-oX", "-", scanType, subnet.CIDR, "--max-parallelism=100", "-p", subnet.Ports)
-		content, err := cmd.Output()
+		content, err := exec.Command("sudo", "nmap", "-oX", "-", scanType, subnet.CIDR, "--max-parallelism=100", "-p", subnet.Ports).Output()
 		if err != nil {
 			log.WithFields(log.Fields{"operation": "scanning network", "subnet": subnet.CIDR, "protocol": subnet.Protocol}).Error(err)
 			continue

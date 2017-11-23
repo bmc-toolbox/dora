@@ -1,6 +1,6 @@
 package connectors
 
-import "gitlab.booking.com/infra/dora/model"
+import "gitlab.booking.com/go/dora/model"
 
 // Bmc represents the requirement of items to be collected a server
 type Bmc interface {

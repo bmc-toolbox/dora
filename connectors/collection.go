@@ -8,8 +8,8 @@ import (
 	"github.com/jinzhu/gorm"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"gitlab.booking.com/infra/dora/model"
-	"gitlab.booking.com/infra/dora/storage"
+	"gitlab.booking.com/go/dora/model"
+	"gitlab.booking.com/go/dora/storage"
 )
 
 var (

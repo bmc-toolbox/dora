@@ -12,7 +12,7 @@ import (
 	"strings"
 
 	log "github.com/sirupsen/logrus"
-	"gitlab.booking.com/infra/dora/model"
+	"gitlab.booking.com/go/dora/model"
 )
 
 // IloReader holds the status and properties of a connection to an iLO device

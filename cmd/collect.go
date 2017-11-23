@@ -20,7 +20,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"gitlab.booking.com/infra/dora/connectors"
+	"gitlab.booking.com/go/dora/connectors"
 )
 
 // collectCmd represents the collect command

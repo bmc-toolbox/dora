@@ -9,8 +9,8 @@ import (
 	"strings"
 
 	log "github.com/sirupsen/logrus"
-	"gitlab.booking.com/infra/dora/model"
-	"gitlab.booking.com/infra/dora/storage"
+	"gitlab.booking.com/go/dora/model"
+	"gitlab.booking.com/go/dora/storage"
 )
 
 const (

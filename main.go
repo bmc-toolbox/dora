@@ -15,7 +15,7 @@
 package main
 
 import (
-	"gitlab.booking.com/infra/dora/cmd"
+	"gitlab.booking.com/go/dora/cmd"
 )
 
 func main() {
