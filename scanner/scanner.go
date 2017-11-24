@@ -16,11 +16,6 @@ import (
 	"gitlab.booking.com/go/dora/storage"
 )
 
-const (
-	nmapTCPPorts = "22,443"
-	nmapUDPPorts = "623"
-)
-
 // Kea is the main entry for parsing the kea config file
 type Kea struct {
 	Dhcp4 *Dhcp4 `json:"Dhcp4"`
@@ -43,24 +38,32 @@ type OptionData struct {
 	Name string `json:"name"`
 }
 
+// ToScan payload message to scan a network
 type ToScan struct {
-	CIDR     string
-	Ports    string
+	CIDR string
+	Site string
+}
+
+type nmapOptions struct {
 	Protocol string
-	Site     string
+	Ports    string
+	ScanType string
 }
 
-// Verify supported methods to load subnet
-func SupportedSources(source string) bool {
-	switch source {
-	case "kea":
-		return true
-	default:
-		return false
-	}
+var scanOptions = []nmapOptions{
+	nmapOptions{
+		Protocol: "tcp",
+		ScanType: "-sT",
+		Ports:    "22,443",
+	},
+	nmapOptions{
+		Protocol: "udp",
+		ScanType: "-sU",
+		Ports:    "623",
+	},
 }
 
-// LoadSubnets from kea.cfg
+// LoadSubnetsFromKea from kea.cfg
 func LoadSubnetsFromKea(content []byte) (subnets []*ToScan) {
 	keaData := &Kea{}
 	err := json.Unmarshal(content, &keaData)
@@ -91,49 +94,39 @@ func LoadSubnetsFromKea(content []byte) (subnets []*ToScan) {
 	return subnets
 }
 
-func scan(input <-chan ToScan, db *gorm.DB) {
+func scan(input <-chan *ToScan, db *gorm.DB) {
 	ScannedBy := viper.GetString("scanner.scanned_by")
-
 	for subnet := range input {
-		scanType := ""
+		for _, s := range scanOptions {
+			log.WithFields(log.Fields{"operation": "scanning network", "subnet": subnet.CIDR, "protocol": s.Protocol}).Info("Scanning network")
+			content, err := exec.Command("sudo", "nmap", "-oX", "-", s.ScanType, subnet.CIDR, "-p", s.Ports).CombinedOutput()
+			if err != nil {
+				log.WithFields(log.Fields{"operation": "scanning network", "subnet": subnet.CIDR, "protocol": s.Protocol}).Error(err)
+				continue
+			}
 
-		switch subnet.Protocol {
-		case "udp":
-			scanType = "-sU"
-		case "tcp":
-			scanType = "-sT"
-		default:
-			log.WithFields(log.Fields{"operation": "scanning network", "subnet": subnet.CIDR, "protocol": subnet.Protocol}).Warn(ErrInvalidProtocol)
-			continue
-		}
+			nmap, err := nmapParse(content)
+			if err != nil {
+				log.WithFields(log.Fields{"operation": "scanning network", "subnet": subnet.CIDR, "protocol": s.Protocol}).Error(err)
+				continue
+			}
+			for _, host := range nmap.Hosts {
+				ip := host.Addresses[0].Addr
+				for _, port := range host.Ports {
+					sp := model.ScannedPort{
+						IP:        ip,
+						CIDR:      subnet.CIDR,
+						Port:      port.PortID,
+						State:     port.State.State,
+						Site:      subnet.Site,
+						Protocol:  s.Protocol,
+						ScannedBy: ScannedBy,
+					}
+					sp.ID = sp.GenID()
 
-		log.WithFields(log.Fields{"operation": "scanning network", "subnet": subnet.CIDR, "protocol": subnet.Protocol}).Info("Scanning network")
-		content, err := exec.Command("sudo", "nmap", "-oX", "-", scanType, subnet.CIDR, "--max-parallelism=100", "-p", subnet.Ports).Output()
-		if err != nil {
-			log.WithFields(log.Fields{"operation": "scanning network", "subnet": subnet.CIDR, "protocol": subnet.Protocol}).Error(err)
-			continue
-		}
-
-		nmap, err := nmapParse(content)
-		if err != nil {
-			log.WithFields(log.Fields{"operation": "scanning network", "subnet": subnet.CIDR, "protocol": subnet.Protocol}).Error(err)
-			continue
-		}
-		for _, host := range nmap.Hosts {
-			ip := host.Addresses[0].Addr
-			for _, port := range host.Ports {
-				sp := model.ScannedPort{
-					IP:        ip,
-					CIDR:      subnet.CIDR,
-					Port:      port.PortID,
-					State:     port.State.State,
-					Protocol:  port.Protocol,
-					ScannedBy: ScannedBy,
-				}
-				sp.ID = sp.GenID()
-
-				if err = db.Save(&sp).Error; err != nil {
-					log.WithFields(log.Fields{"operation": "scanning host", "subnet": subnet.CIDR, "host": ip, "port": sp.Port}).Error(err)
+					if err = db.Save(&sp).Error; err != nil {
+						log.WithFields(log.Fields{"operation": "scanning host", "subnet": subnet.CIDR, "host": ip, "port": sp.Port}).Error(err)
+					}
 				}
 			}
 		}
@@ -190,21 +183,21 @@ func LoadSubnets(source string, subnetsToScan []string, site []string) (subnets 
 }
 
 // ListSubnets all or a list of given subnets
-func ListSubnets(subnetsToQuery []string) (subnets []*ToScan) {
-	return LoadSubnets(viper.GetString("scanner.subnet_source"), subnetsToQuery, []string{})
+func ListSubnets(subnetsToQuery []string, site []string) (subnets []*ToScan) {
+	return LoadSubnets(viper.GetString("scanner.subnet_source"), subnetsToQuery, site)
 }
 
 // ScanNetworks scan specific or all networks and try to find chassis, blades and servers
 func ScanNetworks(subnetsToScan []string, site []string) {
 	concurrency := viper.GetInt("scanner.concurrency")
 
-	cc := make(chan ToScan, concurrency)
+	cc := make(chan *ToScan, concurrency)
 	wg := sync.WaitGroup{}
 	db := storage.InitDB()
 
 	wg.Add(concurrency)
 	for i := 0; i < concurrency; i++ {
-		go func(input <-chan ToScan, db *gorm.DB, wg *sync.WaitGroup) {
+		go func(input <-chan *ToScan, db *gorm.DB, wg *sync.WaitGroup) {
 			defer wg.Done()
 			scan(input, db)
 		}(cc, db, &wg)
@@ -212,24 +205,8 @@ func ScanNetworks(subnetsToScan []string, site []string) {
 
 	subnets := LoadSubnets(viper.GetString("scanner.subnet_source"), subnetsToScan, site)
 
-	for _, subnet := range subnets {
-		t := ToScan{
-			CIDR:     subnet.CIDR,
-			Site:     subnet.Site,
-			Ports:    nmapTCPPorts,
-			Protocol: "tcp",
-		}
-		cc <- t
-	}
-
-	for _, subnet := range subnets {
-		t := ToScan{
-			CIDR:     subnet.CIDR,
-			Site:     subnet.Site,
-			Ports:    nmapUDPPorts,
-			Protocol: "udp",
-		}
-		cc <- t
+	for idx := range subnets {
+		cc <- subnets[idx]
 	}
 
 	close(cc)
