@@ -237,7 +237,7 @@ func (h *HpChassisReader) Blades() (blades []*model.Blade, err error) {
 							blade.BmcWEBReachable = true
 						} else if scan.Port == 22 && scan.Protocol == "tcp" && scan.State == "open" {
 							blade.BmcSSHReachable = true
-						} else if scan.Port == 623 && scan.Protocol == "udp" && scan.State == "open" {
+						} else if scan.Port == 623 && scan.Protocol == "ipmi" && scan.State == "open" {
 							blade.BmcIpmiReachable = true
 						}
 					}

@@ -281,7 +281,7 @@ func (c *Connection) blade(bmc Bmc) (blade *model.Blade, err error) {
 		if scan.Port == 22 && scan.Protocol == "tcp" && scan.State == "open" {
 			blade.BmcSSHReachable = true
 		} else if scan.Port == 443 && scan.Protocol == "tcp" && scan.State == "open" {
-			discrete.BmcWEBReachable = true
+			blade.BmcWEBReachable = true
 		} else if scan.Port == 623 && scan.Protocol == "ipmi" && scan.State == "open" {
 			blade.BmcIpmiReachable = true
 		}
