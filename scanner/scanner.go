@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
-	"os/exec"
 	"strings"
 	"sync"
 
@@ -44,22 +43,23 @@ type ToScan struct {
 	Site string
 }
 
-type nmapOptions struct {
+type scanOption struct {
 	Protocol string
-	Ports    string
-	ScanType string
+	Port     int
 }
 
-var scanOptions = []nmapOptions{
-	nmapOptions{
+var scanProfiles = []scanOption{
+	scanOption{
 		Protocol: "tcp",
-		ScanType: "-sT",
-		Ports:    "22,443",
+		Port:     22,
 	},
-	nmapOptions{
-		Protocol: "udp",
-		ScanType: "-sU",
-		Ports:    "623",
+	scanOption{
+		Protocol: "tcp",
+		Port:     443,
+	},
+	scanOption{
+		Protocol: "ipmi",
+		Port:     623,
 	},
 }
 
@@ -94,39 +94,59 @@ func LoadSubnetsFromKea(content []byte) (subnets []*ToScan) {
 	return subnets
 }
 
+func nexIP(ip net.IP) {
+	for j := len(ip) - 1; j >= 0; j-- {
+		ip[j]++
+		if ip[j] > 0 {
+			break
+		}
+	}
+}
+
+func ipsWithinASubnet(cidr string) ([]string, error) {
+	ip, ipnet, err := net.ParseCIDR(cidr)
+	if err != nil {
+		return nil, err
+	}
+
+	var ips []string
+	for ip := ip.Mask(ipnet.Mask); ipnet.Contains(ip); nexIP(ip) {
+		ips = append(ips, ip.String())
+	}
+	// remove network address and broadcast address
+	return ips[1 : len(ips)-1], nil
+}
+
 func scan(input <-chan *ToScan, db *gorm.DB) {
 	ScannedBy := viper.GetString("scanner.scanned_by")
 	for subnet := range input {
-		for _, s := range scanOptions {
-			log.WithFields(log.Fields{"operation": "scanning network", "subnet": subnet.CIDR, "protocol": s.Protocol}).Info("Scanning network")
-			content, err := exec.Command("sudo", "nmap", "-oX", "-", s.ScanType, subnet.CIDR, "-p", s.Ports).CombinedOutput()
-			if err != nil {
-				log.WithFields(log.Fields{"operation": "scanning network", "subnet": subnet.CIDR, "protocol": s.Protocol}).Error(err)
-				continue
-			}
 
-			nmap, err := nmapParse(content)
-			if err != nil {
-				log.WithFields(log.Fields{"operation": "scanning network", "subnet": subnet.CIDR, "protocol": s.Protocol}).Error(err)
-				continue
-			}
-			for _, host := range nmap.Hosts {
-				ip := host.Addresses[0].Addr
-				for _, port := range host.Ports {
-					sp := model.ScannedPort{
-						IP:        ip,
-						CIDR:      subnet.CIDR,
-						Port:      port.PortID,
-						State:     port.State.State,
-						Site:      subnet.Site,
-						Protocol:  s.Protocol,
-						ScannedBy: ScannedBy,
-					}
-					sp.ID = sp.GenID()
+		ips, err := ipsWithinASubnet(subnet.CIDR)
+		if err != nil {
+			log.WithFields(log.Fields{"operation": "subnet expansion", "subnet": subnet.CIDR}).Error(err)
+			continue
+		}
 
-					if err = db.Save(&sp).Error; err != nil {
-						log.WithFields(log.Fields{"operation": "scanning host", "subnet": subnet.CIDR, "host": ip, "port": sp.Port}).Error(err)
-					}
+		for _, s := range scanProfiles {
+			for _, ip := range ips {
+				probeStatus, err := Probe(s.Protocol, ip, s.Port)
+				if err != nil {
+					log.WithFields(log.Fields{"operation": "scanning host", "subnet": subnet.CIDR, "host": ip, "port": s.Port}).Error(err)
+				}
+
+				sp := model.ScannedPort{
+					IP:        ip,
+					CIDR:      subnet.CIDR,
+					Port:      s.Port,
+					State:     probeStatus.String(),
+					Site:      subnet.Site,
+					Protocol:  s.Protocol,
+					ScannedBy: ScannedBy,
+				}
+				sp.ID = sp.GenID()
+
+				if err = db.Save(&sp).Error; err != nil {
+					log.WithFields(log.Fields{"operation": "storing scan", "subnet": subnet.CIDR, "host": ip, "port": s.Port}).Error(err)
 				}
 			}
 		}
