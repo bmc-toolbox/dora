@@ -280,7 +280,9 @@ func (c *Connection) blade(bmc Bmc) (blade *model.Blade, err error) {
 	for _, scan := range scans {
 		if scan.Port == 22 && scan.Protocol == "tcp" && scan.State == "open" {
 			blade.BmcSSHReachable = true
-		} else if scan.Port == 623 && scan.Protocol == "udp" && (scan.State == "open|filtered" || scan.State == "open") {
+		} else if scan.Port == 443 && scan.Protocol == "tcp" && scan.State == "open" {
+			discrete.BmcWEBReachable = true
+		} else if scan.Port == 623 && scan.Protocol == "ipmi" && scan.State == "open" {
 			blade.BmcIpmiReachable = true
 		}
 	}
@@ -384,7 +386,9 @@ func (c *Connection) discrete(bmc Bmc) (discrete *model.Discrete, err error) {
 	for _, scan := range scans {
 		if scan.Port == 22 && scan.Protocol == "tcp" && scan.State == "open" {
 			discrete.BmcSSHReachable = true
-		} else if scan.Port == 623 && scan.Protocol == "udp" && (scan.State == "open|filtered" || scan.State == "open") {
+		} else if scan.Port == 443 && scan.Protocol == "tcp" && scan.State == "open" {
+			discrete.BmcWEBReachable = true
+		} else if scan.Port == 623 && scan.Protocol == "ipmi" && scan.State == "open" {
 			discrete.BmcIpmiReachable = true
 		}
 	}
