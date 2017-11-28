@@ -17,25 +17,24 @@ To make the magic of dynamic filtering work, we need to define each json field m
 
 // Chassis contains all the chassis the information we will expose across different vendors
 type Chassis struct {
-	Serial           string          `json:"serial" gorm:"primary_key"`
-	Name             string          `json:"name"`
-	BmcAddress       string          `json:"bmc_address"`
-	BmcSSHReachable  bool            `json:"bmc_ssh_reachable"`
-	BmcWEBReachable  bool            `json:"bmc_web_reachable"`
-	BmcAuth          bool            `json:"bmc_auth"`
-	Blades           []*Blade        `json:"-" gorm:"ForeignKey:ChassisSerial"`
-	StorageBlades    []*StorageBlade `json:"-" gorm:"ForeignKey:ChassisSerial"`
-	Nics             []*Nic          `json:"-" gorm:"ForeignKey:ChassisSerial"`
-	Psus             []*Psu          `json:"-" gorm:"ForeignKey:ChassisSerial"`
-	TempC            int             `json:"temp_c"`
-	PowerSupplyCount int             `json:"power_supply_count"`
-	PassThru         string          `json:"pass_thru"`
-	Status           string          `json:"status"`
-	PowerKw          float64         `json:"power_kw"`
-	Model            string          `json:"model"`
-	Vendor           string          `json:"vendor"`
-	FwVersion        string          `json:"fw_version"`
-	UpdatedAt        time.Time       `json:"updated_at"`
+	Serial          string          `json:"serial" gorm:"primary_key"`
+	Name            string          `json:"name"`
+	BmcAddress      string          `json:"bmc_address"`
+	BmcSSHReachable bool            `json:"bmc_ssh_reachable"`
+	BmcWEBReachable bool            `json:"bmc_web_reachable"`
+	BmcAuth         bool            `json:"bmc_auth"`
+	Blades          []*Blade        `json:"-" gorm:"ForeignKey:ChassisSerial"`
+	StorageBlades   []*StorageBlade `json:"-" gorm:"ForeignKey:ChassisSerial"`
+	Nics            []*Nic          `json:"-" gorm:"ForeignKey:ChassisSerial"`
+	Psus            []*Psu          `json:"-" gorm:"ForeignKey:ChassisSerial"`
+	TempC           int             `json:"temp_c"`
+	PassThru        string          `json:"pass_thru"`
+	Status          string          `json:"status"`
+	PowerKw         float64         `json:"power_kw"`
+	Model           string          `json:"model"`
+	Vendor          string          `json:"vendor"`
+	FwVersion       string          `json:"fw_version"`
+	UpdatedAt       time.Time       `json:"updated_at"`
 }
 
 // GetID to satisfy jsonapi.MarshalIdentifier interface

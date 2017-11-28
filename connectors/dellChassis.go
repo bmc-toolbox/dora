@@ -206,11 +206,6 @@ func (d *DellCmcReader) Status() (status string, err error) {
 	return status, err
 }
 
-// PowerSupplyCount returns the total count of the power supply
-func (d *DellCmcReader) PowerSupplyCount() (count int64, err error) {
-	return d.cmcJSON.DellChassis.DellChassisGroupMemberHealthBlob.DellPsuStatus.PsuCount, err
-}
-
 // FwVersion returns the current firmware version of the bmc
 func (d *DellCmcReader) FwVersion() (version string, err error) {
 	return d.cmcJSON.DellChassis.DellChassisGroupMemberHealthBlob.DellChassisStatus.ROCmcFwVersionString, err
