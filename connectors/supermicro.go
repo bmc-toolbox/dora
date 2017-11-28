@@ -256,6 +256,10 @@ func (s *SupermicroReader) Serial() (serial string, err error) {
 		return serial, err
 	}
 
+	if ipmi.FruInfo == nil || ipmi.FruInfo.Chassis == nil {
+		return serial, ErrInvalidSerial
+	}
+
 	if strings.HasPrefix(ipmi.FruInfo.Chassis.SerialNum, "S") {
 		serial = strings.TrimSpace(fmt.Sprintf("%s_%s", strings.TrimSpace(ipmi.FruInfo.Chassis.SerialNum), strings.TrimSpace(ipmi.FruInfo.Board.SerialNum)))
 	} else {
