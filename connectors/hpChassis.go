@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 	"gitlab.booking.com/go/dora/model"
 	"gitlab.booking.com/go/dora/storage"
 )
@@ -243,7 +244,9 @@ func (h *HpChassisReader) Blades() (blades []*model.Blade, err error) {
 					}
 
 					if blade.BmcWEBReachable {
-						ilo, err := NewIloReader(&blade.BmcAddress, h.username, h.password)
+						bmcUser := viper.GetString("bmc_user")
+						bmcPass := viper.GetString("bmc_pass")
+						ilo, err := NewIloReader(&blade.BmcAddress, &bmcUser, &bmcPass)
 						if err == nil {
 							blade.Nics, _ = ilo.Nics()
 							err = ilo.Login()

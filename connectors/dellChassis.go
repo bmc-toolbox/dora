@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 	"gitlab.booking.com/go/dora/model"
 	"gitlab.booking.com/go/dora/storage"
 )
@@ -415,7 +416,9 @@ func (d *DellCmcReader) Blades() (blades []*model.Blade, err error) {
 				}
 
 				if blade.BmcWEBReachable {
-					idrac, err := NewIDracReader(&blade.BmcAddress, d.username, d.password)
+					bmcUser := viper.GetString("bmc_user")
+					bmcPass := viper.GetString("bmc_pass")
+					idrac, err := NewIDracReader(&blade.BmcAddress, &bmcUser, &bmcPass)
 					if err != nil {
 						log.WithFields(log.Fields{"operation": "opening ilo connection", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
 					} else {
