@@ -70,11 +70,11 @@ func (i *IDracReader) Login() (err error) {
 		return err
 	}
 
-	if iDracAuth.AuthResult == 1 {
+	stTemp := strings.Split(iDracAuth.ForwardURL, ",")
+	if len(stTemp) != 2 {
 		return ErrLoginFailed
 	}
 
-	stTemp := strings.Split(iDracAuth.ForwardURL, ",")
 	i.st1 = strings.TrimLeft(stTemp[0], "index.html?ST1=")
 	i.st2 = strings.TrimLeft(stTemp[1], "ST2=")
 
