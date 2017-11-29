@@ -10,6 +10,7 @@ import (
 	"net/http/cookiejar"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -113,4 +114,8 @@ func assetNotify(callback string) (err error) {
 	}
 
 	return err
+}
+
+func standardizeProcessorName(name string) string {
+	return strings.ToLower(strings.TrimSpace(strings.TrimSuffix(strings.Split(name, "@")[0], "0")))
 }

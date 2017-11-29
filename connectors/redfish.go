@@ -306,10 +306,10 @@ func (r *RedFishReader) CPU() (cpu string, cpuCount int, coreCount int, hyperthr
 			DumpInvalidPayload(*r.ip, payload)
 			return cpu, cpuCount, coreCount, hyperthreadCount, err
 		}
-		return strings.ToLower(strings.TrimSpace(strings.Split(redFishEntry.ProcessorSummary.Model, "@")[0])), redFishCPUEntry.MembersOdataCount, redFishCPU.TotalCores, redFishCPU.TotalThreads, err
+		return standardizeProcessorName(redFishEntry.ProcessorSummary.Model), redFishCPUEntry.MembersOdataCount, redFishCPU.TotalCores, redFishCPU.TotalThreads, err
 	}
 
-	return strings.ToLower(strings.TrimSpace(strings.Split(redFishEntry.ProcessorSummary.Model, "@")[0])), redFishEntry.ProcessorSummary.Count, redFishCPU.TotalCores, redFishCPU.TotalThreads, err
+	return standardizeProcessorName(redFishEntry.ProcessorSummary.Model), redFishEntry.ProcessorSummary.Count, redFishCPU.TotalCores, redFishCPU.TotalThreads, err
 }
 
 // BiosVersion returns the current version of the bios
