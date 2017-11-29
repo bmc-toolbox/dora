@@ -39,9 +39,13 @@ func collect(input <-chan string, source *string, db *gorm.DB) {
 			if err == ErrLoginFailed && viper.GetBool("collector.try_default_credentials") {
 				c.username = viper.GetString(fmt.Sprintf("collector.default.%s.username", strings.ToLower(c.Vendor())))
 				c.password = viper.GetString(fmt.Sprintf("collector.default.%s.password", strings.ToLower(c.Vendor())))
+				if c.username == "" || c.password == "" {
+					log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType(), "vendor": c.Vendor()}).Debug("Default password not found")
+					continue
+				}
 				data, err = c.Collect()
 				if err != nil {
-					log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType(), "error": err}).Error("collecting data")
+					log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType()}).Error(err)
 					continue
 				}
 			} else {
