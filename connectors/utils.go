@@ -117,5 +117,5 @@ func assetNotify(callback string) (err error) {
 }
 
 func standardizeProcessorName(name string) string {
-	return strings.ToLower(strings.TrimSpace(strings.TrimSuffix(strings.Split(name, "@")[0], "0 ")))
+	return strings.ToLower(strings.TrimSuffix(strings.TrimSpace(strings.Split(name, "@")[0]), " 0"))
 }
