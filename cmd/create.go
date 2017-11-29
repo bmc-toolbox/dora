@@ -47,14 +47,19 @@ collector:
 	dump_invalid_payloads: true
 	dump_invalid_payload_path: /tmp/dora/dumps
 
-	default_usernames:
-    dell:
-      - username: root
-		password: calvin
+	try_default_credentials: false
+	default:
+      dell:
+        username: Priest
+	    password: Wololo
 		
-	hp:
-	  - username: admin
-	    password: admin
+	  supermicro:
+	    username: Priest
+	    password: Wololo
+  
+	  hp:
+	    username: Priest
+        password: Wololo
 
 
 scanner:
