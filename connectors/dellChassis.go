@@ -334,6 +334,7 @@ func (d *DellCmcReader) StorageBlades() (storageBlades []*model.StorageBlade, er
 	return storageBlades, err
 }
 
+// Blades returns all StorageBlades found in this chassis
 func (d *DellCmcReader) Blades() (blades []*model.Blade, err error) {
 	db := storage.InitDB()
 	for _, dellBlade := range d.cmcJSON.DellChassis.DellChassisGroupMemberHealthBlob.DellBlades {
