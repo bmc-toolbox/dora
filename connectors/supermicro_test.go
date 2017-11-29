@@ -288,7 +288,7 @@ func TestSupermicroMemory(t *testing.T) {
 }
 
 func TestSupermicroCPU(t *testing.T) {
-	expectedAnswerCPUType := "Intel(R) Xeon(R) CPU E5-2630 v4 @ 2.20GHz"
+	expectedAnswerCPUType := "intel(r) xeon(r) cpu e5-2630 v4"
 	expectedAnswerCPUCount := 2
 	expectedAnswerCore := 10
 	expectedAnswerHyperthread := 10

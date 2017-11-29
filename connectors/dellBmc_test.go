@@ -5393,7 +5393,7 @@ func TestDellIdracMemory(t *testing.T) {
 }
 
 func TestDellIdracCPU(t *testing.T) {
-	expectedAnswerCPUType := "Intel(R) Xeon(R) CPU E5-2690 v4 @ 2.60GHz"
+	expectedAnswerCPUType := "intel(r) xeon(r) cpu e5-2690 v4"
 	expectedAnswerCPUCount := 2
 	expectedAnswerCore := 14
 	expectedAnswerHyperthread := 28

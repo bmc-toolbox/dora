@@ -394,7 +394,7 @@ func (i *IDracReader) CPU() (cpu string, cpuCount int, coreCount int, hyperthrea
 				hasHT = 2
 			}
 		}
-		return strings.TrimSpace(proc.Brand), len(dellBladeProc.Proccessors), proc.CoreCount, proc.CoreCount * hasHT, err
+		return strings.ToLower(strings.TrimSpace(strings.Split(proc.Brand, "@")[0])), len(dellBladeProc.Proccessors), proc.CoreCount, proc.CoreCount * hasHT, err
 	}
 
 	return cpu, cpuCount, coreCount, hyperthreadCount, err

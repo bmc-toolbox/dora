@@ -219,7 +219,7 @@ func (i *IloReader) CPU() (cpu string, cpuCount int, coreCount int, hyperthreadC
 	}
 
 	for _, proc := range hpProcData.Processors {
-		return strings.TrimSpace(proc.ProcName), len(hpProcData.Processors), proc.ProcNumCores, proc.ProcNumThreads, err
+		return strings.ToLower(strings.TrimSpace(strings.Split(proc.ProcName, "@")[0])), len(hpProcData.Processors), proc.ProcNumCores, proc.ProcNumThreads, err
 	}
 
 	return cpu, cpuCount, coreCount, hyperthreadCount, err

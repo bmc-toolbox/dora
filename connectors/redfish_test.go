@@ -326,7 +326,7 @@ func TestRedfishCPU(t *testing.T) {
 				coreCount        int
 				hyperthreadCount int
 			}{
-				"Intel(R) Xeon(R) CPU E5-2620 v4 @ 2.10GHz",
+				"intel(r) xeon(r) cpu e5-2620 v4",
 				2,
 				8,
 				16,
@@ -343,7 +343,7 @@ func TestRedfishCPU(t *testing.T) {
 				coreCount        int
 				hyperthreadCount int
 			}{
-				"Intel(R) Xeon(R) CPU E5-2620 v3 @ 2.40GHz",
+				"intel(r) xeon(r) cpu e5-2620 v3",
 				2,
 				6,
 				12,
@@ -360,7 +360,7 @@ func TestRedfishCPU(t *testing.T) {
 				coreCount        int
 				hyperthreadCount int
 			}{
-				"Intel(R) Xeon(R) processor",
+				"intel(r) xeon(r) processor",
 				2,
 				8,
 				16,

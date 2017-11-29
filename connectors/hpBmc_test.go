@@ -312,7 +312,7 @@ func TestHpIloMemory(t *testing.T) {
 }
 
 func TestHpIloCPU(t *testing.T) {
-	expectedAnswerCPUType := "Intel(R) Xeon(R) CPU E5-2620 v3 @ 2.40GHz"
+	expectedAnswerCPUType := "intel(r) xeon(r) cpu e5-2620 v3"
 	expectedAnswerCPUCount := 2
 	expectedAnswerCore := 6
 	expectedAnswerHyperthread := 12

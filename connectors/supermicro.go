@@ -341,7 +341,7 @@ func (s *SupermicroReader) Memory() (mem int, err error) {
 func (s *SupermicroReader) CPU() (cpu string, cpuCount int, coreCount int, hyperthreadCount int, err error) {
 	ipmi, err := s.query("SMBIOS_INFO.XML=(0,0)")
 	for _, entry := range ipmi.CPU {
-		cpu = entry.Version
+		cpu = strings.ToLower(strings.TrimSpace(strings.Split(entry.Version, "@")[0]))
 		cpuCount = len(ipmi.CPU)
 
 		coreCount, err = strconv.Atoi(entry.Core)
