@@ -55,7 +55,7 @@ usage: dora server
 				for {
 					time.Sleep(sleepFor * time.Minute)
 					scanner.ScanNetworks([]string{"all"}, viper.GetStringSlice("site"))
-					connectors.DataCollection([]string{"all"}, "cli")
+					connectors.DataCollection([]string{"all"}, "service")
 				}
 			}(viper.GetDuration("collector.scheduler.interval"))
 		}
