@@ -61,8 +61,8 @@ var (
 			<IPMI>
 			  <BIOS VENDOR="American Megatrends Inc." VER="2.0" REL_DATE="12/17/2015"/>
 			  <SYSTEM MANUFACTURER="Supermicro" PN="SYS-F618H6-FTPTL+" SN="A19627226A05569" SKUN="Default string"/>
-			  <CPU TYPE="03h" SPEED="2200 MHz" PROC_UPGRADE="2bh" CORE="10" CORE_ENABLED="10" SOCKET="CPU2" MANUFACTURER="Intel" VER="Intel(R) Xeon(R) CPU E5-2630 v4 @ 2.20GHz"/>
-			  <CPU TYPE="03h" SPEED="2200 MHz" PROC_UPGRADE="2bh" CORE="10" CORE_ENABLED="10" SOCKET="CPU1" MANUFACTURER="Intel" VER="Intel(R) Xeon(R) CPU E5-2630 v4 @ 2.20GHz"/>
+			  <CPU TYPE="03h" SPEED="2200 MHz" PROC_UPGRADE="2bh" CORE="10" CORE_ENABLED="10" SOCKET="CPU2" MANUFACTURER="Intel" VER="Intel(R) Xeon(R) CPU E5-2630 0 @ 2.20GHz"/>
+			  <CPU TYPE="03h" SPEED="2200 MHz" PROC_UPGRADE="2bh" CORE="10" CORE_ENABLED="10" SOCKET="CPU1" MANUFACTURER="Intel" VER="Intel(R) Xeon(R) CPU E5-2630 0 @ 2.20GHz"/>
 			  <DIMM TYPE="1ah" SPEED="2133 MHz" CFG_SPEED="2133 MHz" SIZE="16384 MB" LOCATION="P2-DIMMH1" SN="10D12481" PN="HMA42GR7MFR4N-TF   " BANK_LOCATION="P1_Node1_Channel3_Dimm0" ASSET="P2-DIMMH1_AssetTag (date:15/40)" MANUFACTURER="Hynix Semiconductor"/>
 			  <DIMM TYPE="1ah" SPEED="2133 MHz" CFG_SPEED="2133 MHz" SIZE="16384 MB" LOCATION="P2-DIMMG1" SN="10D12494" PN="HMA42GR7MFR4N-TF   " BANK_LOCATION="P1_Node1_Channel2_Dimm0" ASSET="P2-DIMMG1_AssetTag (date:15/40)" MANUFACTURER="Hynix Semiconductor"/>
 			  <DIMM TYPE="1ah" SPEED="2133 MHz" CFG_SPEED="2133 MHz" SIZE="16384 MB" LOCATION="P2-DIMMF1" SN="10D1247D" PN="HMA42GR7MFR4N-TF   " BANK_LOCATION="P1_Node1_Channel1_Dimm0" ASSET="P2-DIMMF1_AssetTag (date:15/40)" MANUFACTURER="Hynix Semiconductor"/>
@@ -288,7 +288,7 @@ func TestSupermicroMemory(t *testing.T) {
 }
 
 func TestSupermicroCPU(t *testing.T) {
-	expectedAnswerCPUType := "intel(r) xeon(r) cpu e5-2630 v4"
+	expectedAnswerCPUType := "intel(r) xeon(r) cpu e5-2630"
 	expectedAnswerCPUCount := 2
 	expectedAnswerCore := 10
 	expectedAnswerHyperthread := 10
