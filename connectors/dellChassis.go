@@ -235,6 +235,11 @@ func (d *DellCmcReader) Nics() (nics []*model.Nic, err error) {
 	return nics, err
 }
 
+// IsActive returns health string status from the bmc
+func (d *DellCmcReader) IsActive() bool {
+	return true
+}
+
 // PassThru returns the type of switch we have for this chassis
 func (d *DellCmcReader) PassThru() (passthru string, err error) {
 	passthru = "1G"

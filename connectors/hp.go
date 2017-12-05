@@ -69,6 +69,7 @@ type HpRimp struct {
 // HpManager hold the information of the manager board of the chassis
 type HpManager struct {
 	MgmtIPAddr string `xml:" MGMTIPADDR,omitempty"`
+	Role       string `xml:" ROLE,omitempty"`
 	MacAddr    string `xml:" MACADDR,omitempty"`
 	Status     string `xml:" STATUS,omitempty"`
 	Name       string `xml:" NAME,omitempty"`

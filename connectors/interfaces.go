@@ -36,6 +36,7 @@ type BmcChassis interface {
 	Psus() ([]*model.Psu, error)
 	Serial() (string, error)
 	Status() (string, error)
+	IsActive() bool
 	StorageBlades() ([]*model.StorageBlade, error)
 	TempC() (int, error)
 }

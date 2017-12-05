@@ -1808,7 +1808,7 @@ var (
 							<BAY>
 								<CONNECTION>1</CONNECTION>
 							</BAY>
-							<MGMTIPADDR>10.193.251.22</MGMTIPADDR>
+							<MGMTIPADDR>127.0.0.1</MGMTIPADDR>
 							<NAME>OA-1C98EC1F8273</NAME>
 							<ROLE>ACTIVE</ROLE>
 							<STATUS>OK</STATUS>
@@ -2673,6 +2673,23 @@ func TestHpChassisPsu(t *testing.T) {
 		if psu.Serial != expectedAnswer[pos].Serial || psu.CapacityKw != expectedAnswer[pos].CapacityKw || psu.PowerKw != expectedAnswer[pos].PowerKw || psu.Status != expectedAnswer[pos].Status || psu.ChassisSerial != expectedAnswer[pos].ChassisSerial {
 			t.Errorf("Expected answer %v: found %v", expectedAnswer[pos], psu)
 		}
+	}
+
+	hpChassisTeardown()
+}
+
+func TestHpChassisRole(t *testing.T) {
+	expectedAnswer := true
+
+	chassis, err := hpChassisSetup()
+	if err != nil {
+		t.Fatalf("Found errors during the test hpChassisSetup %v", err)
+	}
+
+	answer := chassis.IsActive()
+
+	if answer != expectedAnswer {
+		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
 	}
 
 	hpChassisTeardown()

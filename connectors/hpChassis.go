@@ -135,6 +135,16 @@ func (h *HpChassisReader) Status() (status string, err error) {
 	return h.hpRimp.HpInfra2.Status, err
 }
 
+// IsActive returns health string status from the bmc
+func (h *HpChassisReader) IsActive() bool {
+	for _, manager := range h.hpRimp.HpInfra2.HpManagers {
+		if manager.MgmtIPAddr == strings.Split(*h.ip, ":")[0] && manager.Role == "ACTIVE" {
+			return true
+		}
+	}
+	return false
+}
+
 // FwVersion returns the current firmware version of the bmc
 func (h *HpChassisReader) FwVersion() (version string, err error) {
 	return h.hpRimp.HpMP.Fwri, err
