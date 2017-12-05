@@ -398,7 +398,7 @@ func (c *Connection) discrete(bmc Bmc) (discrete *model.Discrete, err error) {
 
 func (c *Connection) chassis(ch BmcChassis) (chassis *model.Chassis, err error) {
 	if !ch.IsActive() {
-		log.WithFields(log.Fields{"operation": "chassis connection": c.host, "vendor": c.Vendor(), "type": c.HwType()}).Debug("Skipping standby chassis")
+		log.WithFields(log.Fields{"operation": "chassis connection", "ip": c.host, "vendor": c.Vendor(), "type": c.HwType()}).Debug("Skipping standby chassis")
 		return chassis, err
 	}
 
