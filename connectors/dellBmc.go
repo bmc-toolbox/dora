@@ -16,8 +16,8 @@ import (
 	"gitlab.booking.com/go/dora/model"
 )
 
-// IDracReader holds the status and properties of a connection to an iDrac device
-type IDracReader struct {
+// IDrac8Reader holds the status and properties of a connection to an iDrac device
+type IDrac8Reader struct {
 	ip             *string
 	username       *string
 	password       *string
@@ -27,18 +27,18 @@ type IDracReader struct {
 	iDracInventory *IDracInventory
 }
 
-// NewIDracReader returns a new IloReader ready to be used
-func NewIDracReader(ip *string, username *string, password *string) (iDrac *IDracReader, err error) {
+// NewIDrac8Reader returns a new IloReader ready to be used
+func NewIDrac8Reader(ip *string, username *string, password *string) (iDrac *IDrac8Reader, err error) {
 	client, err := buildClient()
 	if err != nil {
 		return iDrac, err
 	}
 
-	return &IDracReader{ip: ip, username: username, password: password, client: client}, err
+	return &IDrac8Reader{ip: ip, username: username, password: password, client: client}, err
 }
 
 // Login initiates the connection to a bmc device
-func (i *IDracReader) Login() (err error) {
+func (i *IDrac8Reader) Login() (err error) {
 	log.WithFields(log.Fields{"step": "bmc connection", "vendor": Dell, "ip": *i.ip}).Debug("connecting to bmc")
 
 	data := fmt.Sprintf("user=%s&password=%s", *i.username, *i.password)
@@ -87,7 +87,7 @@ func (i *IDracReader) Login() (err error) {
 }
 
 // loadHwData load the full hardware information from the iDrac
-func (i *IDracReader) loadHwData() (err error) {
+func (i *IDrac8Reader) loadHwData() (err error) {
 	payload, err := i.get("sysmgmt/2012/server/inventory/hardware", nil)
 	if err != nil {
 		return err
@@ -110,7 +110,7 @@ func (i *IDracReader) loadHwData() (err error) {
 }
 
 // get calls a given json endpoint of the ilo and returns the data
-func (i *IDracReader) get(endpoint string, extraHeaders *map[string]string) (payload []byte, err error) {
+func (i *IDrac8Reader) get(endpoint string, extraHeaders *map[string]string) (payload []byte, err error) {
 	log.WithFields(log.Fields{"step": "bmc connection", "vendor": Dell, "ip": *i.ip, "endpoint": endpoint}).Debug("retrieving data from bmc")
 
 	bmcURL := fmt.Sprintf("https://%s", *i.ip)
@@ -155,7 +155,7 @@ func (i *IDracReader) get(endpoint string, extraHeaders *map[string]string) (pay
 }
 
 // Nics returns all found Nics in the device
-func (i *IDracReader) Nics() (nics []*model.Nic, err error) {
+func (i *IDrac8Reader) Nics() (nics []*model.Nic, err error) {
 	for _, component := range i.iDracInventory.Component {
 		if component.Classname == "DCIM_NICView" {
 			for _, property := range component.Properties {
@@ -200,7 +200,7 @@ func (i *IDracReader) Nics() (nics []*model.Nic, err error) {
 }
 
 // Serial returns the device serial
-func (i *IDracReader) Serial() (serial string, err error) {
+func (i *IDrac8Reader) Serial() (serial string, err error) {
 	for _, component := range i.iDracInventory.Component {
 		if component.Classname == "DCIM_SystemView" {
 			for _, property := range component.Properties {
@@ -214,12 +214,12 @@ func (i *IDracReader) Serial() (serial string, err error) {
 }
 
 // Status returns health string status from the bmc
-func (i *IDracReader) Status() (serial string, err error) {
+func (i *IDrac8Reader) Status() (serial string, err error) {
 	return "NotSupported", err
 }
 
 // PowerKw returns the current power usage in Kw
-func (i *IDracReader) PowerKw() (power float64, err error) {
+func (i *IDrac8Reader) PowerKw() (power float64, err error) {
 	payload, err := i.get("data?get=powermonitordata", nil)
 	if err != nil {
 		return power, err
@@ -244,7 +244,7 @@ func (i *IDracReader) PowerKw() (power float64, err error) {
 }
 
 // BiosVersion returns the current version of the bios
-func (i *IDracReader) BiosVersion() (version string, err error) {
+func (i *IDrac8Reader) BiosVersion() (version string, err error) {
 	for _, component := range i.iDracInventory.Component {
 		if component.Classname == "DCIM_SystemView" {
 			for _, property := range component.Properties {
@@ -259,7 +259,7 @@ func (i *IDracReader) BiosVersion() (version string, err error) {
 }
 
 // Name returns the name of this server from the bmc point of view
-func (i *IDracReader) Name() (name string, err error) {
+func (i *IDrac8Reader) Name() (name string, err error) {
 	for _, component := range i.iDracInventory.Component {
 		if component.Classname == "DCIM_SystemView" {
 			for _, property := range component.Properties {
@@ -274,7 +274,7 @@ func (i *IDracReader) Name() (name string, err error) {
 }
 
 // BmcVersion returns the version of the bmc we are running
-func (i *IDracReader) BmcVersion() (bmcVersion string, err error) {
+func (i *IDrac8Reader) BmcVersion() (bmcVersion string, err error) {
 	for _, component := range i.iDracInventory.Component {
 		if component.Classname == "DCIM_iDRACCardView" {
 			for _, property := range component.Properties {
@@ -288,7 +288,7 @@ func (i *IDracReader) BmcVersion() (bmcVersion string, err error) {
 }
 
 // Model returns the device model
-func (i *IDracReader) Model() (model string, err error) {
+func (i *IDrac8Reader) Model() (model string, err error) {
 	for _, component := range i.iDracInventory.Component {
 		if component.Classname == "DCIM_SystemView" {
 			for _, property := range component.Properties {
@@ -302,12 +302,12 @@ func (i *IDracReader) Model() (model string, err error) {
 }
 
 // BmcType returns the type of bmc we are talking to
-func (i *IDracReader) BmcType() (bmcType string, err error) {
-	return "iDrac", err
+func (i *IDrac8Reader) BmcType() (bmcType string, err error) {
+	return "iDrac8", err
 }
 
 // License returns the bmc license information
-func (i *IDracReader) License() (name string, licType string, err error) {
+func (i *IDrac8Reader) License() (name string, licType string, err error) {
 	extraHeaders := &map[string]string{
 		"X_SYSMGMT_OPTIMIZE": "true",
 	}
@@ -331,7 +331,7 @@ func (i *IDracReader) License() (name string, licType string, err error) {
 }
 
 // Memory return the total amount of memory of the server
-func (i *IDracReader) Memory() (mem int, err error) {
+func (i *IDrac8Reader) Memory() (mem int, err error) {
 	for _, component := range i.iDracInventory.Component {
 		if component.Classname == "DCIM_SystemView" {
 			for _, property := range component.Properties {
@@ -349,7 +349,7 @@ func (i *IDracReader) Memory() (mem int, err error) {
 }
 
 // TempC returns the current temperature of the machine
-func (i *IDracReader) TempC() (temp int, err error) {
+func (i *IDrac8Reader) TempC() (temp int, err error) {
 	extraHeaders := &map[string]string{
 		"X_SYSMGMT_OPTIMIZE": "true",
 	}
@@ -370,7 +370,7 @@ func (i *IDracReader) TempC() (temp int, err error) {
 }
 
 // CPU return the cpu, cores and hyperthreads the server
-func (i *IDracReader) CPU() (cpu string, cpuCount int, coreCount int, hyperthreadCount int, err error) {
+func (i *IDrac8Reader) CPU() (cpu string, cpuCount int, coreCount int, hyperthreadCount int, err error) {
 	extraHeaders := &map[string]string{
 		"X_SYSMGMT_OPTIMIZE": "true",
 	}
@@ -401,7 +401,7 @@ func (i *IDracReader) CPU() (cpu string, cpuCount int, coreCount int, hyperthrea
 }
 
 // Logout logs out and close the bmc connection
-func (i *IDracReader) Logout() (err error) {
+func (i *IDrac8Reader) Logout() (err error) {
 	log.WithFields(log.Fields{"step": "bmc connection", "vendor": Dell, "ip": *i.ip}).Debug("logout from bmc")
 
 	resp, err := i.client.Get(fmt.Sprintf("https://%s/data/logout", *i.ip))
@@ -415,7 +415,7 @@ func (i *IDracReader) Logout() (err error) {
 }
 
 // IsBlade returns if the current hardware is a blade or not
-func (i *IDracReader) IsBlade() (isBlade bool, err error) {
+func (i *IDrac8Reader) IsBlade() (isBlade bool, err error) {
 	model, err := i.Model()
 	if err != nil {
 		return isBlade, err
@@ -429,7 +429,7 @@ func (i *IDracReader) IsBlade() (isBlade bool, err error) {
 }
 
 // Psus returns a list of psus installed on the device
-func (i *IDracReader) Psus() (psus []*model.Psu, err error) {
+func (i *IDrac8Reader) Psus() (psus []*model.Psu, err error) {
 	payload, err := i.get("data?get=powerSupplies", nil)
 	if err != nil {
 		return psus, err

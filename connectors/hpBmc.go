@@ -127,10 +127,14 @@ func (i *IloReader) Model() (model string, err error) {
 // BmcType returns the type of bmc we are talking to
 func (i *IloReader) BmcType() (bmcType string, err error) {
 	switch i.hpRimpBlade.HpMP.Pn {
-	case "Integrated Lights-Out 4 (iLO 4)":
-		return "iLO4", err
+	case "Integrated Lights-Out 2 (iLO 2)":
+		return Ilo2, err
 	case "Integrated Lights-Out 3 (iLO 3)":
-		return "iLO3", err
+		return Ilo3, err
+	case "Integrated Lights-Out 4 (iLO 4)":
+		return Ilo4, err
+	case "Integrated Lights-Out 5 (iLO 5)":
+		return Ilo5, err
 	default:
 		return i.hpRimpBlade.HpMP.Pn, err
 	}

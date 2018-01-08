@@ -423,7 +423,7 @@ func (d *DellCmcReader) Blades() (blades []*model.Blade, err error) {
 				if blade.BmcWEBReachable {
 					bmcUser := viper.GetString("bmc_user")
 					bmcPass := viper.GetString("bmc_pass")
-					idrac, err := NewIDracReader(&blade.BmcAddress, &bmcUser, &bmcPass)
+					idrac, err := NewIDrac8Reader(&blade.BmcAddress, &bmcUser, &bmcPass)
 					if err != nil {
 						log.WithFields(log.Fields{"operation": "opening ilo connection", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
 					} else {

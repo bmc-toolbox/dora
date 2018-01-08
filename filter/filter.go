@@ -93,7 +93,7 @@ func (f *Filters) BuildQuery(m interface{}) (query string, err error) {
 				} else {
 					query = fmt.Sprintf("%s and %s %s ('%s')", query, structJSONMemberName, queryType, strings.Join(values, "', '"))
 				}
-			case reflect.Bool, reflect.Int:
+			case reflect.Bool, reflect.Int, reflect.Float64, reflect.Float32:
 				if query == "" {
 					query = fmt.Sprintf("%s %s (%s)", structJSONMemberName, queryType, strings.Join(values, ", "))
 				} else {

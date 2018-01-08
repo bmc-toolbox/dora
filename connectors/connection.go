@@ -32,6 +32,23 @@ const (
 	Common = "Common"
 	// Unknown is the constant that defines Unknowns vendors
 	Unknown = "Unknown"
+
+	// BMC constants
+
+	// IDrac8 is the constant for iDRAC8 bmc
+	IDrac8 = "iDRAC8"
+	// IDrac9 is the constant for iDRAC9 bmc
+	IDrac9 = "iDRAC9"
+	// Ilo2 is the constant for Ilo2 bmc
+	Ilo2 = "iLO2"
+	// Ilo3 is the constant for iLO3 bmc
+	Ilo3 = "iLO3"
+	// Ilo4 is the constant for iLO4 bmc
+	Ilo4 = "iLO4"
+	// Ilo5 is the constant for iLO5 bmc
+	Ilo5 = "iLO5"
+	//AtenSM is the constant for AtenSM bmc
+	AtenSM = "AtenSM"
 )
 
 // Connection is used to connect and later discover the hardware information we have for each vendor
@@ -41,11 +58,17 @@ type Connection struct {
 	host     string
 	vendor   string
 	hwtype   string
+	bmcType  string
 }
 
 // Vendor returns the vendor of the current connection
 func (c *Connection) Vendor() (vendor string) {
 	return c.vendor
+}
+
+// BmcType returns the type bmc of the current connection
+func (c *Connection) BmcType() (vendor string) {
+	return c.bmcType
 }
 
 // HwType returns hwtype of the current connection
@@ -105,19 +128,41 @@ func (c *Connection) detect() (err error) {
 			return err
 		}
 
-		if iloXML.HpBladeBlade != nil {
-			log.WithFields(log.Fields{"step": "connection", "host": c.host, "vendor": HP}).Debug("it's a blade")
+		if iloXML.HpHSI != nil {
 			c.vendor = HP
-			c.hwtype = Blade
-			return err
-		} else if iloXML.HpMP != nil && iloXML.HpBladeBlade == nil {
-			log.WithFields(log.Fields{"step": "connection", "host": c.host, "vendor": HP}).Debug("it's a discrete")
-			c.vendor = HP
-			c.hwtype = Discrete
+			if iloXML.HpBladeBlade != nil {
+				log.WithFields(log.Fields{"step": "connection", "host": c.host, "vendor": HP}).Debug("it's a blade")
+				c.hwtype = Blade
+			} else {
+				if iloXML.HpHSI == nil || iloXML.HpHSI.Spn == "" {
+					return fmt.Errorf("it's an HP, but I cound't not identify the hardware type. Please verify")
+				}
+
+				if strings.Contains(iloXML.HpHSI.Spn, " BL") {
+					c.hwtype = Blade
+				} else if strings.Contains(iloXML.HpHSI.Spn, " DL") {
+					c.hwtype = Discrete
+				} else {
+					return fmt.Errorf("it's an HP, but I cound't not identify the hardware type. Please verify")
+				}
+			}
+
+			switch iloXML.HpMP.Pn {
+			case "Integrated Lights-Out 2 (iLO 2)":
+				c.bmcType = Ilo2
+			case "Integrated Lights-Out 3 (iLO 3)":
+				c.bmcType = Ilo3
+			case "Integrated Lights-Out 4 (iLO 4)":
+				c.bmcType = Ilo4
+			case "Integrated Lights-Out 5 (iLO 5)":
+				c.bmcType = Ilo4
+			default:
+				return fmt.Errorf("it's an HP, but I cound't not identify the hardware type. Please verify")
+			}
 			return err
 		}
 
-		return err
+		return fmt.Errorf("it's seems to be an HP, but I cound't not identify the hardware type. Please verify")
 	}
 
 	resp, err = client.Get(fmt.Sprintf("https://%s/session?aimGetProp=hostname,gui_str_title_bar,OEMHostName,fwVersion,sysDesc", c.host))
@@ -175,6 +220,7 @@ func (c *Connection) detect() (err error) {
 		log.WithFields(log.Fields{"step": "connection", "host": c.host, "vendor": Supermicro}).Debug("it's a discrete")
 		c.vendor = Supermicro
 		c.hwtype = Discrete
+		c.bmcType = AtenSM
 		return err
 	}
 
@@ -501,7 +547,7 @@ func (c *Connection) Collect() (i interface{}, err error) {
 			if err != nil {
 				return i, err
 			}
-			return c.blade(ilo)
+			return c.discrete(ilo)
 		} else if c.HwType() == Chassis {
 			c7000, err := NewHpChassisReader(&c.host, &c.username, &c.password)
 			if err != nil {
@@ -511,13 +557,13 @@ func (c *Connection) Collect() (i interface{}, err error) {
 		}
 	case Dell:
 		if c.HwType() == Blade {
-			idrac, err := NewIDracReader(&c.host, &c.username, &c.password)
+			idrac, err := NewIDrac8Reader(&c.host, &c.username, &c.password)
 			if err != nil {
 				return i, err
 			}
 			return c.blade(idrac)
 		} else if c.HwType() == Discrete {
-			idrac, err := NewIDracReader(&c.host, &c.username, &c.password)
+			idrac, err := NewIDrac8Reader(&c.host, &c.username, &c.password)
 			if err != nil {
 				return i, err
 			}

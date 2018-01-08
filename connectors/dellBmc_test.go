@@ -5220,7 +5220,7 @@ var (
 	}
 )
 
-func dellIdracSetup() (bmc *IDracReader, err error) {
+func dellIDracSetup() (bmc *IDrac8Reader, err error) {
 	viper.SetDefault("debug", true)
 	mux = http.NewServeMux()
 	server = httptest.NewTLSServer(mux)
@@ -5235,7 +5235,7 @@ func dellIdracSetup() (bmc *IDracReader, err error) {
 		})
 	}
 
-	bmc, err = NewIDracReader(&ip, &username, &password)
+	bmc, err = NewIDrac8Reader(&ip, &username, &password)
 	if err != nil {
 		return bmc, err
 	}
@@ -5248,16 +5248,16 @@ func dellIdracSetup() (bmc *IDracReader, err error) {
 	return bmc, err
 }
 
-func dellIdracTeardown() {
+func dellIDracTeardown() {
 	server.Close()
 }
 
-func TestDellIdracSerial(t *testing.T) {
+func TestDellIDracSerial(t *testing.T) {
 	expectedAnswer := "65kt7j2"
 
-	bmc, err := dellIdracSetup()
+	bmc, err := dellIDracSetup()
 	if err != nil {
-		t.Fatalf("Found errors during the test dellIdracSetup %v", err)
+		t.Fatalf("Found errors during the test dellIDracSetup %v", err)
 	}
 
 	answer, err := bmc.Serial()
@@ -5269,15 +5269,15 @@ func TestDellIdracSerial(t *testing.T) {
 		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
 	}
 
-	dellIdracTeardown()
+	dellIDracTeardown()
 }
 
-func TestDellIdracModel(t *testing.T) {
+func TestDellIDracModel(t *testing.T) {
 	expectedAnswer := "PowerEdge R630"
 
-	bmc, err := dellIdracSetup()
+	bmc, err := dellIDracSetup()
 	if err != nil {
-		t.Fatalf("Found errors during the test dellIdracSetup %v", err)
+		t.Fatalf("Found errors during the test dellIDracSetup %v", err)
 	}
 
 	answer, err := bmc.Model()
@@ -5289,15 +5289,15 @@ func TestDellIdracModel(t *testing.T) {
 		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
 	}
 
-	dellIdracTeardown()
+	dellIDracTeardown()
 }
 
-func TestDellIdracBmcType(t *testing.T) {
-	expectedAnswer := "iDrac"
+func TestDellIDracBmcType(t *testing.T) {
+	expectedAnswer := "iDrac8"
 
-	bmc, err := dellIdracSetup()
+	bmc, err := dellIDracSetup()
 	if err != nil {
-		t.Fatalf("Found errors during the test dellIdracSetup %v", err)
+		t.Fatalf("Found errors during the test dellIDracSetup %v", err)
 	}
 
 	answer, err := bmc.BmcType()
@@ -5309,15 +5309,15 @@ func TestDellIdracBmcType(t *testing.T) {
 		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
 	}
 
-	dellIdracTeardown()
+	dellIDracTeardown()
 }
 
-func TestDellIdracBmcVersion(t *testing.T) {
+func TestDellIDracBmcVersion(t *testing.T) {
 	expectedAnswer := "2.41.40.40"
 
-	bmc, err := dellIdracSetup()
+	bmc, err := dellIDracSetup()
 	if err != nil {
-		t.Fatalf("Found errors during the test dellIdracSetup %v", err)
+		t.Fatalf("Found errors during the test dellIDracSetup %v", err)
 	}
 
 	answer, err := bmc.BmcVersion()
@@ -5329,15 +5329,15 @@ func TestDellIdracBmcVersion(t *testing.T) {
 		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
 	}
 
-	dellIdracTeardown()
+	dellIDracTeardown()
 }
 
-func TestDellIdracName(t *testing.T) {
+func TestDellIDracName(t *testing.T) {
 	expectedAnswer := "machine.example.com"
 
-	bmc, err := dellIdracSetup()
+	bmc, err := dellIDracSetup()
 	if err != nil {
-		t.Fatalf("Found errors during the test dellIdracSetup %v", err)
+		t.Fatalf("Found errors during the test dellIDracSetup %v", err)
 	}
 
 	answer, err := bmc.Name()
@@ -5349,15 +5349,15 @@ func TestDellIdracName(t *testing.T) {
 		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
 	}
 
-	dellIdracTeardown()
+	dellIDracTeardown()
 }
 
-func TestDellIdracStatus(t *testing.T) {
+func TestDellIDracStatus(t *testing.T) {
 	expectedAnswer := "NotSupported"
 
-	bmc, err := dellIdracSetup()
+	bmc, err := dellIDracSetup()
 	if err != nil {
-		t.Fatalf("Found errors during the test dellIdracSetup %v", err)
+		t.Fatalf("Found errors during the test dellIDracSetup %v", err)
 	}
 
 	answer, err := bmc.Status()
@@ -5369,15 +5369,15 @@ func TestDellIdracStatus(t *testing.T) {
 		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
 	}
 
-	dellIdracTeardown()
+	dellIDracTeardown()
 }
 
-func TestDellIdracMemory(t *testing.T) {
+func TestDellIDracMemory(t *testing.T) {
 	expectedAnswer := 384
 
-	bmc, err := dellIdracSetup()
+	bmc, err := dellIDracSetup()
 	if err != nil {
-		t.Fatalf("Found errors during the test dellIdracSetup %v", err)
+		t.Fatalf("Found errors during the test dellIDracSetup %v", err)
 	}
 
 	answer, err := bmc.Memory()
@@ -5389,18 +5389,18 @@ func TestDellIdracMemory(t *testing.T) {
 		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
 	}
 
-	dellIdracTeardown()
+	dellIDracTeardown()
 }
 
-func TestDellIdracCPU(t *testing.T) {
+func TestDellIDracCPU(t *testing.T) {
 	expectedAnswerCPUType := "intel(r) xeon(r) cpu e5-2690 v4"
 	expectedAnswerCPUCount := 2
 	expectedAnswerCore := 14
 	expectedAnswerHyperthread := 28
 
-	bmc, err := dellIdracSetup()
+	bmc, err := dellIDracSetup()
 	if err != nil {
-		t.Fatalf("Found errors during the test dellIdracSetup %v", err)
+		t.Fatalf("Found errors during the test dellIDracSetup %v", err)
 	}
 
 	cpuType, cpuCount, core, ht, err := bmc.CPU()
@@ -5424,15 +5424,15 @@ func TestDellIdracCPU(t *testing.T) {
 		t.Errorf("Expected ht answer %v: found %v", expectedAnswerHyperthread, ht)
 	}
 
-	dellIdracTeardown()
+	dellIDracTeardown()
 }
 
-func TestDellIdracBiosVersion(t *testing.T) {
+func TestDellIDracBiosVersion(t *testing.T) {
 	expectedAnswer := "2.4.3"
 
-	bmc, err := dellIdracSetup()
+	bmc, err := dellIDracSetup()
 	if err != nil {
-		t.Fatalf("Found errors during the test dellIdracSetup %v", err)
+		t.Fatalf("Found errors during the test dellIDracSetup %v", err)
 	}
 
 	answer, err := bmc.BiosVersion()
@@ -5444,15 +5444,15 @@ func TestDellIdracBiosVersion(t *testing.T) {
 		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
 	}
 
-	dellIdracTeardown()
+	dellIDracTeardown()
 }
 
-func TestDellIdracPowerKW(t *testing.T) {
+func TestDellIDracPowerKW(t *testing.T) {
 	expectedAnswer := 0.168
 
-	bmc, err := dellIdracSetup()
+	bmc, err := dellIDracSetup()
 	if err != nil {
-		t.Fatalf("Found errors during the test dellIdracSetup %v", err)
+		t.Fatalf("Found errors during the test dellIDracSetup %v", err)
 	}
 
 	answer, err := bmc.PowerKw()
@@ -5464,15 +5464,15 @@ func TestDellIdracPowerKW(t *testing.T) {
 		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
 	}
 
-	dellIdracTeardown()
+	dellIDracTeardown()
 }
 
-func TestDellIdracTempC(t *testing.T) {
+func TestDellIDracTempC(t *testing.T) {
 	expectedAnswer := 19
 
-	bmc, err := dellIdracSetup()
+	bmc, err := dellIDracSetup()
 	if err != nil {
-		t.Fatalf("Found errors during the test dellIdracSetup %v", err)
+		t.Fatalf("Found errors during the test dellIDracSetup %v", err)
 	}
 
 	answer, err := bmc.TempC()
@@ -5484,10 +5484,10 @@ func TestDellIdracTempC(t *testing.T) {
 		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
 	}
 
-	dellIdracTeardown()
+	dellIDracTeardown()
 }
 
-func TestDellIdracNics(t *testing.T) {
+func TestDellIDracNics(t *testing.T) {
 	expectedAnswer := []*model.Nic{
 		&model.Nic{
 			MacAddress: "24:8a:07:5a:9e:8c",
@@ -5503,9 +5503,9 @@ func TestDellIdracNics(t *testing.T) {
 		},
 	}
 
-	bmc, err := dellIdracSetup()
+	bmc, err := dellIDracSetup()
 	if err != nil {
-		t.Fatalf("Found errors during the test dellIdracSetup %v", err)
+		t.Fatalf("Found errors during the test dellIDracSetup %v", err)
 	}
 
 	nics, err := bmc.Nics()
@@ -5523,16 +5523,16 @@ func TestDellIdracNics(t *testing.T) {
 		}
 	}
 
-	dellIdracTeardown()
+	dellIDracTeardown()
 }
 
-func TestDellIdracLicense(t *testing.T) {
+func TestDellIDracLicense(t *testing.T) {
 	expectedName := "Enterprise"
 	expectedLicType := "Licensed"
 
-	bmc, err := dellIdracSetup()
+	bmc, err := dellIDracSetup()
 	if err != nil {
-		t.Fatalf("Found errors during the test dellIdracSetup %v", err)
+		t.Fatalf("Found errors during the test dellIDracSetup %v", err)
 	}
 
 	name, licType, err := bmc.License()
@@ -5548,10 +5548,10 @@ func TestDellIdracLicense(t *testing.T) {
 		t.Errorf("Expected name %v: found %v", expectedLicType, licType)
 	}
 
-	dellIdracTeardown()
+	dellIDracTeardown()
 }
 
-func TestDellIdracPsu(t *testing.T) {
+func TestDellIDracPsu(t *testing.T) {
 	expectedAnswer := []*model.Psu{
 		&model.Psu{
 			Serial:         "65kt7j2_PS1",
@@ -5569,7 +5569,7 @@ func TestDellIdracPsu(t *testing.T) {
 		},
 	}
 
-	bmc, err := dellIdracSetup()
+	bmc, err := dellIDracSetup()
 	if err != nil {
 		t.Fatalf("Found errors during the test hpChassisSetup %v", err)
 	}
@@ -5589,15 +5589,15 @@ func TestDellIdracPsu(t *testing.T) {
 		}
 	}
 
-	dellIdracTeardown()
+	dellIDracTeardown()
 }
 
-func TestDellIdracIsBlade(t *testing.T) {
+func TestDellIDracIsBlade(t *testing.T) {
 	expectedAnswer := false
 
-	bmc, err := dellIdracSetup()
+	bmc, err := dellIDracSetup()
 	if err != nil {
-		t.Fatalf("Found errors during the test dellIdracSetup %v", err)
+		t.Fatalf("Found errors during the test dellIDracSetup %v", err)
 	}
 
 	answer, err := bmc.IsBlade()
@@ -5609,5 +5609,5 @@ func TestDellIdracIsBlade(t *testing.T) {
 		t.Errorf("Expected answer %v: found %v", expectedAnswer, answer)
 	}
 
-	dellIdracTeardown()
+	dellIDracTeardown()
 }

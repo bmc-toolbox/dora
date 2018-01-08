@@ -31,6 +31,7 @@ const (
 var (
 	redfishVendorEndPoints = map[string]map[string]string{
 		Dell: map[string]string{
+			//		RFChassis:    "redfish/v1/Chassis/",
 			RFEntry:      "redfish/v1/Systems/System.Embedded.1/",
 			RFPower:      "redfish/v1/Chassis/System.Embedded.1/Power",
 			RFThermal:    "redfish/v1/Chassis/System.Embedded.1/Thermal",
@@ -40,6 +41,7 @@ var (
 			RFBMCNetwork: "redfish/v1/Managers/iDRAC.Embedded.1/EthernetInterfaces/iDRAC.Embedded.1%23NIC.1",
 		},
 		HP: map[string]string{
+			//		RFChassis:    "redfish/v1/Chassis/",
 			RFEntry:      "redfish/v1/Systems/1/",
 			RFPower:      "redfish/v1/Chassis/1/Power/",
 			RFThermal:    "redfish/v1/Chassis/1/Thermal/",
@@ -49,6 +51,7 @@ var (
 			RFBMCNetwork: "redfish/v1/Managers/1/EthernetInterfaces/1/",
 		},
 		Supermicro: map[string]string{
+			//		RFChassis:    "redfish/v1/Chassis/",
 			RFEntry:      "redfish/v1/Systems/1/",
 			RFPower:      "redfish/v1/Chassis/1/Power/",
 			RFThermal:    "redfish/v1/Chassis/1/Thermal/",
@@ -467,3 +470,22 @@ func (r *RedFishReader) TempC() (temp int, err error) {
 
 	return temp, err
 }
+
+// // IsBlade returns if the current hardware is a blade or not
+// func (r *RedFishReader) IsBlade() (isBlade bool, err error) {
+// 	switch vendor {
+// 	case Supermicro:
+// 		return isBlade, err
+// 	case Dell:
+// 		model, err := r.Model()
+// 		if err != nil {
+// 			return isBlade, err
+// 		}
+// 	case HP:
+// 		model, err := r.Model()
+// 		if err != nil {
+// 			return isBlade, err
+// 		}
+// 	}
+// 	return isBlade, err
+// }
