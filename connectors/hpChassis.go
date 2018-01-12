@@ -214,7 +214,7 @@ func (h *HpChassisReader) Blades() (blades []*model.Blade, err error) {
 				if blade.Serial == "" || blade.Serial == "[unknown]" || blade.Serial == "0000000000" {
 					nb := model.Blade{}
 					db.Where("bmc_address = ? and blade_position = ?", hpBlade.MgmtIPAddr, hpBlade.HpBay.Connection).First(&nb)
-					log.WithFields(log.Fields{"operation": "connection", "ip": *h.ip, "name": name, "position": blade.BladePosition, "type": "chassis", "error": "Review this blade. The chassis identifies it as connected, but we have no data"}).Error("Auditing blade")
+					log.WithFields(log.Fields{"operation": "connection", "ip": *h.ip, "name": name, "position": blade.BladePosition, "type": "chassis"}).Error("Review this blade. The chassis identifies it as connected, but we have no data")
 
 					if nb.Serial == "" {
 						continue
@@ -261,29 +261,29 @@ func (h *HpChassisReader) Blades() (blades []*model.Blade, err error) {
 							blade.Nics, _ = ilo.Nics()
 							err = ilo.Login()
 							if err != nil {
-								log.WithFields(log.Fields{"operation": "opening ilo connection", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+								log.WithFields(log.Fields{"operation": "opening ilo connection", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis"}).Warning(err)
 							} else {
 								defer ilo.Logout()
 								blade.BmcAuth = true
 
 								blade.Processor, blade.ProcessorCount, blade.ProcessorCoreCount, blade.ProcessorThreadCount, err = ilo.CPU()
 								if err != nil {
-									log.WithFields(log.Fields{"operation": "reading cpu data", "ip": blade.BmcAddress, "name": blade.Name, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+									log.WithFields(log.Fields{"operation": "reading cpu data", "ip": blade.BmcAddress, "name": blade.Name, "serial": blade.Serial, "type": "chassis"}).Warning(err)
 								}
 
 								blade.Memory, err = ilo.Memory()
 								if err != nil {
-									log.WithFields(log.Fields{"operation": "reading memory data", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+									log.WithFields(log.Fields{"operation": "reading memory data", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis"}).Warning(err)
 								}
 
 								blade.BmcLicenceType, blade.BmcLicenceStatus, err = ilo.License()
 								if err != nil {
-									log.WithFields(log.Fields{"operation": "reading license data", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+									log.WithFields(log.Fields{"operation": "reading license data", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis"}).Warning(err)
 								}
 							}
 						}
 					} else {
-						log.WithFields(log.Fields{"operation": "create ilo connection", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis", "error": "bmc web is not reachable"}).Warning("Auditing blade")
+						log.WithFields(log.Fields{"operation": "create ilo connection", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis"}).Error("Not reachable")
 					}
 				}
 				blades = append(blades, &blade)

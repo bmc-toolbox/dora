@@ -19,6 +19,7 @@ import (
 
 var (
 	macFinder = regexp.MustCompile("([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})")
+	findBmcIP = regexp.MustCompile("bladeIpAddress\">((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3})")
 )
 
 // DellCmcReader holds the status and properties of a connection to a CMC device
@@ -352,7 +353,7 @@ func (d *DellCmcReader) Blades() (blades []*model.Blade, err error) {
 			chassisSerial, _ := d.Serial()
 
 			if blade.Serial == "" || blade.Serial == "[unknown]" || blade.Serial == "0000000000" {
-				log.WithFields(log.Fields{"operation": "connection", "ip": *d.ip, "position": blade.BladePosition, "type": "chassis", "chassis_serial": chassisSerial, "error": "Review this blade. The chassis identifies it as connected, but we have no data"}).Error("Auditing blade")
+				log.WithFields(log.Fields{"operation": "connection", "ip": *d.ip, "position": blade.BladePosition, "type": "chassis", "chassis_serial": chassisSerial}).Error("Review this blade. The chassis identifies it as connected, but we have no data")
 				continue
 			}
 
@@ -360,7 +361,7 @@ func (d *DellCmcReader) Blades() (blades []*model.Blade, err error) {
 			blade.PowerKw = float64(dellBlade.ActualPwrConsump) / 1000
 			temp, err := strconv.Atoi(dellBlade.BladeTemperature)
 			if err != nil {
-				log.WithFields(log.Fields{"operation": "connection", "ip": *d.ip, "position": blade.BladePosition, "type": "chassis", "chassis_serial": chassisSerial, "error": err}).Warning("Auditing blade")
+				log.WithFields(log.Fields{"operation": "connection", "ip": *d.ip, "position": blade.BladePosition, "type": "chassis", "chassis_serial": chassisSerial}).Warning(err)
 				continue
 			} else {
 				blade.TempC = temp
@@ -389,9 +390,21 @@ func (d *DellCmcReader) Blades() (blades []*model.Blade, err error) {
 				blade.Nics = append(blade.Nics, n)
 			}
 
+			if strings.Count(blade.BmcAddress, ".") != 4 {
+				payload, err := d.get(fmt.Sprintf("blade_status?id=%d&cat=C10&tab=T41&id=P78", blade.BladePosition))
+				if err != nil {
+					log.WithFields(log.Fields{"operation": "connection", "ip": *d.ip, "position": blade.BladePosition, "type": "chassis", "chassis_serial": chassisSerial}).Warning(err)
+				} else {
+					ip := findBmcIP.FindStringSubmatch(string(payload))
+					if len(ip) > 0 {
+						blade.BmcAddress = ip[1]
+					}
+				}
+			}
+
 			for _, nic := range dellBlade.Nics {
 				if nic.BladeNicName == "" {
-					log.WithFields(log.Fields{"operation": "connection", "ip": *d.ip, "position": blade.BladePosition, "type": "chassis", "chassis_serial": chassisSerial, "error": "Network card information missing, please verify"}).Error("Auditing blade")
+					log.WithFields(log.Fields{"operation": "connection", "ip": *d.ip, "position": blade.BladePosition, "type": "chassis", "chassis_serial": chassisSerial}).Error("Network card information missing, please verify")
 					continue
 				}
 				n := &model.Nic{
@@ -425,7 +438,7 @@ func (d *DellCmcReader) Blades() (blades []*model.Blade, err error) {
 					bmcPass := viper.GetString("bmc_pass")
 					idrac, err := NewIDrac8Reader(&blade.BmcAddress, &bmcUser, &bmcPass)
 					if err != nil {
-						log.WithFields(log.Fields{"operation": "opening ilo connection", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+						log.WithFields(log.Fields{"operation": "opening ilo connection", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis"}).Warning(err)
 					} else {
 						err = idrac.Login()
 						if err == nil {
@@ -434,22 +447,22 @@ func (d *DellCmcReader) Blades() (blades []*model.Blade, err error) {
 
 							blade.Processor, blade.ProcessorCount, blade.ProcessorCoreCount, blade.ProcessorThreadCount, err = idrac.CPU()
 							if err != nil {
-								log.WithFields(log.Fields{"operation": "reading cpu data", "ip": blade.BmcAddress, "name": blade.Name, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+								log.WithFields(log.Fields{"operation": "reading cpu data", "ip": blade.BmcAddress, "name": blade.Name, "serial": blade.Serial, "type": "chassis"}).Warning(err)
 							}
 
 							blade.Memory, err = idrac.Memory()
 							if err != nil {
-								log.WithFields(log.Fields{"operation": "reading memory data", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+								log.WithFields(log.Fields{"operation": "reading memory data", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis"}).Warning(err)
 							}
 
 							blade.BmcLicenceType, blade.BmcLicenceStatus, err = idrac.License()
 							if err != nil {
-								log.WithFields(log.Fields{"operation": "reading license data", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+								log.WithFields(log.Fields{"operation": "reading license data", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis"}).Warning(err)
 							}
 						}
 					}
 				} else {
-					log.WithFields(log.Fields{"operation": "create ilo connection", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis", "error": err}).Warning("Auditing blade")
+					log.WithFields(log.Fields{"operation": "create idrac connection", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis"}).Error("Not reachable")
 				}
 			}
 			blades = append(blades, &blade)
