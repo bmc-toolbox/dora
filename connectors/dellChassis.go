@@ -390,7 +390,7 @@ func (d *DellCmcReader) Blades() (blades []*model.Blade, err error) {
 				blade.Nics = append(blade.Nics, n)
 			}
 
-			if strings.Count(blade.BmcAddress, ".") != 4 {
+			if strings.HasPrefix(blade.BmcAddress, "[") {
 				payload, err := d.get(fmt.Sprintf("blade_status?id=%d&cat=C10&tab=T41&id=P78", blade.BladePosition))
 				if err != nil {
 					log.WithFields(log.Fields{"operation": "connection", "ip": *d.ip, "position": blade.BladePosition, "type": "chassis", "chassis_serial": chassisSerial}).Warning(err)
