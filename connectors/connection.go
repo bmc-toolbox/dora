@@ -155,7 +155,7 @@ func (c *Connection) detect() (err error) {
 			case "Integrated Lights-Out 4 (iLO 4)":
 				c.bmcType = Ilo4
 			case "Integrated Lights-Out 5 (iLO 5)":
-				c.bmcType = Ilo4
+				c.bmcType = Ilo5
 			default:
 				return fmt.Errorf("it's an HP, but I cound't not identify the hardware type. Please verify")
 			}
