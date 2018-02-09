@@ -3,12 +3,15 @@ package connectors
 import (
 	"fmt"
 	"net"
-	"strings"
 	"sync"
+
+	"gitlab.booking.com/go/bmc/errors"
 
 	"github.com/jinzhu/gorm"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+	"gitlab.booking.com/go/bmc/devices"
+	"gitlab.booking.com/go/bmc/discover"
 	"gitlab.booking.com/go/dora/model"
 	"gitlab.booking.com/go/dora/storage"
 )
@@ -22,113 +25,27 @@ func collect(input <-chan string, source *string, db *gorm.DB) {
 	bmcPass := viper.GetString("bmc_pass")
 
 	for host := range input {
-		c, err := NewConnection(bmcUser, bmcPass, host)
+		log.WithFields(log.Fields{"operation": "scan", "ip": host}).Debug("collection started")
+
+		conn, err := discover.ScanAndConnect(host, bmcUser, bmcPass)
 		if err != nil {
-			log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType()}).Error(err)
+			log.WithFields(log.Fields{"operation": "scan", "ip": host}).Error(err)
 			continue
 		}
 
-		if c.HwType() == Blade && *source != "cli-with-force" {
-			log.WithFields(log.Fields{"operation": "detection", "ip": host, "type": c.HwType()}).Debug("we don't want to scan blades directly since the chassis does it for us")
-			continue
-		}
-
-		data, err := c.Collect()
-		if err != nil {
-			log.WithFields(log.Fields{"operation": "collection", "ip": host, "type": c.HwType()}).Error(err)
-			if err == ErrLoginFailed && viper.GetBool("collector.try_default_credentials") {
-				c.username = viper.GetString(fmt.Sprintf("collector.default.%s.username", strings.ToLower(c.Vendor())))
-				c.password = viper.GetString(fmt.Sprintf("collector.default.%s.password", strings.ToLower(c.Vendor())))
-				if c.username == "" || c.password == "" {
-					log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType(), "vendor": c.Vendor()}).Debug("Default password not found")
-					continue
-				}
-				data, err = c.Collect()
-				if err != nil {
-					log.WithFields(log.Fields{"operation": "connection", "ip": host, "type": c.HwType()}).Error(err)
-					continue
-				}
-			} else {
+		if bmc, ok := conn.(devices.Bmc); ok {
+			err = bmc.Login()
+			if err == errors.ErrLoginFailed {
+				//username := viper.GetString(fmt.Sprintf("collector.default.%s.username"))
+				//password := viper.GetString(fmt.Sprintf("collector.default.%s.password"))
+			} else if err != nil {
+				log.WithFields(log.Fields{"operation": "connection", "ip": host}).Error(err)
 				continue
 			}
-		}
-
-		switch data.(type) {
-		case *model.Chassis:
-			chassis := data.(*model.Chassis)
-			if chassis == nil {
-				continue
-			}
-
-			chassisStorage := storage.NewChassisStorage(db)
-			existingData, err := chassisStorage.GetOne(chassis.Serial)
-			if err != nil && err != gorm.ErrRecordNotFound {
-				log.WithFields(log.Fields{"operation": "store", "ip": host, "type": c.HwType()}).Error(err)
-				continue
-			}
-
-			_, err = chassisStorage.UpdateOrCreate(chassis)
+			err := collectBMC(bmc)
 			if err != nil {
-				log.WithFields(log.Fields{"operation": "store", "ip": host, "type": c.HwType()}).Error(err)
-				continue
+				log.WithFields(log.Fields{"operation": "collection", "ip": host}).Error(err)
 			}
-
-			if len(chassis.Diff(&existingData)) != 0 {
-				notifyChange <- fmt.Sprintf("%s/%s/%s", viper.GetString("url"), "chassis", chassis.Serial)
-			}
-			// for _, line := range chassis.Diff(&existingData) {
-			// 	fmt.Println(line)
-			// }
-		case *model.Blade:
-			blade := data.(*model.Blade)
-			if blade == nil {
-				continue
-			}
-
-			bladeStorage := storage.NewBladeStorage(db)
-			existingData, err := bladeStorage.GetOne(blade.Serial)
-			if err != nil && err != gorm.ErrRecordNotFound {
-				log.WithFields(log.Fields{"operation": "store", "ip": host, "type": c.HwType()}).Error(err)
-				continue
-			}
-
-			_, err = bladeStorage.UpdateOrCreate(blade)
-			if err != nil {
-				log.WithFields(log.Fields{"operation": "store", "ip": host, "type": c.HwType()}).Error(err)
-				continue
-			}
-
-			if len(blade.Diff(&existingData)) != 0 {
-				notifyChange <- fmt.Sprintf("%s/%s/%s", viper.GetString("url"), "blades", blade.Serial)
-			}
-			// for _, line := range blade.Diff(&existingData) {
-			// 	fmt.Println(line)
-			// }
-		case *model.Discrete:
-			discrete := data.(*model.Discrete)
-			if discrete == nil {
-				continue
-			}
-
-			discreteStorage := storage.NewDiscreteStorage(db)
-			existingData, err := discreteStorage.GetOne(discrete.Serial)
-			if err != nil && err != gorm.ErrRecordNotFound {
-				log.WithFields(log.Fields{"operation": "store", "ip": host, "type": c.HwType()}).Error(err)
-				continue
-			}
-
-			_, err = discreteStorage.UpdateOrCreate(discrete)
-			if err != nil {
-				log.WithFields(log.Fields{"operation": "store", "ip": host, "type": c.HwType()}).Error(err)
-				continue
-			}
-
-			if len(discrete.Diff(&existingData)) != 0 {
-				notifyChange <- fmt.Sprintf("%s/%s/%s", viper.GetString("url"), "discretes", discrete.Serial)
-			}
-			// for _, line := range discrete.Diff(&existingData) {
-			// 	fmt.Println(line)
-			// }
 		}
 	}
 }
@@ -191,4 +108,69 @@ func DataCollection(ips []string, source string) {
 
 	close(cc)
 	wg.Wait()
+}
+
+func collectBMC(bmc devices.Bmc) (err error) {
+	defer bmc.Logout()
+
+	serial, err := bmc.Serial()
+	if err != nil {
+		return err
+	}
+
+	if serial == "" || serial == "[unknown]" || serial == "0000000000" || serial == "_" {
+		return ErrInvalidSerial
+	}
+
+	isBlade, err := bmc.IsBlade()
+	if err != nil {
+		return err
+	}
+
+	db := storage.InitDB()
+
+	if isBlade {
+		server, err := bmc.ServerSnapshot()
+		if err != nil {
+			return err
+		}
+
+		b, ok := server.(*devices.Blade)
+		if !ok {
+			return fmt.Errorf("Unable to read devices.Blade")
+		}
+
+		blade := model.NewBladeFromDevice(b)
+		blade.BmcAuth = true
+		blade.BmcWEBReachable = true
+
+		scans := []model.ScannedPort{}
+		db.Where("ip = ?", blade.BmcAddress).Find(&scans)
+		for _, scan := range scans {
+			if scan.Port == 22 && scan.Protocol == "tcp" && scan.State == "open" {
+				blade.BmcSSHReachable = true
+			} else if scan.Port == 443 && scan.Protocol == "tcp" && scan.State == "open" {
+				blade.BmcWEBReachable = true
+			} else if scan.Port == 623 && scan.Protocol == "ipmi" && scan.State == "open" {
+				blade.BmcIpmiReachable = true
+			}
+		}
+
+		bladeStorage := storage.NewBladeStorage(db)
+		existingData, err := bladeStorage.GetOne(blade.Serial)
+		if err != nil && err != gorm.ErrRecordNotFound {
+			return err
+		}
+
+		_, err = bladeStorage.UpdateOrCreate(blade)
+		if err != nil {
+			return err
+		}
+
+		if len(blade.Diff(&existingData)) != 0 {
+			notifyChange <- fmt.Sprintf("%s/%s/%s", viper.GetString("url"), "blades", blade.Serial)
+		}
+	}
+
+	return nil
 }
