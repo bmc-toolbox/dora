@@ -7,6 +7,7 @@ import (
 
 	"github.com/kr/pretty"
 	"github.com/manyminds/api2go/jsonapi"
+	"gitlab.booking.com/go/bmc/devices"
 )
 
 /* READ THIS BEFORE CHANGING THE SCHEMA
@@ -14,6 +15,41 @@ import (
 To make the magic of dynamic filtering work, we need to define each json field matching the database column name
 
 */
+
+// NewBladeFromDevice will create a new object comming from the bmc blade devices
+func NewBladeFromDevice(b *devices.Blade) (blade *Blade) {
+	blade = &Blade{}
+	blade.Name = b.Name
+	blade.Serial = b.Serial
+	blade.BiosVersion = b.BiosVersion
+	blade.BmcType = b.BmcType
+	blade.BmcAddress = b.BmcAddress
+	blade.BmcVersion = b.BmcVersion
+	blade.BmcLicenceType = b.BmcLicenceType
+	blade.BmcLicenceStatus = b.BmcLicenceStatus
+	for _, nic := range b.Nics {
+		blade.Nics = make([]*Nic, 0)
+		blade.Nics = append(blade.Nics, &Nic{
+			MacAddress:  nic.MacAddress,
+			Name:        nic.Name,
+			BladeSerial: b.Serial,
+		})
+	}
+	blade.BladePosition = b.BladePosition
+	blade.Model = b.Model
+	blade.TempC = b.TempC
+	blade.PowerKw = b.PowerKw
+	blade.Status = b.Status
+	blade.Vendor = b.Vendor
+	blade.ChassisSerial = b.ChassisSerial
+	blade.Processor = b.Processor
+	blade.ProcessorCount = b.ProcessorCount
+	blade.ProcessorCoreCount = b.ProcessorCoreCount
+	blade.ProcessorThreadCount = b.ProcessorThreadCount
+	blade.Memory = b.Memory
+
+	return blade
+}
 
 // Blade contains all the blade information we will expose across different vendors
 type Blade struct {
