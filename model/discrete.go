@@ -7,6 +7,7 @@ import (
 
 	"github.com/kr/pretty"
 	"github.com/manyminds/api2go/jsonapi"
+	"gitlab.booking.com/go/bmc/devices"
 )
 
 /* READ THIS BEFORE CHANGING THE SCHEMA
@@ -15,7 +16,50 @@ To make the magic of dynamic filtering work, we need to define each json field m
 
 */
 
-// Discrete contains all the blade information we will expose across different vendors
+// NewDiscreteFromDevice will create a new object comming from the bmc discrete devices
+func NewDiscreteFromDevice(d *devices.Discrete) (discrete *Discrete) {
+	discrete = &Discrete{}
+	discrete.Name = d.Name
+	discrete.Serial = d.Serial
+	discrete.BiosVersion = d.BiosVersion
+	discrete.BmcType = d.BmcType
+	discrete.BmcAddress = d.BmcAddress
+	discrete.BmcVersion = d.BmcVersion
+	discrete.BmcLicenceType = d.BmcLicenceType
+	discrete.BmcLicenceStatus = d.BmcLicenceStatus
+	for _, nic := range d.Nics {
+		discrete.Nics = make([]*Nic, 0)
+		discrete.Nics = append(discrete.Nics, &Nic{
+			MacAddress:     nic.MacAddress,
+			Name:           nic.Name,
+			DiscreteSerial: d.Serial,
+		})
+	}
+	discrete.Model = d.Model
+	discrete.TempC = d.TempC
+	discrete.PowerKw = d.PowerKw
+	discrete.Status = d.Status
+	discrete.Vendor = d.Vendor
+	discrete.Processor = d.Processor
+	discrete.ProcessorCount = d.ProcessorCount
+	discrete.ProcessorCoreCount = d.ProcessorCoreCount
+	discrete.ProcessorThreadCount = d.ProcessorThreadCount
+	discrete.Memory = d.Memory
+	for _, psu := range d.Psus {
+		discrete.Psus = make([]*Psu, 0)
+		discrete.Psus = append(discrete.Psus, &Psu{
+			Serial:         psu.Serial,
+			CapacityKw:     psu.CapacityKw,
+			PowerKw:        psu.PowerKw,
+			Status:         psu.Status,
+			DiscreteSerial: d.Serial,
+		})
+	}
+
+	return discrete
+}
+
+// Discrete contains all the discrete information we will expose across different vendors
 type Discrete struct {
 	Serial               string    `json:"serial" gorm:"primary_key"`
 	Name                 string    `json:"name"`
