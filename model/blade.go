@@ -27,8 +27,8 @@ func NewBladeFromDevice(b *devices.Blade) (blade *Blade) {
 	blade.BmcVersion = b.BmcVersion
 	blade.BmcLicenceType = b.BmcLicenceType
 	blade.BmcLicenceStatus = b.BmcLicenceStatus
+	blade.Nics = make([]*Nic, 0)
 	for _, nic := range b.Nics {
-		blade.Nics = make([]*Nic, 0)
 		blade.Nics = append(blade.Nics, &Nic{
 			MacAddress:  nic.MacAddress,
 			Name:        nic.Name,

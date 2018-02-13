@@ -5,8 +5,12 @@ import (
 	"strings"
 	"time"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/kr/pretty"
 	"github.com/manyminds/api2go/jsonapi"
+	"gitlab.booking.com/go/bmc/devices"
+	"gitlab.booking.com/go/bmc/errors"
 )
 
 /* READ THIS BEFORE CHANGING THE SCHEMA
@@ -14,6 +18,61 @@ import (
 To make the magic of dynamic filtering work, we need to define each json field matching the database column name
 
 */
+
+// NewChassisFromDevice will create a new object comming from the bmc discrete devices
+func NewChassisFromDevice(c *devices.Chassis) (chassis *Chassis) {
+	chassis = &Chassis{}
+	chassis.Vendor = c.Vendor
+	chassis.BmcAddress = c.BmcAddress
+	chassis.Name = c.Name
+	chassis.Serial = c.Serial
+	chassis.Model = c.Model
+	chassis.PowerKw = c.PowerKw
+	chassis.TempC = c.TempC
+	chassis.Status = c.Status
+	chassis.FwVersion = c.FwVersion
+	chassis.PassThru = c.PassThru
+	chassis.Blades = make([]*Blade, 0)
+	for _, b := range c.Blades {
+		blade := NewBladeFromDevice(b)
+		if blade.Serial == "" || blade.Serial == "[unknown]" || blade.Serial == "0000000000" || blade.Serial == "_" {
+			log.WithFields(log.Fields{"operation": "chassis scan", "position": blade.BladePosition, "type": "chassis", "chassis_serial": chassis.Serial}).Error(errors.ErrInvalidSerial)
+			continue
+		}
+		blade.ChassisSerial = c.Serial
+		chassis.Blades = append(chassis.Blades, blade)
+	}
+	chassis.StorageBlades = make([]*StorageBlade, 0)
+	for _, s := range c.StorageBlades {
+		storageBlade := NewStorageBladeFromDevice(s)
+		if storageBlade.Serial == "" || storageBlade.Serial == "[unknown]" || storageBlade.Serial == "0000000000" || storageBlade.Serial == "_" {
+			log.WithFields(log.Fields{"operation": "chassis scan", "position": storageBlade.BladePosition, "type": "chassis", "chassis_serial": chassis.Serial}).Error(errors.ErrInvalidSerial)
+			continue
+		}
+		chassis.StorageBlades = append(chassis.StorageBlades, storageBlade)
+
+	}
+	chassis.Nics = make([]*Nic, 0)
+	for _, nic := range c.Nics {
+		chassis.Nics = append(chassis.Nics, &Nic{
+			MacAddress:    nic.MacAddress,
+			Name:          nic.Name,
+			ChassisSerial: c.Serial,
+		})
+	}
+	chassis.Psus = make([]*Psu, 0)
+	for _, psu := range c.Psus {
+		chassis.Psus = append(chassis.Psus, &Psu{
+			Serial:        psu.Serial,
+			CapacityKw:    psu.CapacityKw,
+			PowerKw:       psu.PowerKw,
+			Status:        psu.Status,
+			ChassisSerial: c.Serial,
+		})
+	}
+
+	return chassis
+}
 
 // Chassis contains all the chassis the information we will expose across different vendors
 type Chassis struct {

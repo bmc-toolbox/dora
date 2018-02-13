@@ -6,6 +6,7 @@ import (
 
 	"github.com/kr/pretty"
 	"github.com/manyminds/api2go/jsonapi"
+	"gitlab.booking.com/go/bmc/devices"
 )
 
 /* READ THIS BEFORE CHANGING THE SCHEMA
@@ -13,6 +14,22 @@ import (
 To make the magic of dynamic filtering work, we need to define each json field matching the database column name
 
 */
+
+// NewStorageBladeFromDevice will create a new object comming from the bmc blade devices
+func NewStorageBladeFromDevice(b *devices.StorageBlade) (blade *StorageBlade) {
+	blade = &StorageBlade{}
+	blade.Serial = b.Serial
+	blade.FwVersion = b.FwVersion
+	blade.BladePosition = b.BladePosition
+	blade.Model = b.Model
+	blade.TempC = b.TempC
+	blade.PowerKw = b.PowerKw
+	blade.Status = b.Status
+	blade.Vendor = b.Vendor
+	blade.ChassisSerial = b.ChassisSerial
+	blade.BladeSerial = b.BladeSerial
+	return blade
+}
 
 // StorageBlade contains all the storage blade information we will expose across different vendors
 type StorageBlade struct {

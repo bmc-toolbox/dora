@@ -27,8 +27,8 @@ func NewDiscreteFromDevice(d *devices.Discrete) (discrete *Discrete) {
 	discrete.BmcVersion = d.BmcVersion
 	discrete.BmcLicenceType = d.BmcLicenceType
 	discrete.BmcLicenceStatus = d.BmcLicenceStatus
+	discrete.Nics = make([]*Nic, 0)
 	for _, nic := range d.Nics {
-		discrete.Nics = make([]*Nic, 0)
 		discrete.Nics = append(discrete.Nics, &Nic{
 			MacAddress:     nic.MacAddress,
 			Name:           nic.Name,
@@ -45,8 +45,8 @@ func NewDiscreteFromDevice(d *devices.Discrete) (discrete *Discrete) {
 	discrete.ProcessorCoreCount = d.ProcessorCoreCount
 	discrete.ProcessorThreadCount = d.ProcessorThreadCount
 	discrete.Memory = d.Memory
+	discrete.Psus = make([]*Psu, 0)
 	for _, psu := range d.Psus {
-		discrete.Psus = make([]*Psu, 0)
 		discrete.Psus = append(discrete.Psus, &Psu{
 			Serial:         psu.Serial,
 			CapacityKw:     psu.CapacityKw,
