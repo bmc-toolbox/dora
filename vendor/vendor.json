@@ -147,6 +147,19 @@
 			"revisionTime": "2017-05-13T00:01:12Z"
 		},
 		{
+			"checksumSHA1": "cdOCt0Yb+hdErz8NAQqayxPmRsY=",
+			"origin": "github.com/hashicorp/go-multierror/vendor/github.com/hashicorp/errwrap",
+			"path": "github.com/hashicorp/errwrap",
+			"revision": "b7773ae218740a7be65057fc60b366a49b538a44",
+			"revisionTime": "2017-12-04T18:29:08Z"
+		},
+		{
+			"checksumSHA1": "HgWj4iVBAZlEyv7xlYVBLx/faaw=",
+			"path": "github.com/hashicorp/go-multierror",
+			"revision": "b7773ae218740a7be65057fc60b366a49b538a44",
+			"revisionTime": "2017-12-04T18:29:08Z"
+		},
+		{
 			"checksumSHA1": "SV/KllLv9bQBgQgkqYGEA+fxqQU=",
 			"path": "github.com/hashicorp/hcl",
 			"revision": "8f6b1344a92ff8877cf24a5de9177bf7d0a2a187",
@@ -163,6 +176,12 @@
 			"path": "github.com/hashicorp/hcl/hcl/parser",
 			"revision": "8f6b1344a92ff8877cf24a5de9177bf7d0a2a187",
 			"revisionTime": "2017-04-17T18:02:14Z"
+		},
+		{
+			"checksumSHA1": "6BK0YsrnmyfyxTzoqinelmTkyRk=",
+			"path": "github.com/hashicorp/hcl/hcl/printer",
+			"revision": "23c074d0eceb2b8a5bfdbb271ab780cde70f05a8",
+			"revisionTime": "2017-10-17T18:19:29Z"
 		},
 		{
 			"checksumSHA1": "ZIF08kf2iNidD6QMavEuUM6HJU0=",
@@ -421,6 +440,84 @@
 			"path": "github.com/ugorji/go/codec",
 			"revision": "5efa3251c7f7d05e5d9704a69a984ec9f1386a40",
 			"revisionTime": "2017-06-20T10:48:52Z"
+		},
+		{
+			"checksumSHA1": "wZHY/BzJo9QcBc8ncFWasLAxgqo=",
+			"path": "gitlab.booking.com/go/bmc/c7000",
+			"revision": "db41509bc44c92efdbe1da30b25c85caa6f81f84",
+			"revisionTime": "2018-02-13T14:55:38Z"
+		},
+		{
+			"checksumSHA1": "73aP0Kd9VLfSAj/tOkNb24H3sg0=",
+			"path": "gitlab.booking.com/go/bmc/dell",
+			"revision": "db41509bc44c92efdbe1da30b25c85caa6f81f84",
+			"revisionTime": "2018-02-13T14:55:38Z"
+		},
+		{
+			"checksumSHA1": "y4X48NVr8k4jZAvNdNQdtWeIx0U=",
+			"path": "gitlab.booking.com/go/bmc/devices",
+			"revision": "db41509bc44c92efdbe1da30b25c85caa6f81f84",
+			"revisionTime": "2018-02-13T14:55:38Z"
+		},
+		{
+			"checksumSHA1": "p+hhp1EA4lsHRqy8Thxiqb6b8F8=",
+			"path": "gitlab.booking.com/go/bmc/discover",
+			"revision": "db41509bc44c92efdbe1da30b25c85caa6f81f84",
+			"revisionTime": "2018-02-13T14:55:38Z"
+		},
+		{
+			"checksumSHA1": "AFo8/PfFYHod25EgSfFbz6qcAXs=",
+			"path": "gitlab.booking.com/go/bmc/errors",
+			"revision": "db41509bc44c92efdbe1da30b25c85caa6f81f84",
+			"revisionTime": "2018-02-13T14:55:38Z"
+		},
+		{
+			"checksumSHA1": "Qdu+6Yf7TCxaIcyZ3/oO01I437c=",
+			"path": "gitlab.booking.com/go/bmc/hp",
+			"revision": "db41509bc44c92efdbe1da30b25c85caa6f81f84",
+			"revisionTime": "2018-02-13T14:55:38Z"
+		},
+		{
+			"checksumSHA1": "h3KIm9l/OgbO2WhKEGNrwXwgGAo=",
+			"path": "gitlab.booking.com/go/bmc/httpclient",
+			"revision": "db41509bc44c92efdbe1da30b25c85caa6f81f84",
+			"revisionTime": "2018-02-13T14:55:38Z"
+		},
+		{
+			"checksumSHA1": "t49eC1dpqZiCT16kIImkiLQfzho=",
+			"path": "gitlab.booking.com/go/bmc/idrac8",
+			"revision": "db41509bc44c92efdbe1da30b25c85caa6f81f84",
+			"revisionTime": "2018-02-13T14:55:38Z"
+		},
+		{
+			"checksumSHA1": "kR0h/2ke9BUmkpEcwT+UsnBRSQY=",
+			"path": "gitlab.booking.com/go/bmc/idrac9",
+			"revision": "db41509bc44c92efdbe1da30b25c85caa6f81f84",
+			"revisionTime": "2018-02-13T14:55:38Z"
+		},
+		{
+			"checksumSHA1": "axJzN0SjPwH6ipB3aQPFtDbc4C8=",
+			"path": "gitlab.booking.com/go/bmc/ilo",
+			"revision": "db41509bc44c92efdbe1da30b25c85caa6f81f84",
+			"revisionTime": "2018-02-13T14:55:38Z"
+		},
+		{
+			"checksumSHA1": "ghRgNy4XUFmbx9tTcekPBIEoi1c=",
+			"path": "gitlab.booking.com/go/bmc/m1000e",
+			"revision": "db41509bc44c92efdbe1da30b25c85caa6f81f84",
+			"revisionTime": "2018-02-13T14:55:38Z"
+		},
+		{
+			"checksumSHA1": "mBeJMMCOdOB87267271/OkpM5zM=",
+			"path": "gitlab.booking.com/go/bmc/supermicro",
+			"revision": "db41509bc44c92efdbe1da30b25c85caa6f81f84",
+			"revisionTime": "2018-02-13T14:55:38Z"
+		},
+		{
+			"checksumSHA1": "9LMvaZWk4WE28wRmn4HfPZ6hLSk=",
+			"path": "gitlab.booking.com/go/bmc/supermicrox10",
+			"revision": "db41509bc44c92efdbe1da30b25c85caa6f81f84",
+			"revisionTime": "2018-02-13T14:55:38Z"
 		},
 		{
 			"checksumSHA1": "ujkdYz/AOSZ4dVskaUGW9g/V/dM=",
