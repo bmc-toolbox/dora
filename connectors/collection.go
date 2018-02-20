@@ -83,6 +83,8 @@ func collect(input <-chan string, source *string, db *gorm.DB) {
 			if err != nil {
 				log.WithFields(log.Fields{"operation": "collection", "ip": host}).Error(err)
 			}
+		} else {
+			log.WithFields(log.Fields{"operation": "collection", "ip": host}).Debug("Unknown hardware skipping...")
 		}
 	}
 }
