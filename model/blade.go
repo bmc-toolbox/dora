@@ -160,6 +160,16 @@ func (b *Blade) Diff(blade *Blade) (differences []string) {
 	return differences
 }
 
+// HasNic checks whether a nic is connected to the discrete
+func (b *Blade) HasNic(macAddress string) bool {
+	for _, nic := range b.Nics {
+		if nic.MacAddress == macAddress {
+			return true
+		}
+	}
+	return false
+}
+
 type byBladeSerial []*Blade
 
 func (b byBladeSerial) Len() int           { return len(b) }

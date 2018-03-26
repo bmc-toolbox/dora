@@ -201,3 +201,43 @@ func (c *Chassis) Diff(chassis *Chassis) (differences []string) {
 
 	return differences
 }
+
+// HasBlade checks whether a blade is connected to the chassis
+func (c *Chassis) HasBlade(serial string) bool {
+	for _, blade := range c.Blades {
+		if blade.Serial == serial {
+			return true
+		}
+	}
+	return false
+}
+
+// HasStorageBlade checks whether a storageblade is connected to the chassis
+func (c *Chassis) HasStorageBlade(serial string) bool {
+	for _, storageBlade := range c.StorageBlades {
+		if storageBlade.Serial == serial {
+			return true
+		}
+	}
+	return false
+}
+
+// HasNic checks whether a nic is connected to the chassis
+func (c *Chassis) HasNic(macAddress string) bool {
+	for _, nic := range c.Nics {
+		if nic.MacAddress == macAddress {
+			return true
+		}
+	}
+	return false
+}
+
+// HasPsu checks whether a psu is connected to the chassis
+func (c *Chassis) HasPsu(serial string) bool {
+	for _, psu := range c.Psus {
+		if psu.Serial == serial {
+			return true
+		}
+	}
+	return false
+}

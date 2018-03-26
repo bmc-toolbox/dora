@@ -150,3 +150,23 @@ func (d *Discrete) Diff(discrete *Discrete) (differences []string) {
 
 	return differences
 }
+
+// HasNic checks whether a nic is connected to the discrete
+func (d *Discrete) HasNic(macAddress string) bool {
+	for _, nic := range d.Nics {
+		if nic.MacAddress == macAddress {
+			return true
+		}
+	}
+	return false
+}
+
+// HasPsu checks whether a psu is connected to the discrete
+func (d *Discrete) HasPsu(serial string) bool {
+	for _, psu := range d.Psus {
+		if psu.Serial == serial {
+			return true
+		}
+	}
+	return false
+}
