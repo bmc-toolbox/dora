@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/jinzhu/gorm"
+	nats "github.com/nats-io/go-nats"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"gitlab.booking.com/go/dora/model"
@@ -39,8 +40,8 @@ type OptionData struct {
 
 // ToScan payload message to scan a network
 type ToScan struct {
-	CIDR string
-	Site string
+	CIDR string `json:"cidr"`
+	Site string `json:"site"`
 }
 
 type scanOption struct {
@@ -231,4 +232,44 @@ func ScanNetworks(subnetsToScan []string, site []string) {
 
 	close(cc)
 	wg.Wait()
+}
+
+// ScanNetworksWorker scan specific or all networks and try to find chassis, blades and servers
+func ScanNetworksWorker() {
+	nc, err := nats.Connect(viper.GetString("collector.worker.server"), nats.UserInfo(viper.GetString("collector.worker.username"), viper.GetString("collector.worker.password")))
+	if err != nil {
+		log.Fatalf("Subscriber unable to connect: %v\n", err)
+	}
+
+	concurrency := viper.GetInt("scanner.concurrency")
+	cc := make(chan *ToScan, concurrency)
+	wg := sync.WaitGroup{}
+	db := storage.InitDB()
+
+	wg.Add(concurrency)
+	for i := 0; i < concurrency; i++ {
+		go func(input <-chan *ToScan, db *gorm.DB, wg *sync.WaitGroup) {
+			defer wg.Done()
+			scan(input, db)
+		}(cc, db, &wg)
+	}
+
+	nc.QueueSubscribe("dora::scan", viper.GetString("collector.worker.queue"), func(msg *nats.Msg) {
+		t := &ToScan{}
+		err := json.Unmarshal(msg.Data, t)
+		if err != nil {
+			log.WithFields(log.Fields{"operation": "subnet scan"}).Error(err)
+			return
+		}
+		cc <- t
+	})
+	nc.Flush()
+
+	if err := nc.LastError(); err != nil {
+		log.WithFields(log.Fields{"operation": "registering worker"}).Fatal(err)
+	}
+
+	log.WithFields(log.Fields{"queue": viper.GetString("collector.worker.queue"), "subject": "dora::scan"}).Info("Subscribed to queue")
+	//	close(cc)
+	//	wg.Wait()
 }

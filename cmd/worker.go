@@ -15,32 +15,13 @@
 package cmd
 
 import (
-	"fmt"
 	"runtime"
 
-	"github.com/nats-io/go-nats"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gitlab.booking.com/go/dora/connectors"
+	"gitlab.booking.com/go/dora/scanner"
 )
-
-func work(subject string) {
-	nc, err := nats.Connect(viper.GetString("collector.worker.server"), nats.UserInfo(viper.GetString("collector.worker.username"), viper.GetString("collector.worker.password")))
-	if err != nil {
-		log.Fatalf("Subscriber unable to connect: %v\n", err)
-	}
-
-	nc.QueueSubscribe(subject, viper.GetString("collector.worker.queue"), func(msg *nats.Msg) {
-		fmt.Printf("%v", msg)
-	})
-	nc.Flush()
-
-	if err := nc.LastError(); err != nil {
-		log.Fatal(err)
-	}
-	log.WithFields(log.Fields{"queue": viper.GetString("collector.worker.queue"), "subject": subject}).Info("Subscribed to queue")
-}
 
 // workerCmd represents the worker command
 var workerCmd = &cobra.Command{
@@ -53,7 +34,7 @@ define the queues via config file.
 usage: dora worker
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		work("dora::scan")
+		scanner.ScanNetworksWorker()
 		connectors.DataCollectionWorker()
 		runtime.Goexit()
 	},

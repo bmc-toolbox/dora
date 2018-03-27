@@ -15,11 +15,14 @@
 package cmd
 
 import (
+	"encoding/json"
+
 	"github.com/nats-io/go-nats"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gitlab.booking.com/go/dora/model"
+	"gitlab.booking.com/go/dora/scanner"
 	"gitlab.booking.com/go/dora/storage"
 )
 
@@ -30,9 +33,9 @@ var publishCmd = &cobra.Command{
 	Long: `Dora publish adds a job to one of the dora queues, checking
 wheter it's valid for the given queue.
 
-usage: dora publish 192.168.0.1 -q dora -s collect 
+usage: dora publish 192.168.0.1/24 -q dora -s scan 
        dora publish 192.168.0.1 -q dora -s collect 
-       dora publish all -q dora -s collect 
+       dora publish all -q dora -s scan 
        dora publish all -q dora -s collect 
 `,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -49,6 +52,22 @@ usage: dora publish 192.168.0.1 -q dora -s collect
 		switch subject {
 		case "scan":
 			subject = "dora::scan"
+			subnets := scanner.LoadSubnets(viper.GetString("scanner.subnet_source"), args, viper.GetStringSlice("site"))
+			args = []string{}
+			for _, subnet := range subnets {
+				s, err := json.Marshal(subnet)
+				if err != nil {
+					log.WithFields(log.Fields{"queue": queue, "subject": subject, "operation": "encoding subnet"}).Error(err)
+					continue
+				}
+				nc.Publish(subject, s)
+				nc.Flush()
+				if err := nc.LastError(); err != nil {
+					log.WithFields(log.Fields{"queue": queue, "subject": subject, "payload": s}).Error(err)
+				} else {
+					log.WithFields(log.Fields{"queue": queue, "subject": subject, "payload": s}).Info("sent")
+				}
+			}
 		case "collect":
 			subject = "dora::collect"
 			if args[0] == "all" {
@@ -63,18 +82,17 @@ usage: dora publish 192.168.0.1 -q dora -s collect
 					}
 				}
 			}
+			for _, payload := range args {
+				nc.Publish(subject, []byte(payload))
+				nc.Flush()
+				if err := nc.LastError(); err != nil {
+					log.WithFields(log.Fields{"queue": queue, "subject": subject, "payload": payload}).Error(err)
+				} else {
+					log.WithFields(log.Fields{"queue": queue, "subject": subject, "payload": payload}).Info("sent")
+				}
+			}
 		default:
 			log.WithFields(log.Fields{"queue": queue, "subject": subject}).Error("unknown subject: %s", subject)
-		}
-
-		for _, payload := range args {
-			nc.Publish(subject, []byte(payload))
-			nc.Flush()
-			if err := nc.LastError(); err != nil {
-				log.WithFields(log.Fields{"queue": queue, "subject": subject, "payload": payload}).Error(err)
-			} else {
-				log.WithFields(log.Fields{"queue": queue, "subject": subject, "payload": payload}).Info("sent")
-			}
 		}
 	},
 }
