@@ -8,6 +8,7 @@ import (
 	"gitlab.booking.com/go/bmc/errors"
 
 	"github.com/jinzhu/gorm"
+	nats "github.com/nats-io/go-nats"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"gitlab.booking.com/go/bmc/devices"
@@ -147,6 +148,62 @@ func DataCollection(ips []string, source string) {
 
 	close(cc)
 	wg.Wait()
+}
+
+// DataCollectionWorker collects the data of all given ips
+func DataCollectionWorker() {
+	nc, err := nats.Connect(viper.GetString("collector.worker.server"), nats.UserInfo(viper.GetString("collector.worker.username"), viper.GetString("collector.worker.password")))
+	if err != nil {
+		log.Fatalf("Subscriber unable to connect: %v\n", err)
+	}
+
+	concurrency := viper.GetInt("collector.concurrency")
+	cc := make(chan string, concurrency)
+	wg := sync.WaitGroup{}
+	db := storage.InitDB()
+	source := "worker"
+
+	wg.Add(concurrency)
+	for i := 0; i < concurrency; i++ {
+		go func(input <-chan string, source *string, db *gorm.DB, wg *sync.WaitGroup) {
+			defer wg.Done()
+			collect(input, source, db)
+		}(cc, &source, db, &wg)
+	}
+
+	nc.QueueSubscribe("dora::collect", viper.GetString("collector.worker.queue"), func(msg *nats.Msg) {
+		ip := string(msg.Data)
+		parsedIP := net.ParseIP(ip)
+		if parsedIP == nil {
+			lookup, err := net.LookupHost(ip)
+			if err != nil {
+				log.WithFields(log.Fields{"operation": "retrieving scanned hosts", "ip": ip}).Error(err)
+				return
+			}
+			ip = lookup[0]
+		}
+		cc <- ip
+	})
+	nc.Flush()
+
+	if err := nc.LastError(); err != nil {
+		log.WithFields(log.Fields{"operation": "registering worker"}).Fatal(err)
+	}
+
+	log.WithFields(log.Fields{"queue": viper.GetString("collector.worker.queue"), "subject": "dora::collect"}).Info("Subscribed to queue")
+
+	notifyChange = make(chan string)
+	go func(notification <-chan string) {
+		for callback := range notification {
+			err := assetNotify(callback)
+			if err != nil {
+				log.WithFields(log.Fields{"operation": "ServerDB callback", "url": callback}).Error(err)
+			}
+		}
+	}(notifyChange)
+
+	//close(cc)
+	//wg.Wait()
 }
 
 func collectBmc(bmc devices.Bmc) (err error) {
