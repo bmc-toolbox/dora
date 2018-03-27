@@ -41,12 +41,20 @@ database_options: host=0.0.0.0 user=postgres port=32768 dbname=postgres password
 api:
 	http_server_port: 8000
 
-
 collector:
 	concurrency: 60
-	dump_invalid_payloads: true
-	dump_invalid_payload_path: /tmp/dora/dumps
 
+	scheduler:                                                                                               
+		enabled: false                                                                                         
+		interval: 15                                                                                           
+																											
+	worker:                                                                                                  
+		enabled: false                                                                                          
+		server: nats://172.17.0.3:4222                                                                         
+		queue: dora                                                                                            
+		username:                                                                                              
+		password: 
+	
 	try_default_credentials: false
 	default:
       dell:
@@ -60,7 +68,6 @@ collector:
 	  hp:
 	    username: Priest
         password: Wololo
-
 
 scanner:
 	scanned_by: anomalia

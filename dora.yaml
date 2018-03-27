@@ -1,16 +1,50 @@
+debug: true
+site:
+   - all 
 bmc_user: Priest
 bmc_pass: Wololo
-simpleapi_user: Priest
-simpleapi_pass: Wololo
-simpleapi_base_url: https://production.booking.com
-site: ams4
-concurrency: 200
-disable_chassis: false
-disable_discretes: false
-noop: false
-debug: false
+notify_api_user: Priest
+notify_api_key: Wololo
+notify_url: https://serverdb-201.lhr4.example.com
+url: http://example.com/dora/v1
 database_type: postgres
-database_options: host=0.0.0.0 user=postgres port=32768 dbname=postgres sslmode=disable password=mysecretpassword
-http_server_port: 8000
-dump_invalid_payloads: true
-dump_invalid_payload_path: /tmp/dora
+database_options: host=0.0.0.0 user=postgres port=32768 dbname=postgres password=mysecretpassword
+
+api:
+	http_server_port: 8000
+
+collector:
+	concurrency: 60
+
+	scheduler:                                                                                               
+		enabled: false                                                                                         
+		interval: 15                                                                                           
+																											
+	worker:                                                                                                  
+		enabled: false                                                                                          
+		server: nats://172.17.0.3:4222                                                                         
+		queue: dora                                                                                            
+		username:                                                                                              
+		password: 
+	
+	try_default_credentials: false
+	default:
+      dell:
+        username: Priest
+	    password: Wololo
+		
+	  supermicro:
+	    username: Priest
+	    password: Wololo
+  
+	  hp:
+	    username: Priest
+        password: Wololo
+
+scanner:
+	scanned_by: anomalia
+	concurrency: 100
+	kea_config: /etc/kea/kea.conf
+	nmap: /usr/local/bin/nmap
+	subnet_source: kea
+	kea_domain_name_suffix: .lom.booking.com  
