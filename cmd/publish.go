@@ -19,6 +19,8 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"gitlab.booking.com/go/dora/model"
+	"gitlab.booking.com/go/dora/storage"
 )
 
 // publishCmd represents the publish command
@@ -29,15 +31,19 @@ var publishCmd = &cobra.Command{
 wheter it's valid for the given queue.
 
 usage: dora publish 192.168.0.1 -q dora -s collect 
-	   dora publish 192.168.0.1 -q dora -s collect 
-	   dora publish all -q dora -s collect 
-	   dora publish all -q dora -s collect 
+       dora publish 192.168.0.1 -q dora -s collect 
+       dora publish all -q dora -s collect 
+       dora publish all -q dora -s collect 
 `,
-	Args: cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		nc, err := nats.Connect(viper.GetString("collector.worker.server"), nats.UserInfo(viper.GetString("collector.worker.username"), viper.GetString("collector.worker.password")))
 		if err != nil {
 			log.Fatalf("Subscriber unable to connect: %v\n", err)
+		}
+
+		if len(args) == 0 || queue == "" || subject == "" {
+			cmd.Help()
+			return
 		}
 
 		switch subject {
@@ -45,6 +51,18 @@ usage: dora publish 192.168.0.1 -q dora -s collect
 			subject = "dora::scan"
 		case "collect":
 			subject = "dora::collect"
+			if args[0] == "all" {
+				db := storage.InitDB()
+				hosts := []model.ScannedPort{}
+				if err := db.Where("port = 443 and protocol = 'tcp' and state = 'open'").Find(&hosts).Error; err != nil {
+					log.WithFields(log.Fields{"queue": queue, "subject": subject, "operation": "retrieving scanned hosts", "ip": "all"}).Error(err)
+				} else {
+					args = []string{}
+					for _, host := range hosts {
+						args = append(args, host.IP)
+					}
+				}
+			}
 		default:
 			log.WithFields(log.Fields{"queue": queue, "subject": subject}).Error("unknown subject: %s", subject)
 		}
