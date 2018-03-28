@@ -122,7 +122,7 @@ func scan(input <-chan *ToScan, db *gorm.DB) {
 	ScannedBy := viper.GetString("scanner.scanned_by")
 	for subnet := range input {
 
-		log.WithFields(log.Fields{"operation": "subnet expansion", "subnet": subnet.CIDR}).Info("scanning network")
+		log.WithFields(log.Fields{"operation": "subnet expansion", "subnet": subnet.CIDR}).Info("network scan started")
 
 		ips, err := ipsWithinASubnet(subnet.CIDR)
 		if err != nil {
@@ -153,6 +153,8 @@ func scan(input <-chan *ToScan, db *gorm.DB) {
 				}
 			}
 		}
+
+		log.WithFields(log.Fields{"operation": "subnet expansion", "subnet": subnet.CIDR}).Info("network scan finished")
 	}
 }
 
