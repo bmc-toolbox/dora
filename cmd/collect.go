@@ -23,6 +23,8 @@ import (
 	"gitlab.booking.com/go/dora/connectors"
 )
 
+var force bool
+
 // collectCmd represents the collect command
 var collectCmd = &cobra.Command{
 	Use:   "collect",
@@ -57,14 +59,20 @@ usage: dora collect
 			}
 		}
 
+		scanType := "cli"
+		if force {
+			scanType = "cli-with-force"
+		}
+
 		if len(args) == 0 {
-			connectors.DataCollection([]string{"all"}, "cli")
+			connectors.DataCollection([]string{"all"}, scanType)
 		} else {
-			connectors.DataCollection(args, "cli")
+			connectors.DataCollection(args, scanType)
 		}
 	},
 }
 
 func init() {
 	RootCmd.AddCommand(collectCmd)
+	collectCmd.Flags().BoolVarP(&force, "force", "f", false, "force blade scan")
 }

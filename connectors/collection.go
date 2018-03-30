@@ -51,7 +51,7 @@ func collect(input <-chan string, source *string, db *gorm.DB) {
 				continue
 			}
 
-			if isBlade, err := bmc.IsBlade(); isBlade && *source != "force" {
+			if isBlade, err := bmc.IsBlade(); isBlade && *source != "cli-with-force" {
 				log.WithFields(log.Fields{"operation": "detection", "ip": host}).Debug("we don't want to scan blades directly since the chassis does it for us")
 				continue
 			} else if err != nil {
@@ -224,7 +224,6 @@ func collectBmc(bmc devices.Bmc) (err error) {
 	}
 
 	db := storage.InitDB()
-
 	if isBlade {
 		server, err := bmc.ServerSnapshot()
 		if err != nil {
@@ -239,7 +238,6 @@ func collectBmc(bmc devices.Bmc) (err error) {
 		blade := model.NewBladeFromDevice(b)
 		blade.BmcAuth = true
 		blade.BmcWEBReachable = true
-
 		scans := []model.ScannedPort{}
 		db.Where("ip = ?", blade.BmcAddress).Find(&scans)
 		for _, scan := range scans {
@@ -318,7 +316,7 @@ func collectBmc(bmc devices.Bmc) (err error) {
 			}
 
 			for _, psu := range existingData.Psus {
-				if !discrete.HasNic(psu.Serial) {
+				if !discrete.HasPsu(psu.Serial) {
 					db.Delete(&psu)
 				}
 			}

@@ -43,7 +43,7 @@ func NewBladeFromDevice(b *devices.Blade) (blade *Blade) {
 			Status:      disk.Status,
 			Model:       disk.Model,
 			Type:        disk.Type,
-			BladeSerial: blade.Serial,
+			BladeSerial: b.Serial,
 		})
 	}
 	blade.BladePosition = b.BladePosition
@@ -110,7 +110,7 @@ func (b Blade) GetReferences() []jsonapi.Reference {
 		{
 			Type:         "disks",
 			Name:         "disks",
-			Relationship: jsonapi.ToOneRelationship,
+			Relationship: jsonapi.ToManyRelationship,
 		},
 		{
 			Type:         "nics",
