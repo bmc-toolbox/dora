@@ -38,7 +38,7 @@ func (r Result) String() string {
 // open.
 func probeTCP(node string, port int) Result {
 	address := fmt.Sprintf("%s:%d", node, port)
-	conn, err := net.DialTimeout("tcp4", address, 2*time.Second)
+	conn, err := net.DialTimeout("tcp4", address, 1*time.Second)
 	if err != nil {
 		log.WithFields(log.Fields{"dial": "tcp", "address": address}).Debug(err)
 		return closed
@@ -51,7 +51,7 @@ func probeTCP(node string, port int) Result {
 // open.
 func probeIPMI(node string, port int) Result {
 	address := fmt.Sprintf("%s:%d", node, port)
-	conn, err := net.DialTimeout("udp4", address, 2*time.Second)
+	conn, err := net.DialTimeout("udp4", address, 1*time.Second)
 	if err != nil {
 		log.WithFields(log.Fields{"dial": "udp", "address": address}).Debug(err)
 		return closed
@@ -66,7 +66,7 @@ func probeIPMI(node string, port int) Result {
 		return closed
 	}
 
-	err = conn.SetReadDeadline(time.Now().Add(2 * time.Second))
+	err = conn.SetReadDeadline(time.Now().Add(1 * time.Second))
 	if err != nil {
 		log.WithFields(log.Fields{"set read timeout": "udp", "address": address}).Debug(err)
 		return closed
