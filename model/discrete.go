@@ -73,6 +73,7 @@ type Discrete struct {
 	BmcLicenceType       string    `json:"bmc_licence_type"`
 	BmcLicenceStatus     string    `json:"bmc_licence_status"`
 	BmcAuth              bool      `json:"bmc_auth"`
+	Disks                []*Disk   `json:"-" gorm:"ForeignKey:BladeSerial"`
 	Nics                 []*Nic    `json:"-" gorm:"ForeignKey:DiscreteSerial"`
 	Psus                 []*Psu    `json:"-" gorm:"ForeignKey:DiscreteSerial"`
 	Model                string    `json:"model"`
@@ -96,6 +97,11 @@ func (d Discrete) GetID() string {
 // GetReferences to satisfy the jsonapi.MarshalReferences interface
 func (d Discrete) GetReferences() []jsonapi.Reference {
 	return []jsonapi.Reference{
+		{
+			Type:         "disks",
+			Name:         "disks",
+			Relationship: jsonapi.ToOneRelationship,
+		},
 		{
 			Type:         "nics",
 			Name:         "nics",
@@ -130,6 +136,14 @@ func (d Discrete) GetReferencedIDs() []jsonapi.ReferenceID {
 		})
 	}
 
+	for _, disk := range d.Disks {
+		result = append(result, jsonapi.ReferenceID{
+			ID:           disk.GetID(),
+			Type:         "disks",
+			Name:         "disks",
+			Relationship: jsonapi.ToManyRelationship,
+		})
+	}
 	return result
 }
 
@@ -141,6 +155,9 @@ func (d *Discrete) Diff(discrete *Discrete) (differences []string) {
 
 	sort.Sort(byMacAddress(d.Nics))
 	sort.Sort(byMacAddress(discrete.Nics))
+
+	sort.Sort(byDiskSerial(d.Disks))
+	sort.Sort(byDiskSerial(discrete.Disks))
 
 	for _, diff := range pretty.Diff(d, discrete) {
 		if !strings.Contains(diff, "UpdatedAt.") && !strings.Contains(diff, "PowerKw") && !strings.Contains(diff, "TempC") {

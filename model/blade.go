@@ -65,6 +65,7 @@ type Blade struct {
 	BmcLicenceType       string       `json:"bmc_licence_type"`
 	BmcLicenceStatus     string       `json:"bmc_licence_status"`
 	BmcAuth              bool         `json:"bmc_auth"`
+	Disks                []*Disk      `json:"-" gorm:"ForeignKey:BladeSerial"`
 	Nics                 []*Nic       `json:"-" gorm:"ForeignKey:BladeSerial"`
 	BladePosition        int          `json:"blade_position"`
 	Model                string       `json:"model"`
@@ -93,6 +94,11 @@ func (b Blade) GetReferences() []jsonapi.Reference {
 		{
 			Type:         "chassis",
 			Name:         "chassis",
+			Relationship: jsonapi.ToOneRelationship,
+		},
+		{
+			Type:         "disks",
+			Name:         "disks",
 			Relationship: jsonapi.ToOneRelationship,
 		},
 		{
@@ -139,6 +145,15 @@ func (b Blade) GetReferencedIDs() []jsonapi.ReferenceID {
 		})
 	}
 
+	for _, disk := range b.Disks {
+		result = append(result, jsonapi.ReferenceID{
+			ID:           disk.GetID(),
+			Type:         "disks",
+			Name:         "disks",
+			Relationship: jsonapi.ToManyRelationship,
+		})
+	}
+
 	return result
 }
 
@@ -150,6 +165,9 @@ func (b *Blade) Diff(blade *Blade) (differences []string) {
 
 	sort.Sort(byMacAddress(b.Nics))
 	sort.Sort(byMacAddress(blade.Nics))
+
+	sort.Sort(byDiskSerial(b.Disks))
+	sort.Sort(byDiskSerial(blade.Disks))
 
 	for _, diff := range pretty.Diff(b, blade) {
 		if !strings.Contains(diff, "UpdatedAt.") && !strings.Contains(diff, "PowerKw") && !strings.Contains(diff, "TempC") {
