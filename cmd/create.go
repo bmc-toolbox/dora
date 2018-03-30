@@ -26,7 +26,6 @@ import (
 
 var sampleConfig = []byte(`---
 debug: true
-noop: true
 site:
    - all 
 bmc_user: Priest
