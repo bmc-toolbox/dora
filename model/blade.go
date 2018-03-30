@@ -35,6 +35,17 @@ func NewBladeFromDevice(b *devices.Blade) (blade *Blade) {
 			BladeSerial: b.Serial,
 		})
 	}
+	blade.Disks = make([]*Disk, 0)
+	for _, disk := range b.Disks {
+		blade.Disks = append(blade.Disks, &Disk{
+			Serial:      disk.Serial,
+			Size:        disk.Size,
+			Status:      disk.Status,
+			Model:       disk.Model,
+			Type:        disk.Type,
+			BladeSerial: blade.Serial,
+		})
+	}
 	blade.BladePosition = b.BladePosition
 	blade.Model = b.Model
 	blade.TempC = b.TempC

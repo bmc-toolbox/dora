@@ -34,12 +34,12 @@ func (c ChassisStorage) GetAll(offset string, limit string) (count int, chassis 
 // GetAllWithAssociations returns all Chassis with their relationships
 func (c ChassisStorage) GetAllWithAssociations(offset string, limit string) (count int, chassis []model.Chassis, err error) {
 	if offset != "" && limit != "" {
-		if err = c.db.Order("serial asc").Preload("Blades").Preload("StorageBlades").Preload("Nics").Find(&chassis).Error; err != nil {
+		if err = c.db.Order("serial asc").Preload("Blades").Preload("StorageBlades").Preload("Psus").Preload("Nics").Find(&chassis).Error; err != nil {
 			return count, chassis, err
 		}
 		c.db.Model(&model.Chassis{}).Order("serial asc").Count(&count)
 	} else {
-		if err = c.db.Order("serial asc").Preload("Blades").Preload("StorageBlades").Preload("Nics").Find(&chassis).Error; err != nil {
+		if err = c.db.Order("serial asc").Preload("Blades").Preload("StorageBlades").Preload("Psus").Preload("Nics").Find(&chassis).Error; err != nil {
 			return count, chassis, err
 		}
 	}
@@ -55,6 +55,21 @@ func (c ChassisStorage) GetAllByNicsID(offset string, limit string, macAddresses
 		c.db.Model(&model.Chassis{}).Joins("INNER JOIN nic ON nic.chassis_serial = chassis.serial").Where("nic.mac_address in (?)", macAddresses).Count(&count)
 	} else {
 		if err = c.db.Joins("INNER JOIN nic ON nic.chassis_serial = chassis.serial").Where("nic.mac_address in (?)", macAddresses).Find(&chassis).Error; err != nil {
+			return count, chassis, err
+		}
+	}
+	return count, chassis, err
+}
+
+// GetAllByPsusID retrieve chassis by psusID
+func (c ChassisStorage) GetAllByPsusID(offset string, limit string, serials []string) (count int, chassis []model.Chassis, err error) {
+	if offset != "" && limit != "" {
+		if err = c.db.Limit(limit).Offset(offset).Joins("INNER JOIN psu ON psu.chassis_serial = chassis.serial").Where("psu.serial in (?)", serials).Find(&chassis).Error; err != nil {
+			return count, chassis, err
+		}
+		c.db.Model(&model.Chassis{}).Joins("INNER JOIN psu ON psu.chassis_serial = chassis.serial").Where("psu.serial in (?)", serials).Count(&count)
+	} else {
+		if err = c.db.Joins("INNER JOIN psu ON psu.chassis_serial = chassis.serial").Where("psu.serial in (?)", serials).Find(&chassis).Error; err != nil {
 			return count, chassis, err
 		}
 	}

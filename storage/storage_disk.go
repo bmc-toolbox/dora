@@ -60,9 +60,9 @@ func (n DiskStorage) GetAllByDiscreteID(offset string, limit string, serials []s
 	return count, disks, err
 }
 
-// GetOne Disk
-func (n DiskStorage) GetOne(macAddress string) (Disk model.Disk, err error) {
-	if err := n.db.Where("serial = ?", macAddress).First(&Disk).Error; err != nil {
+// GetOne z
+func (n DiskStorage) GetOne(serial string) (Disk model.Disk, err error) {
+	if err := n.db.Where("serial = ?", serial).First(&Disk).Error; err != nil {
 		return Disk, err
 	}
 	return Disk, err

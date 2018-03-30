@@ -410,12 +410,30 @@ func collectBmcChassis(bmc devices.BmcChassis) (err error) {
 				if len(blade.Nics) == 0 {
 					nics, err := b.Nics()
 					if err != nil {
-						log.WithFields(log.Fields{"operation": "reading ", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis"}).Warning(err)
+						log.WithFields(log.Fields{"operation": "reading nice", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis"}).Warning(err)
 					} else {
 						for _, nic := range nics {
 							blade.Nics = append(blade.Nics, &model.Nic{
 								MacAddress:  nic.MacAddress,
 								Name:        nic.Name,
+								BladeSerial: blade.Serial,
+							})
+						}
+					}
+				}
+
+				if len(blade.Disks) == 0 {
+					disks, err := b.Disks()
+					if err != nil {
+						log.WithFields(log.Fields{"operation": "reading disks", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis"}).Warning(err)
+					} else {
+						for _, disk := range disks {
+							blade.Disks = append(blade.Disks, &model.Disk{
+								Serial:      disk.Serial,
+								Size:        disk.Size,
+								Status:      disk.Status,
+								Model:       disk.Model,
+								Type:        disk.Type,
 								BladeSerial: blade.Serial,
 							})
 						}

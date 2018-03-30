@@ -35,12 +35,27 @@ func (b BladeStorage) GetAll(offset string, limit string) (count int, blades []m
 // GetAllWithAssociations returns all chassis with their relationships
 func (b BladeStorage) GetAllWithAssociations(offset string, limit string) (count int, blades []model.Blade, err error) {
 	if offset != "" && limit != "" {
-		if err = b.db.Limit(limit).Offset(offset).Order("serial asc").Preload("Nics").Find(&blades).Error; err != nil {
+		if err = b.db.Limit(limit).Offset(offset).Order("serial asc").Preload("Nics").Preload("Disks").Find(&blades).Error; err != nil {
 			return count, blades, err
 		}
 		b.db.Order("serial asc").Find(&model.Blade{}).Count(&count)
 	} else {
-		if err = b.db.Order("serial").Preload("Nics").Find(&blades).Error; err != nil {
+		if err = b.db.Order("serial").Preload("Nics").Preload("Disks").Find(&blades).Error; err != nil {
+			return count, blades, err
+		}
+	}
+	return count, blades, err
+}
+
+// GetAllByDisksID retrieve descretes by disksID
+func (b BladeStorage) GetAllByDisksID(offset string, limit string, serials []string) (count int, blades []model.Blade, err error) {
+	if offset != "" && limit != "" {
+		if err = b.db.Limit(limit).Offset(offset).Joins("INNER JOIN disk ON disk.blade_serial = blade.serial").Where("disk.serial in (?)", serials).Find(&blades).Error; err != nil {
+			return count, blades, err
+		}
+		b.db.Model(&model.Blade{}).Joins("INNER JOIN disk ON disk.blade_serial = blade.serial").Where("disk.serial in (?)", serials).Count(&count)
+	} else {
+		if err = b.db.Joins("INNER JOIN disk ON disk.blade_serial = blade.serial").Where("disk.serial in (?)", serials).Find(&blades).Error; err != nil {
 			return count, blades, err
 		}
 	}
@@ -115,7 +130,7 @@ func (b BladeStorage) GetAllByStorageBladesID(offset string, limit string, seria
 
 // GetOne  Blade
 func (b BladeStorage) GetOne(serial string) (blade model.Blade, err error) {
-	if err := b.db.Preload("Nics").Where("serial = ?", serial).First(&blade).Error; err != nil {
+	if err := b.db.Preload("Nics").Preload("Disks").Where("serial = ?", serial).First(&blade).Error; err != nil {
 		return blade, err
 	}
 	return blade, err

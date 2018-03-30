@@ -97,7 +97,15 @@ func (c ChassisResource) queryAndCountAllWrapper(r api2go.Request) (count int, c
 		}
 	}
 
-	if !hasFilters && !hasInclude && !hasBlade && !hasStorageBlade {
+	psusID, hasPSU := r.QueryParams["psusID"]
+	if hasPSU {
+		count, chassis, err = c.ChassisStorage.GetAllByPsusID(offset, limit, psusID)
+		if err != nil {
+			return count, chassis, err
+		}
+	}
+
+	if !hasFilters && !hasInclude && !hasBlade && !hasStorageBlade && !hasPSU && !hasNIC {
 		count, chassis, err = c.ChassisStorage.GetAll(offset, limit)
 		if err != nil {
 			return count, chassis, err

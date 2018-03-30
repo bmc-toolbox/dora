@@ -81,7 +81,23 @@ func (d DiscreteResource) queryAndCountAllWrapper(r api2go.Request) (count int, 
 		}
 	}
 
-	if !hasFilters && !hasInclude && !hasNIC {
+	psusID, hasPSU := r.QueryParams["psusID"]
+	if hasPSU {
+		count, discretes, err = d.DiscreteStorage.GetAllByPsusID(offset, limit, psusID)
+		if err != nil {
+			return count, discretes, err
+		}
+	}
+
+	disksID, hasDisk := r.QueryParams["disksID"]
+	if hasDisk {
+		count, discretes, err = d.DiscreteStorage.GetAllByDisksID(offset, limit, disksID)
+		if err != nil {
+			return count, discretes, err
+		}
+	}
+
+	if !hasFilters && !hasInclude && !hasNIC && !hasDisk && !hasPSU {
 		count, discretes, err = d.DiscreteStorage.GetAll(offset, limit)
 		if err != nil {
 			return count, discretes, err

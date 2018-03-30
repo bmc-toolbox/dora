@@ -44,6 +44,7 @@ func InitDB() *gorm.DB {
 		&model.StorageBlade{},
 		&model.ScannedPort{},
 		&model.Psu{},
+		&model.Disk{},
 	)
 
 	return db

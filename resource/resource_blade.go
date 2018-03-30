@@ -97,7 +97,15 @@ func (b BladeResource) queryAndCountAllWrapper(r api2go.Request) (count int, bla
 		}
 	}
 
-	if !hasFilters && !hasChassis && !hasInclude && !hasNIC && !hasStorageBlade {
+	disksID, hasDisk := r.QueryParams["disksID"]
+	if hasDisk {
+		count, blades, err = b.BladeStorage.GetAllByDisksID(offset, limit, disksID)
+		if err != nil {
+			return count, blades, err
+		}
+	}
+
+	if !hasFilters && !hasChassis && !hasInclude && !hasNIC && !hasStorageBlade && !hasDisk {
 		count, blades, err = b.BladeStorage.GetAll(offset, limit)
 		if err != nil {
 			return count, blades, err
