@@ -1,10 +1,15 @@
 package storage
 
 import (
+	// Imports for the suported database backends
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
+	// Imports for the suported database backends
+	_ "github.com/go-sql-driver/mysql"
+	// Imports for the suported database backends
 	_ "github.com/lib/pq"
-	_ "github.com/mattn/go-sqlite3"
+	// Imports for the suported database backends
+	_ "github.com/go-sql-driver/mysql"
 
 	"github.com/spf13/viper"
 	"gitlab.booking.com/go/dora/model"

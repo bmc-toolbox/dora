@@ -31,21 +31,6 @@ func (s ScannedPortStorage) GetAll(offset string, limit string) (count int, port
 	return count, ports, err
 }
 
-// GetAllWithAssociations returns all chassis with their relationships
-func (s ScannedPortStorage) GetAllWithAssociations(offset string, limit string) (count int, ports []model.ScannedPort, err error) {
-	if offset != "" && limit != "" {
-		if err = s.db.Limit(limit).Offset(offset).Preload("Hosts").Order("cidr").Find(&ports).Error; err != nil {
-			return count, ports, err
-		}
-		s.db.Model(&model.ScannedPort{}).Preload("Hosts").Order("cidr").Count(&count)
-	} else {
-		if err = s.db.Order("cidr").Preload("Hosts").Find(&ports).Error; err != nil {
-			return count, ports, err
-		}
-	}
-	return count, ports, err
-}
-
 // GetAllByFilters get all chassis based on the filter
 func (s ScannedPortStorage) GetAllByFilters(offset string, limit string, filters *filter.Filters) (count int, ports []model.ScannedPort, err error) {
 	query, err := filters.BuildQuery(model.ScannedPort{})

@@ -91,7 +91,7 @@ func (d DiscreteStorage) GetOne(serial string) (discrete model.Discrete, err err
 	return discrete, err
 }
 
-// UpdateOrCreate
+// UpdateOrCreate updates or create a new object
 func (d *DiscreteStorage) UpdateOrCreate(discrete *model.Discrete) (serial string, err error) {
 	if err = d.db.Save(&discrete).Error; err != nil {
 		return serial, err

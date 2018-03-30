@@ -120,7 +120,7 @@ func (c ChassisStorage) GetAllByStorageBladesID(offset string, limit string, ser
 	return count, chassis, err
 }
 
-// UpdateOrCreate
+// UpdateOrCreate updates or create a new object
 func (c *ChassisStorage) UpdateOrCreate(chassis *model.Chassis) (serial string, err error) {
 	if err = c.db.Save(&chassis).Error; err != nil {
 		return serial, err
