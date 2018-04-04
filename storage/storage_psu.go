@@ -2,6 +2,7 @@ package storage
 
 import (
 	"github.com/jinzhu/gorm"
+	"gitlab.booking.com/go/dora/filter"
 	"gitlab.booking.com/go/dora/model"
 )
 
@@ -16,14 +17,14 @@ type PsuStorage struct {
 }
 
 // GetAll psus
-func (n PsuStorage) GetAll(offset string, limit string) (count int, psus []model.Psu, err error) {
+func (p PsuStorage) GetAll(offset string, limit string) (count int, psus []model.Psu, err error) {
 	if offset != "" && limit != "" {
-		if err = n.db.Limit(limit).Offset(offset).Order("serial").Find(&psus).Error; err != nil {
+		if err = p.db.Limit(limit).Offset(offset).Order("serial").Find(&psus).Error; err != nil {
 			return count, psus, err
 		}
-		n.db.Model(&model.Psu{}).Order("serial").Count(&count)
+		p.db.Model(&model.Psu{}).Order("serial").Count(&count)
 	} else {
-		if err = n.db.Order("serial").Find(&psus).Error; err != nil {
+		if err = p.db.Order("serial").Find(&psus).Error; err != nil {
 			return count, psus, err
 		}
 	}
@@ -31,14 +32,14 @@ func (n PsuStorage) GetAll(offset string, limit string) (count int, psus []model
 }
 
 // GetAllByChassisID of the psus by ChassisID
-func (n PsuStorage) GetAllByChassisID(offset string, limit string, serials []string) (count int, psus []model.Psu, err error) {
+func (p PsuStorage) GetAllByChassisID(offset string, limit string, serials []string) (count int, psus []model.Psu, err error) {
 	if offset != "" && limit != "" {
-		if err = n.db.Limit(limit).Offset(offset).Where("chassis_serial in (?)", serials).Find(&psus).Error; err != nil {
+		if err = p.db.Limit(limit).Offset(offset).Where("chassis_serial in (?)", serials).Find(&psus).Error; err != nil {
 			return count, psus, err
 		}
-		n.db.Model(&model.Psu{}).Where("chassis_serial in (?)", serials).Count(&count)
+		p.db.Model(&model.Psu{}).Where("chassis_serial in (?)", serials).Count(&count)
 	} else {
-		if err = n.db.Where("chassis_serial in (?)", serials).Find(&psus).Error; err != nil {
+		if err = p.db.Where("chassis_serial in (?)", serials).Find(&psus).Error; err != nil {
 			return count, psus, err
 		}
 	}
@@ -46,14 +47,14 @@ func (n PsuStorage) GetAllByChassisID(offset string, limit string, serials []str
 }
 
 // GetAllByDiscreteID of the psus by DiscreteID
-func (n PsuStorage) GetAllByDiscreteID(offset string, limit string, serials []string) (count int, psus []model.Psu, err error) {
+func (p PsuStorage) GetAllByDiscreteID(offset string, limit string, serials []string) (count int, psus []model.Psu, err error) {
 	if offset != "" && limit != "" {
-		if err = n.db.Limit(limit).Offset(offset).Where("discrete_serial in (?)", serials).Find(&psus).Error; err != nil {
+		if err = p.db.Limit(limit).Offset(offset).Where("discrete_serial in (?)", serials).Find(&psus).Error; err != nil {
 			return count, psus, err
 		}
-		n.db.Model(&model.Psu{}).Where("discrete_serial in (?)", serials).Count(&count)
+		p.db.Model(&model.Psu{}).Where("discrete_serial in (?)", serials).Count(&count)
 	} else {
-		if err = n.db.Where("discrete_serial in (?)", serials).Find(&psus).Error; err != nil {
+		if err = p.db.Where("discrete_serial in (?)", serials).Find(&psus).Error; err != nil {
 			return count, psus, err
 		}
 	}
@@ -61,9 +62,30 @@ func (n PsuStorage) GetAllByDiscreteID(offset string, limit string, serials []st
 }
 
 // GetOne psu
-func (n PsuStorage) GetOne(serial string) (psu model.Psu, err error) {
-	if err := n.db.Where("serial = ?", serial).First(&psu).Error; err != nil {
+func (p PsuStorage) GetOne(serial string) (psu model.Psu, err error) {
+	if err := p.db.Where("serial = ?", serial).First(&psu).Error; err != nil {
 		return psu, err
 	}
 	return psu, err
+}
+
+// GetAllByFilters get all blades based on the filter
+func (p PsuStorage) GetAllByFilters(offset string, limit string, filters *filter.Filters) (count int, psus []model.Psu, err error) {
+	query, err := filters.BuildQuery(model.Psu{})
+	if err != nil {
+		return count, psus, err
+	}
+
+	if offset != "" && limit != "" {
+		if err = p.db.Limit(limit).Offset(offset).Where(query).Find(&psus).Error; err != nil {
+			return count, psus, err
+		}
+		p.db.Model(&model.Psu{}).Where(query).Count(&count)
+	} else {
+		if err = p.db.Where(query).Find(&psus).Error; err != nil {
+			return count, psus, err
+		}
+	}
+
+	return count, psus, nil
 }

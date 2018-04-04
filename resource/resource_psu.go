@@ -46,6 +46,14 @@ func (p PsuResource) queryAndCountAllWrapper(r api2go.Request) (count int, psus 
 	}
 
 	offset, limit := filter.OffSetAndLimitParse(&r)
+	filters, hasFilters := filter.NewFilterSet(&r)
+	if hasFilters {
+		count, psus, err = p.PsuStorage.GetAllByFilters(offset, limit, filters)
+		filters.Clean()
+		if err != nil {
+			return count, psus, err
+		}
+	}
 
 	chassisID, hasChassis := r.QueryParams["chassisID"]
 	if hasChassis {
@@ -59,7 +67,7 @@ func (p PsuResource) queryAndCountAllWrapper(r api2go.Request) (count int, psus 
 		return count, psus, err
 	}
 
-	if !hasChassis && !hasDiscrete {
+	if !hasFilters && !hasChassis && !hasDiscrete {
 		count, psus, err = p.PsuStorage.GetAll(offset, limit)
 		if err != nil {
 			return count, psus, err

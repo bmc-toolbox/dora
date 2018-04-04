@@ -11,10 +11,10 @@
     <title>Dora - API DOC</title>
 
     <!-- Bootstrap core CSS -->
-    <link href="/static/bootstrap.min.css" rel="stylesheet">
+    <link href="/api_static/bootstrap.min.css" rel="stylesheet">
 
     <!-- Custom styles for this template -->
-    <link href="/static/narrow-jumbotron.css" rel="stylesheet">
+    <link href="/api_static/narrow-jumbotron.css" rel="stylesheet">
   </head>
 
   <body>
@@ -31,70 +31,105 @@
       </div>
 
       <div class="row marketing">
-        <div class="col-lg-8">
-          <h4>Chassis</h4>
+        <div class="col-lg-12">
+          <h2>Assets</h4>
           </br>
-
-          <h6>/v1/chassis</h6>
-          <p class="small">List all chassis</p>
-
-          <h6>/v1/chassis?include=blades</h6>
-          <p class="small">List all chassis including the blade objects in the response</p>
-
-          <h6>/v1/chassis?page[offset]=0&page[limit]=2</h6>
-          <p class="small">List all chassis and paginate the response</p>
-
-          <h6>/v1/chassis/:serial</h6>
-          <p class="small">Retrieve chassis object by its serial numberr</p>
-
-          <h6>/v1/chassis?filter[:field1]=:value1,:values2</h6>
-          <p class="small">Retrieve chassis filtering by most of the fields exposed via api</p>
         </div>
-        <div class="col-lg-8">
+        <div class="col-lg-12">
+          <h4>Supported assets types and their replationships</h4>
+          </br>
+          <h6>chassis</h6>
+          <p class="small">blades: one to many</p>
+          <p class="small">nics: one to many</p>
+          <p class="small">psu: one to many</p>
+          </br>
+          <h6>blades</h6>
+          <p class="small">disks: one to many</p>
+          <p class="small">nics: one to many</p>
+          <p class="small">chassis: one to one</p>
+          </br>
+          <h6>discretes</h6>
+          <p class="small">disks: one to many</p>
+          <p class="small">nics: one to many</p>
+          <p class="small">psus: one to many</p>
+          </br>
+          <h6>nics</h6> 
+          <p class="small">chassis: unique</p>
+          <p class="small">discretes: unique</p>
+          <p class="small">blades: unique</p>
+          </br>
+          <h6>disks</h6>
+          <p class="small">discretes: unique</p>
+          <p class="small">blades: unique</p>
+          </br>
+          <h6>psus</h6>
+          <p class="small">chassis: unique</p>
+          <p class="small">discretes: unique</p>
+          </br>
+        </div>
+        <div class="col-lg-12">
+          </br>
+        </div>
+        <div class="col-lg-12">
+          <h4>Endpoints and queries</h4>
+          </br>
+          
+          <h6>/v1/${asset_type}</h6>
+          <p class="small">List all ${asset_type}</p>
+          <p class="small">eg: /v1/blades</p>
+          </br>
+          <h6>/v1/${asset_type}?include=${relationship}</h6>
+          <p class="small">List all ${asset_type} including the ${relationship} objects in the response (we only support top to botton include)</p>
+          <p class="small">eg: /v1/chassis?include=blades</p>
+          </br>
+          <h6>/v1/${asset_type}?page[offset]=0&page[limit]=2</h6>
+          <p class="small">List all ${asset_type} and paginate the response</p>
+          <p class="small">eg: /v1/disks?page[offset]=0&page[limit]=2</p>
+          </br>
+          <h6>/v1/${asset_type}/:id/</h6>
+          <p class="small">Retrieve a ${asset_type} object by its :id</p>
+          <p class="small">eg: /v1/psus/176qq52_psu_1</p>
+          </br>
+          <h6>/v1/${asset_type}/:id/${relationship}</h6>
+          <p class="small">Retrieve all the related ${relationship} object of a ${asset_type} object by its :id</p>
+          <p class="small">eg: /v1/psus/176qq52_psu_1/chassis</p>
+          </br>
+          <h6>/v1/${asset_type}?filter[:field1]=:value1,:values2</h6>
+          <p class="small">Retrieve ${asset_type} filtering by fields exposed via api</p>
+          <p class="small">eg: /v1/disks?filter[model]=vk000240gwjpd,vk000480gwjpe&filter[status]!=OK</p>
+        </div>
+           <div class="col-lg-12">
         </br>
         </div>
-        <div class="col-lg-8">
-          <h4>Blades</h4>
+        <div class="col-lg-12">
+           </br>
+        </div>
+        <div class="col-lg-12">
+           </br>
+        </div>
+        <div class="col-lg-12">
+           <h2>Scanned ports</h4>
+           </br>
+        </div>
+        <div class="col-lg-12">
+          <h4>Endpoints and queries</h4>
           </br>
           
-          <h6>/v1/blades</h6>
-          <p class="small">List all blades</p>
-          
-          <h6>/v1/blades?include=nics</h6>
-          <p class="small">List all blades including the nics objects in the response</p>
-          
-          <h6>/v1/blades?page[offset]=0&page[limit]=2</h6>
-          <p class="small">List all blades and paginate the response</p>
-          
-          <h6>/v1/blades/:serial</h6>
-          <p class="small">Retrieve a blade object by its serial number</p>
-          
-          <h6>/v1/blades?filter[:field1]=:value1,:values2</h6>
-          <p class="small">Retrieve blades filtering by most of the fields exposed via api</p>
-        </div>
-        <div class="col-lg-8">
-        </br>
-        </div>
-        <div class="col-lg-8">
-          <h4>Nics</h4>
+          <h6>/v1/scanned_ports</h6>
+          <p class="small">List all scanned ports</p>
           </br>
-          
-          <h6>/v1/nics</h6>
-          <p class="small">List all nics</p>
-          
-          <h6>/v1/nics?page[offset]=0&page[limit]=2</h6>
-          <p class="small">List all nics and paginate the response</p>
-          
-          <h6>/v1/nics/:mac_address</h6>
-          <p class="small">Retrieve nic object by its mac_address</p>
-          
-          <h6>/v1/nics?filter[:field1]=:value1,:values2</h6>
-          <p class="small">Retrieve nics filtering by most of the fields exposed via api</p>
+          <h6>/v1/scanned_ports?page[offset]=0&page[limit]=2</h6>
+          <p class="small">List all scanned ports and paginate the response</p>
+          </br>
+          <h6>/v1/scanned_ports?filter[:field1]=:value1,:values2</h6>
+          <p class="small">List all scanned ports filtering by fields exposed via api</p>
         </div>
       </div>
+      </div>
+
 
       <footer class="footer">
-        <p>&copy; PSM @ Booking.com 2017</p>
+        <p>&copy; PSM Crew @ Booking.com 2018</p>
       </footer>
 
     </div> <!-- /container -->
@@ -103,7 +138,7 @@
     ================================================== -->
     <!-- Placed at the end of the document so the pages load faster -->
     <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
-    <script src="/static/ie10-viewport-bug-workaround.js"></script>
+    <script src="/api_static/ie10-viewport-bug-workaround.js"></script>
   </body>
 </html>
 

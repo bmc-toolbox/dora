@@ -45,9 +45,8 @@ func (d DiskResource) queryAndCountAllWrapper(r api2go.Request) (count int, disk
 		}
 	}
 
-	filters, hasFilters := filter.NewFilterSet(&r)
 	offset, limit := filter.OffSetAndLimitParse(&r)
-
+	filters, hasFilters := filter.NewFilterSet(&r)
 	if hasFilters {
 		count, disks, err = d.DiskStorage.GetAllByFilters(offset, limit, filters)
 		filters.Clean()
