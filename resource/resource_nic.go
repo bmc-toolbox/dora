@@ -45,7 +45,16 @@ func (n NicResource) queryAndCountAllWrapper(r api2go.Request) (count int, nics 
 		}
 	}
 
+	filters, hasFilters := filter.NewFilterSet(&r)
 	offset, limit := filter.OffSetAndLimitParse(&r)
+
+	if hasFilters {
+		count, nics, err = n.NicStorage.GetAllByFilters(offset, limit, filters)
+		filters.Clean()
+		if err != nil {
+			return count, nics, err
+		}
+	}
 
 	bladeID, hasBlade := r.QueryParams["bladesID"]
 	if hasBlade {
@@ -65,7 +74,7 @@ func (n NicResource) queryAndCountAllWrapper(r api2go.Request) (count int, nics 
 		return count, nics, err
 	}
 
-	if !hasBlade && !hasChassis && !hasDiscrete {
+	if !hasFilters && !hasBlade && !hasChassis && !hasDiscrete {
 		count, nics, err = n.NicStorage.GetAll(offset, limit)
 		if err != nil {
 			return count, nics, err

@@ -2,6 +2,7 @@ package storage
 
 import (
 	"github.com/jinzhu/gorm"
+	"gitlab.booking.com/go/dora/filter"
 	"gitlab.booking.com/go/dora/model"
 )
 
@@ -81,4 +82,25 @@ func (n NicStorage) GetOne(macAddress string) (nic model.Nic, err error) {
 		return nic, err
 	}
 	return nic, err
+}
+
+// GetAllByFilters get all blades based on the filter
+func (n NicStorage) GetAllByFilters(offset string, limit string, filters *filter.Filters) (count int, nics []model.Nic, err error) {
+	query, err := filters.BuildQuery(model.Nic{})
+	if err != nil {
+		return count, nics, err
+	}
+
+	if offset != "" && limit != "" {
+		if err = n.db.Limit(limit).Offset(offset).Where(query).Find(&nics).Error; err != nil {
+			return count, nics, err
+		}
+		n.db.Model(&model.Nic{}).Where(query).Count(&count)
+	} else {
+		if err = n.db.Where(query).Find(&nics).Error; err != nil {
+			return count, nics, err
+		}
+	}
+
+	return count, nics, nil
 }

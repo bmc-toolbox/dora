@@ -45,7 +45,16 @@ func (d DiskResource) queryAndCountAllWrapper(r api2go.Request) (count int, disk
 		}
 	}
 
+	filters, hasFilters := filter.NewFilterSet(&r)
 	offset, limit := filter.OffSetAndLimitParse(&r)
+
+	if hasFilters {
+		count, disks, err = d.DiskStorage.GetAllByFilters(offset, limit, filters)
+		filters.Clean()
+		if err != nil {
+			return count, disks, err
+		}
+	}
 
 	bladeID, hasBlade := r.QueryParams["bladesID"]
 	if hasBlade {
@@ -59,7 +68,7 @@ func (d DiskResource) queryAndCountAllWrapper(r api2go.Request) (count int, disk
 		return count, disks, err
 	}
 
-	if !hasBlade && !hasDiscrete {
+	if !hasFilters && !hasBlade && !hasDiscrete {
 		count, disks, err = d.DiskStorage.GetAll(offset, limit)
 		if err != nil {
 			return count, disks, err
