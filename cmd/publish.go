@@ -41,7 +41,7 @@ usage: dora publish 192.168.0.1/24 -q dora -s scan
 	Run: func(cmd *cobra.Command, args []string) {
 		nc, err := nats.Connect(viper.GetString("collector.worker.server"), nats.UserInfo(viper.GetString("collector.worker.username"), viper.GetString("collector.worker.password")))
 		if err != nil {
-			log.Fatalf("Subscriber unable to connect: %v\n", err)
+			log.Fatalf("publisher unable to connect: %v\n", err)
 		}
 
 		if len(args) == 0 || queue == "" || subject == "" {
