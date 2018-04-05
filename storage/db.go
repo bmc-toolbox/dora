@@ -31,8 +31,8 @@ func InitDB() *gorm.DB {
 		panic(err)
 	}
 
-	db.DB().SetMaxIdleConns(10)
-	db.DB().SetMaxOpenConns(25)
+	db.DB().SetMaxIdleConns(5)
+	db.DB().SetMaxOpenConns(15)
 
 	db.LogMode(viper.GetBool("debug"))
 	db.SingularTable(true)
