@@ -61,9 +61,9 @@ func NewChassisFromDevice(c *devices.Chassis) (chassis *Chassis) {
 		})
 	}
 	chassis.Psus = make([]*Psu, 0)
-	for psu_position, psu := range c.Psus {
+	for psuPosition, psu := range c.Psus {
 		if psu.Serial == "" || psu.Serial == "[unknown]" || psu.Serial == "0000000000" || psu.Serial == "_" {
-			log.WithFields(log.Fields{"operation": "chassis scan", "psu": psu_position, "type": "chassis", "chassis_serial": chassis.Serial}).Error(errors.ErrInvalidSerial)
+			log.WithFields(log.Fields{"operation": "chassis scan", "psu": psuPosition, "type": "chassis", "chassis_serial": chassis.Serial}).Error(errors.ErrInvalidSerial)
 			continue
 		}
 		chassis.Psus = append(chassis.Psus, &Psu{

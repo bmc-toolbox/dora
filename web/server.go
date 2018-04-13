@@ -20,7 +20,7 @@ import (
 	"gitlab.booking.com/go/dora/scanner"
 	"gitlab.booking.com/go/dora/storage"
 
-	gin "gopkg.in/gin-gonic/gin.v1"
+	"github.com/gin-gonic/gin"
 )
 
 type scanRequest struct {

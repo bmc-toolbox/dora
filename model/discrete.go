@@ -90,6 +90,7 @@ type Discrete struct {
 	Model                string    `json:"model"`
 	TempC                int       `json:"temp_c"`
 	PowerKw              float64   `json:"power_kw"`
+	PowerState           string    `json:"power_state"`
 	Status               string    `json:"status"`
 	Vendor               string    `json:"vendor"`
 	Processor            string    `json:"processor"`

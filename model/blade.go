@@ -27,6 +27,7 @@ func NewBladeFromDevice(b *devices.Blade) (blade *Blade) {
 	blade.BmcVersion = b.BmcVersion
 	blade.BmcLicenceType = b.BmcLicenceType
 	blade.BmcLicenceStatus = b.BmcLicenceStatus
+	blade.PowerState = b.PowerState
 	blade.Nics = make([]*Nic, 0)
 	for _, nic := range b.Nics {
 		blade.Nics = append(blade.Nics, &Nic{
@@ -82,6 +83,7 @@ type Blade struct {
 	Model                string       `json:"model"`
 	TempC                int          `json:"temp_c"`
 	PowerKw              float64      `json:"power_kw"`
+	PowerState           string       `json:"power_state"`
 	Status               string       `json:"status"`
 	Vendor               string       `json:"vendor"`
 	ChassisSerial        string       `json:"-"`
