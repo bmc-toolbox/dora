@@ -432,6 +432,7 @@ func collectBmcChassis(bmc devices.BmcChassis) (err error) {
 								Status:      disk.Status,
 								Model:       disk.Model,
 								Type:        disk.Type,
+								FwVersion:   disk.FwVersion,
 								BladeSerial: blade.Serial,
 							})
 						}
