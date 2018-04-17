@@ -21,6 +21,7 @@ type Disk struct {
 	Type           string    `json:"type"`
 	Size           string    `json:"size"`
 	Model          string    `json:"model"`
+	FwVersion      string    `json:"fw_version"`
 	UpdatedAt      time.Time `json:"updated_at"`
 	BladeSerial    string    `json:"-"`
 	DiscreteSerial string    `json:"-"`

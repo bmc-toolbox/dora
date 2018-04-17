@@ -38,12 +38,13 @@ func NewDiscreteFromDevice(d *devices.Discrete) (discrete *Discrete) {
 	discrete.Disks = make([]*Disk, 0)
 	for _, disk := range d.Disks {
 		discrete.Disks = append(discrete.Disks, &Disk{
-			Serial:      disk.Serial,
-			Size:        disk.Size,
-			Status:      disk.Status,
-			Model:       disk.Model,
-			Type:        disk.Type,
-			BladeSerial: discrete.Serial,
+			Serial:         disk.Serial,
+			Size:           disk.Size,
+			Status:         disk.Status,
+			Model:          disk.Model,
+			Type:           disk.Type,
+			FwVersion:      disk.FwVersion,
+			DiscreteSerial: discrete.Serial,
 		})
 	}
 	discrete.Model = d.Model

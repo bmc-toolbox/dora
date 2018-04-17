@@ -44,6 +44,7 @@ func NewBladeFromDevice(b *devices.Blade) (blade *Blade) {
 			Status:      disk.Status,
 			Model:       disk.Model,
 			Type:        disk.Type,
+			FwVersion:   disk.FwVersion,
 			BladeSerial: b.Serial,
 		})
 	}
