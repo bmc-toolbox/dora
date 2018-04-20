@@ -100,7 +100,7 @@ func initConfig() {
 
 	// Scan
 	viper.SetDefault("scanner.kea_domain_name_suffix", ".lom.booking.com")
-	viper.SetDefault("scanner.kea_config", "/etc/kea/kea.conf")
+	viper.SetDefault("scanner.kea_config", "/etc/kea/kea-dhcp4.conf")
 	viper.SetDefault("scanner.subnet_source", "kea")
 	viper.SetDefault("scanner.nmap", "/usr/bin/nmap")
 	viper.SetDefault("scanner.concurrency", 100)

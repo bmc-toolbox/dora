@@ -71,7 +71,7 @@ collector:
 scanner:
 	scanned_by: anomalia
 	concurrency: 100
-	kea_config: /etc/kea/kea.conf
+	kea_config: /etc/kea/kea-dhcp4.conf
 	nmap: /usr/local/bin/nmap
 	subnet_source: kea
 	kea_domain_name_suffix: .lom.booking.com  
