@@ -1,6 +1,7 @@
 package storage
 
 import (
+	multierror "github.com/hashicorp/go-multierror"
 	"github.com/jinzhu/gorm"
 	"gitlab.booking.com/go/dora/filter"
 	"gitlab.booking.com/go/dora/model"
@@ -142,4 +143,53 @@ func (b *BladeStorage) UpdateOrCreate(blade *model.Blade) (serial string, err er
 		return serial, err
 	}
 	return blade.Serial, nil
+}
+
+// RemoveOldDiskRefs deletes all the old references from Nics that used to be inside of the chassis
+func (b *BladeStorage) RemoveOldDiskRefs(blade *model.Blade) (count int, serials []string, err error) {
+	var connectedSerials []string
+	for _, disk := range blade.Disks {
+		connectedSerials = append(connectedSerials, disk.Serial)
+	}
+
+	if err = b.db.Model(&model.Disk{}).Where("serial not in (?) and blade_serial = ?", connectedSerials, blade.Serial).Pluck("serial", &serials).Count(&count).Error; err != nil {
+		return count, serials, err
+	}
+
+	if count > 0 {
+		if err = b.db.Where("serial in (?) and blade_serial = ?", serials, blade.Serial).Delete(model.Disk{}).Error; err != nil {
+			return count, serials, err
+		}
+	}
+
+	return count, serials, err
+}
+
+// RemoveOldNicRefs deletes all the old references from Nics that used to be inside of the chassis
+func (b *BladeStorage) RemoveOldNicRefs(blade *model.Blade) (count int, macAddresses []string, err error) {
+	var connectedMacAddresses []string
+	for _, nic := range blade.Nics {
+		connectedMacAddresses = append(connectedMacAddresses, nic.MacAddress)
+	}
+
+	if err = b.db.Model(&model.Nic{}).Where("mac_address not in (?) and blade_serial = ?", connectedMacAddresses, blade.Serial).Pluck("mac_address", &macAddresses).Count(&count).Error; err != nil {
+		return count, macAddresses, err
+	}
+
+	if count > 0 {
+		if err = b.db.Where("mac_address in (?) and blade_serial = ?", macAddresses, blade.Serial).Delete(model.Nic{}).Error; err != nil {
+			return count, macAddresses, err
+		}
+	}
+
+	return count, macAddresses, err
+}
+
+// RemoveOldRefs deletes all the old references from all attached components
+func (b *BladeStorage) RemoveOldRefs(blade *model.Blade) (err error) {
+	_, _, lerr := b.RemoveOldNicRefs(blade)
+	err = multierror.Append(err, lerr)
+	_, _, lerr = b.RemoveOldDiskRefs(blade)
+	err = multierror.Append(err, lerr)
+	return err
 }
