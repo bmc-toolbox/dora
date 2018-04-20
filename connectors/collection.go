@@ -7,6 +7,7 @@ import (
 
 	"gitlab.booking.com/go/bmc/errors"
 
+	multierror "github.com/hashicorp/go-multierror"
 	"github.com/jinzhu/gorm"
 	nats "github.com/nats-io/go-nats"
 	log "github.com/sirupsen/logrus"
@@ -263,11 +264,11 @@ func collectBmc(bmc devices.Bmc) (err error) {
 
 		if len(blade.Diff(&existingData)) != 0 {
 			notifyChange <- fmt.Sprintf("%s/%s/%s", viper.GetString("url"), "blades", blade.Serial)
-			for _, nic := range existingData.Nics {
-				if !blade.HasNic(nic.MacAddress) {
-					db.Delete(&nic)
-				}
-			}
+		}
+
+		err = bladeStorage.RemoveOldRefs(blade)
+		if err != nil {
+			return err
 		}
 	} else {
 		server, err := bmc.ServerSnapshot()
@@ -309,17 +310,11 @@ func collectBmc(bmc devices.Bmc) (err error) {
 
 		if len(discrete.Diff(&existingData)) != 0 {
 			notifyChange <- fmt.Sprintf("%s/%s/%s", viper.GetString("url"), "discretes", discrete.Serial)
-			for _, nic := range existingData.Nics {
-				if !discrete.HasNic(nic.MacAddress) {
-					db.Delete(&nic)
-				}
-			}
+		}
 
-			for _, psu := range existingData.Psus {
-				if !discrete.HasPsu(psu.Serial) {
-					db.Delete(&psu)
-				}
-			}
+		err = discreteStorage.RemoveOldRefs(discrete)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -455,29 +450,20 @@ func collectBmcChassis(bmc devices.BmcChassis) (err error) {
 
 	if len(chassis.Diff(&existingData)) != 0 {
 		notifyChange <- fmt.Sprintf("%s/%s/%s", viper.GetString("url"), "chassis", chassis.Serial)
-		for _, blade := range existingData.Blades {
-			if !chassis.HasBlade(blade.Serial) {
-				db.Delete(&blade)
-			}
-		}
+	}
 
-		for _, storageBlade := range existingData.StorageBlades {
-			if !chassis.HasStorageBlade(storageBlade.Serial) {
-				db.Delete(&storageBlade)
-			}
-		}
+	err = chassisStorage.RemoveOldRefs(chassis)
+	if err != nil {
+		return err
+	}
 
-		for _, nic := range existingData.Nics {
-			if !chassis.HasNic(nic.MacAddress) {
-				db.Delete(&nic)
-			}
-		}
+	bladeStorage := storage.NewBladeStorage(db)
+	for _, blade := range chassis.Blades {
+		err = multierror.Append(err, bladeStorage.RemoveOldRefs(blade))
+	}
 
-		for _, psu := range existingData.Psus {
-			if !chassis.HasNic(psu.Serial) {
-				db.Delete(&psu)
-			}
-		}
+	if err != nil {
+		return err
 	}
 
 	return nil
