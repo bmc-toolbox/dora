@@ -1,6 +1,7 @@
 package storage
 
 import (
+	multierror "github.com/hashicorp/go-multierror"
 	"github.com/jinzhu/gorm"
 	"gitlab.booking.com/go/dora/filter"
 	"gitlab.booking.com/go/dora/model"
@@ -181,4 +182,57 @@ func (c *ChassisStorage) RemoveOldStorageBladesRefs(chassis *model.Chassis) (cou
 	}
 
 	return count, serials, err
+}
+
+// RemoveOldNicRefs deletes all the old references from Nics that used to be inside of the chassis
+func (c *ChassisStorage) RemoveOldNicRefs(chassis *model.Chassis) (count int, macAddresses []string, err error) {
+	var connectedMacAddresses []string
+	for _, nic := range chassis.Nics {
+		connectedMacAddresses = append(connectedMacAddresses, nic.MacAddress)
+	}
+
+	if err = c.db.Model(&model.Nic{}).Where("mac_address not in (?) and chassis_serial = ?", connectedMacAddresses, chassis.Serial).Pluck("mac_address", &macAddresses).Count(&count).Error; err != nil {
+		return count, macAddresses, err
+	}
+
+	if count > 0 {
+		if err = c.db.Where("mac_address in (?) and chassis_serial = ?", macAddresses, chassis.Serial).Delete(model.Nic{}).Error; err != nil {
+			return count, macAddresses, err
+		}
+	}
+
+	return count, macAddresses, err
+}
+
+// RemoveOldPsuRefs deletes all the old references from Psus that used to be inside of the chassis
+func (c *ChassisStorage) RemoveOldPsuRefs(chassis *model.Chassis) (count int, serials []string, err error) {
+	var connectedSerials []string
+	for _, psu := range chassis.Psus {
+		connectedSerials = append(connectedSerials, psu.Serial)
+	}
+
+	if err = c.db.Model(&model.Psu{}).Where("serial not in (?) and chassis_serial = ?", connectedSerials, chassis.Serial).Pluck("serial", &serials).Count(&count).Error; err != nil {
+		return count, serials, err
+	}
+
+	if count > 0 {
+		if err = c.db.Where("serial in (?) and chassis_serial = ?", serials, chassis.Serial).Delete(model.Psu{}).Error; err != nil {
+			return count, serials, err
+		}
+	}
+
+	return count, serials, err
+}
+
+// RemoveOldRefs deletes all the old references from all attached components
+func (c *ChassisStorage) RemoveOldRefs(chassis *model.Chassis) (err error) {
+	_, _, lerr := c.RemoveOldPsuRefs(chassis)
+	err = multierror.Append(err, lerr)
+	_, _, lerr = c.RemoveOldStorageBladesRefs(chassis)
+	err = multierror.Append(err, lerr)
+	_, _, lerr = c.RemoveOldNicRefs(chassis)
+	err = multierror.Append(err, lerr)
+	_, _, lerr = c.RemoveOldBladesRefs(chassis)
+	err = multierror.Append(err, lerr)
+	return err
 }
