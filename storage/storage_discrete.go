@@ -1,6 +1,7 @@
 package storage
 
 import (
+	multierror "github.com/hashicorp/go-multierror"
 	"github.com/jinzhu/gorm"
 	"gitlab.booking.com/go/dora/filter"
 	"gitlab.booking.com/go/dora/model"
@@ -127,4 +128,75 @@ func (d *DiscreteStorage) UpdateOrCreate(discrete *model.Discrete) (serial strin
 		return serial, err
 	}
 	return discrete.Serial, nil
+}
+
+// RemoveOldDiskRefs deletes all the old references from Nics that used to be inside of the chassis
+func (d *DiscreteStorage) RemoveOldDiskRefs(discrete *model.Discrete) (count int, serials []string, err error) {
+	var connectedSerials []string
+	for _, disk := range discrete.Disks {
+		connectedSerials = append(connectedSerials, disk.Serial)
+	}
+
+	if err = d.db.Model(&model.Disk{}).Where("serial not in (?) and discrete_serial = ?", connectedSerials, discrete.Serial).Pluck("serial", &serials).Count(&count).Error; err != nil {
+		return count, serials, err
+	}
+
+	if count > 0 {
+		if err = d.db.Where("serial in (?) and discrete_serial = ?", serials, discrete.Serial).Delete(model.Disk{}).Error; err != nil {
+			return count, serials, err
+		}
+	}
+
+	return count, serials, err
+}
+
+// RemoveOldNicRefs deletes all the old references from Nics that used to be inside of the chassis
+func (d *DiscreteStorage) RemoveOldNicRefs(discrete *model.Discrete) (count int, macAddresses []string, err error) {
+	var connectedMacAddresses []string
+	for _, nic := range discrete.Nics {
+		connectedMacAddresses = append(connectedMacAddresses, nic.MacAddress)
+	}
+
+	if err = d.db.Model(&model.Nic{}).Where("mac_address not in (?) and discrete_serial = ?", connectedMacAddresses, discrete.Serial).Pluck("mac_address", &macAddresses).Count(&count).Error; err != nil {
+		return count, macAddresses, err
+	}
+
+	if count > 0 {
+		if err = d.db.Where("mac_address in (?) and discrete_serial = ?", macAddresses, discrete.Serial).Delete(model.Nic{}).Error; err != nil {
+			return count, macAddresses, err
+		}
+	}
+
+	return count, macAddresses, err
+}
+
+// RemoveOldPsuRefs deletes all the old references from Psus that used to be inside of the chassis
+func (d *DiscreteStorage) RemoveOldPsuRefs(discrete *model.Discrete) (count int, serials []string, err error) {
+	var connectedSerials []string
+	for _, psu := range discrete.Psus {
+		connectedSerials = append(connectedSerials, psu.Serial)
+	}
+
+	if err = d.db.Model(&model.Psu{}).Where("serial not in (?) and discrete_serial = ?", connectedSerials, discrete.Serial).Pluck("serial", &serials).Count(&count).Error; err != nil {
+		return count, serials, err
+	}
+
+	if count > 0 {
+		if err = d.db.Where("serial in (?) and discrete_serial = ?", serials, discrete.Serial).Delete(model.Psu{}).Error; err != nil {
+			return count, serials, err
+		}
+	}
+
+	return count, serials, err
+}
+
+// RemoveOldRefs deletes all the old references from all attached components
+func (d *DiscreteStorage) RemoveOldRefs(discrete *model.Discrete) (err error) {
+	_, _, lerr := d.RemoveOldPsuRefs(discrete)
+	err = multierror.Append(err, lerr)
+	_, _, lerr = d.RemoveOldNicRefs(discrete)
+	err = multierror.Append(err, lerr)
+	_, _, lerr = d.RemoveOldDiskRefs(discrete)
+	err = multierror.Append(err, lerr)
+	return err
 }
