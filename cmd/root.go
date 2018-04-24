@@ -104,6 +104,7 @@ func initConfig() {
 	viper.SetDefault("scanner.subnet_source", "kea")
 	viper.SetDefault("scanner.nmap", "/usr/bin/nmap")
 	viper.SetDefault("scanner.concurrency", 100)
+	viper.SetDefault("database_max_connections", 10)
 
 	hostname, err := os.Hostname()
 	if err != nil {

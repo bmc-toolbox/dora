@@ -36,6 +36,7 @@ notify_url: https://serverdb-201.lhr4.example.com
 url: http://example.com/dora/v1
 database_type: postgres
 database_options: host=0.0.0.0 user=postgres port=32768 dbname=postgres password=mysecretpassword
+database_max_connections: 10
 
 api:
 	http_server_port: 8000
