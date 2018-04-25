@@ -452,18 +452,20 @@ func collectBmcChassis(bmc devices.BmcChassis) (err error) {
 		notifyChange <- fmt.Sprintf("%s/%s/%s", viper.GetString("url"), "chassis", chassis.Serial)
 	}
 
-	err = chassisStorage.RemoveOldRefs(chassis)
-	if err != nil {
-		return err
-	}
+	var merror *multierror.Error
 
 	bladeStorage := storage.NewBladeStorage(db)
 	for _, blade := range chassis.Blades {
-		err = multierror.Append(err, bladeStorage.RemoveOldRefs(blade))
+		merror = multierror.Append(merror, bladeStorage.RemoveOldRefs(blade))
+	}
+
+	err = chassisStorage.RemoveOldRefs(chassis)
+	if err != nil {
+		merror = multierror.Append(merror, err)
 	}
 
 	if err != nil {
-		return err
+		return merror.ErrorOrNil()
 	}
 
 	return nil
