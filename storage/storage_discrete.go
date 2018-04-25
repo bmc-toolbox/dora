@@ -192,11 +192,12 @@ func (d *DiscreteStorage) RemoveOldPsuRefs(discrete *model.Discrete) (count int,
 
 // RemoveOldRefs deletes all the old references from all attached components
 func (d *DiscreteStorage) RemoveOldRefs(discrete *model.Discrete) (err error) {
-	_, _, lerr := d.RemoveOldPsuRefs(discrete)
-	err = multierror.Append(err, lerr)
-	_, _, lerr = d.RemoveOldNicRefs(discrete)
-	err = multierror.Append(err, lerr)
-	_, _, lerr = d.RemoveOldDiskRefs(discrete)
-	err = multierror.Append(err, lerr)
-	return err
+	var merror *multierror.Error
+	_, _, err = d.RemoveOldPsuRefs(discrete)
+	merror = multierror.Append(merror, err)
+	_, _, err = d.RemoveOldNicRefs(discrete)
+	merror = multierror.Append(merror, err)
+	_, _, err = d.RemoveOldDiskRefs(discrete)
+	merror = multierror.Append(merror, err)
+	return merror.ErrorOrNil()
 }

@@ -226,13 +226,14 @@ func (c *ChassisStorage) RemoveOldPsuRefs(chassis *model.Chassis) (count int, se
 
 // RemoveOldRefs deletes all the old references from all attached components
 func (c *ChassisStorage) RemoveOldRefs(chassis *model.Chassis) (err error) {
-	_, _, lerr := c.RemoveOldPsuRefs(chassis)
-	err = multierror.Append(err, lerr)
-	_, _, lerr = c.RemoveOldStorageBladesRefs(chassis)
-	err = multierror.Append(err, lerr)
-	_, _, lerr = c.RemoveOldNicRefs(chassis)
-	err = multierror.Append(err, lerr)
-	_, _, lerr = c.RemoveOldBladesRefs(chassis)
-	err = multierror.Append(err, lerr)
-	return err
+	var merror *multierror.Error
+	_, _, err = c.RemoveOldPsuRefs(chassis)
+	merror = multierror.Append(merror, err)
+	_, _, err = c.RemoveOldStorageBladesRefs(chassis)
+	merror = multierror.Append(merror, err)
+	_, _, err = c.RemoveOldNicRefs(chassis)
+	merror = multierror.Append(merror, err)
+	_, _, err = c.RemoveOldBladesRefs(chassis)
+	merror = multierror.Append(merror, err)
+	return merror.ErrorOrNil()
 }
