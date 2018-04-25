@@ -1,8 +1,6 @@
 package storage
 
 import (
-	"fmt"
-
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/jinzhu/gorm"
 	"gitlab.booking.com/go/dora/filter"
@@ -150,7 +148,6 @@ func (b *BladeStorage) UpdateOrCreate(blade *model.Blade) (serial string, err er
 // RemoveOldDiskRefs deletes all the old references from Nics that used to be inside of the chassis
 func (b *BladeStorage) RemoveOldDiskRefs(blade *model.Blade) (count int, serials []string, err error) {
 	var connectedSerials []string
-	fmt.Println("here")
 	for _, disk := range blade.Disks {
 		connectedSerials = append(connectedSerials, disk.Serial)
 	}
