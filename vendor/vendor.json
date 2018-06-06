@@ -15,6 +15,96 @@
 			"revisionTime": "2017-04-20T13:57:05Z"
 		},
 		{
+			"checksumSHA1": "wYq1R4C6u4aZO6gWzbGvhfqtgYI=",
+			"path": "github.com/bmc-toolbox/bmclib/cfgresources",
+			"revision": "7cf3d743633435ed1a25f15e9931ab1337ec6c1b",
+			"revisionTime": "2018-06-05T15:35:48Z"
+		},
+		{
+			"checksumSHA1": "3QYSQNnIG5a46FBgyCct//9UNcg=",
+			"path": "github.com/bmc-toolbox/bmclib/devices",
+			"revision": "7cf3d743633435ed1a25f15e9931ab1337ec6c1b",
+			"revisionTime": "2018-06-05T15:35:48Z"
+		},
+		{
+			"checksumSHA1": "SgXG8BX7NaLsHwynNA/KPyKZiJE=",
+			"path": "github.com/bmc-toolbox/bmclib/discover",
+			"revision": "7cf3d743633435ed1a25f15e9931ab1337ec6c1b",
+			"revisionTime": "2018-06-05T15:35:48Z"
+		},
+		{
+			"checksumSHA1": "5rDuyM7NKgRWJe/GEtGWp1Z1W7k=",
+			"path": "github.com/bmc-toolbox/bmclib/errors",
+			"revision": "7cf3d743633435ed1a25f15e9931ab1337ec6c1b",
+			"revisionTime": "2018-06-05T15:35:48Z"
+		},
+		{
+			"checksumSHA1": "FnAD1mywo2zuNm5mT7TXi5dQGW0=",
+			"path": "github.com/bmc-toolbox/bmclib/httpclient",
+			"revision": "7cf3d743633435ed1a25f15e9931ab1337ec6c1b",
+			"revisionTime": "2018-06-05T15:35:48Z"
+		},
+		{
+			"checksumSHA1": "mNILaVea4KJc5PNxSyoSdqQ6F/g=",
+			"path": "github.com/bmc-toolbox/bmclib/logging",
+			"revision": "7cf3d743633435ed1a25f15e9931ab1337ec6c1b",
+			"revisionTime": "2018-06-05T15:35:48Z"
+		},
+		{
+			"checksumSHA1": "0VMtxWp8idw30zXq4bA87nrGC1A=",
+			"path": "github.com/bmc-toolbox/bmclib/providers/dell",
+			"revision": "7cf3d743633435ed1a25f15e9931ab1337ec6c1b",
+			"revisionTime": "2018-06-05T15:35:48Z"
+		},
+		{
+			"checksumSHA1": "Qg4mjBKzL36wnMaeKyZveeiVALs=",
+			"path": "github.com/bmc-toolbox/bmclib/providers/dell/idrac8",
+			"revision": "7cf3d743633435ed1a25f15e9931ab1337ec6c1b",
+			"revisionTime": "2018-06-05T15:35:48Z"
+		},
+		{
+			"checksumSHA1": "Caccd9GI419H3oBy8yva6T04fk4=",
+			"path": "github.com/bmc-toolbox/bmclib/providers/dell/idrac9",
+			"revision": "7cf3d743633435ed1a25f15e9931ab1337ec6c1b",
+			"revisionTime": "2018-06-05T15:35:48Z"
+		},
+		{
+			"checksumSHA1": "FIfvEDTvbRdLAeZbwLnCQKTqqiw=",
+			"path": "github.com/bmc-toolbox/bmclib/providers/dell/m1000e",
+			"revision": "7cf3d743633435ed1a25f15e9931ab1337ec6c1b",
+			"revisionTime": "2018-06-05T15:35:48Z"
+		},
+		{
+			"checksumSHA1": "sGYzYB11bfvyT46e+GQMHvmTl5k=",
+			"path": "github.com/bmc-toolbox/bmclib/providers/hp",
+			"revision": "7cf3d743633435ed1a25f15e9931ab1337ec6c1b",
+			"revisionTime": "2018-06-05T15:35:48Z"
+		},
+		{
+			"checksumSHA1": "N2kBn0OSLog4jQOjhiwBMHXvjwM=",
+			"path": "github.com/bmc-toolbox/bmclib/providers/hp/c7000",
+			"revision": "7cf3d743633435ed1a25f15e9931ab1337ec6c1b",
+			"revisionTime": "2018-06-05T15:35:48Z"
+		},
+		{
+			"checksumSHA1": "cO1VexY6CrjHSOjSlQydpsZpKBY=",
+			"path": "github.com/bmc-toolbox/bmclib/providers/hp/ilo",
+			"revision": "7cf3d743633435ed1a25f15e9931ab1337ec6c1b",
+			"revisionTime": "2018-06-05T15:35:48Z"
+		},
+		{
+			"checksumSHA1": "yqCKz1tkSCuaCkZ0ccl+T1pP/+w=",
+			"path": "github.com/bmc-toolbox/bmclib/providers/supermicro",
+			"revision": "7cf3d743633435ed1a25f15e9931ab1337ec6c1b",
+			"revisionTime": "2018-06-05T15:35:48Z"
+		},
+		{
+			"checksumSHA1": "nIiU2MZhqk9uEJ4GRwxOUE0J2jU=",
+			"path": "github.com/bmc-toolbox/bmclib/providers/supermicro/supermicrox10",
+			"revision": "7cf3d743633435ed1a25f15e9931ab1337ec6c1b",
+			"revisionTime": "2018-06-05T15:35:48Z"
+		},
+		{
 			"checksumSHA1": "8i+beEgcVf0q/I7lTqo2ERZM/OU=",
 			"path": "github.com/daaku/go.zipexe",
 			"revision": "a5fe2436ffcb3236e175e5149162b41cd28bd27d",
@@ -75,6 +165,12 @@
 			"revisionTime": "2018-03-28T16:31:53Z"
 		},
 		{
+			"checksumSHA1": "p3IB18uJRs4dL2K5yx24MrLYE9A=",
+			"path": "github.com/google/go-querystring/query",
+			"revision": "53e6ce116135b80d037921a7fdd5138cf32d7a8a",
+			"revisionTime": "2017-01-11T10:11:55Z"
+		},
+		{
 			"checksumSHA1": "mLmwamaqyrVUNOmTAGaSpnO1YJQ=",
 			"path": "github.com/google/gops/agent",
 			"revision": "160b358b10d6123169a895090938b088c8f78dc9",
@@ -94,17 +190,16 @@
 		},
 		{
 			"checksumSHA1": "cdOCt0Yb+hdErz8NAQqayxPmRsY=",
-			"origin": "gitlab.booking.com/go/bmc/vendor/github.com/hashicorp/errwrap",
+			"origin": "github.com/hashicorp/go-multierror/vendor/github.com/hashicorp/errwrap",
 			"path": "github.com/hashicorp/errwrap",
-			"revision": "178c1d7326aac9133f74a92216379807d3107161",
-			"revisionTime": "2018-04-17T12:58:41Z"
+			"revision": "b7773ae218740a7be65057fc60b366a49b538a44",
+			"revisionTime": "2017-12-04T18:29:08Z"
 		},
 		{
 			"checksumSHA1": "g7uHECbzuaWwdxvwoyxBwgeERPk=",
-			"origin": "gitlab.booking.com/go/bmc/vendor/github.com/hashicorp/go-multierror",
 			"path": "github.com/hashicorp/go-multierror",
-			"revision": "178c1d7326aac9133f74a92216379807d3107161",
-			"revisionTime": "2018-04-17T12:58:41Z"
+			"revision": "b7773ae218740a7be65057fc60b366a49b538a44",
+			"revisionTime": "2017-12-04T18:29:08Z"
 		},
 		{
 			"checksumSHA1": "HtpYAWHvd9mq+mHkpo7z8PGzMik=",
@@ -351,90 +446,6 @@
 			"path": "github.com/ugorji/go/codec",
 			"revision": "02537d3a3e32ef636a53519265d211bd208ca488",
 			"revisionTime": "2018-03-07T15:23:41Z"
-		},
-		{
-			"checksumSHA1": "vwIdZ3KdggN96vgD7hSPMLhfeVY=",
-			"path": "gitlab.booking.com/go/bmc/c7000",
-			"revision": "178c1d7326aac9133f74a92216379807d3107161",
-			"revisionTime": "2018-04-17T12:58:41Z"
-		},
-		{
-			"checksumSHA1": "+tx2MEZuEgATFRWO2DKWDgyidBA=",
-			"path": "gitlab.booking.com/go/bmc/dell",
-			"revision": "178c1d7326aac9133f74a92216379807d3107161",
-			"revisionTime": "2018-04-17T12:58:41Z"
-		},
-		{
-			"checksumSHA1": "aLbT7Vpmo+Bb73jHHeS7KyUsSeg=",
-			"path": "gitlab.booking.com/go/bmc/devices",
-			"revision": "178c1d7326aac9133f74a92216379807d3107161",
-			"revisionTime": "2018-04-17T12:58:41Z"
-		},
-		{
-			"checksumSHA1": "DVRY6299g3rpyS8ZbxgAcrpnNGo=",
-			"path": "gitlab.booking.com/go/bmc/discover",
-			"revision": "178c1d7326aac9133f74a92216379807d3107161",
-			"revisionTime": "2018-04-17T12:58:41Z"
-		},
-		{
-			"checksumSHA1": "AFo8/PfFYHod25EgSfFbz6qcAXs=",
-			"path": "gitlab.booking.com/go/bmc/errors",
-			"revision": "178c1d7326aac9133f74a92216379807d3107161",
-			"revisionTime": "2018-04-17T12:58:41Z"
-		},
-		{
-			"checksumSHA1": "Q+9Kvzq7b7OgaGeKiNTifshtE2o=",
-			"path": "gitlab.booking.com/go/bmc/hp",
-			"revision": "178c1d7326aac9133f74a92216379807d3107161",
-			"revisionTime": "2018-04-17T12:58:41Z"
-		},
-		{
-			"checksumSHA1": "h3KIm9l/OgbO2WhKEGNrwXwgGAo=",
-			"path": "gitlab.booking.com/go/bmc/httpclient",
-			"revision": "178c1d7326aac9133f74a92216379807d3107161",
-			"revisionTime": "2018-04-17T12:58:41Z"
-		},
-		{
-			"checksumSHA1": "n01syqMfr5jIy6M1MBf8O0l8v8Q=",
-			"path": "gitlab.booking.com/go/bmc/idrac8",
-			"revision": "178c1d7326aac9133f74a92216379807d3107161",
-			"revisionTime": "2018-04-17T12:58:41Z"
-		},
-		{
-			"checksumSHA1": "JCqJ/n5LoQeGhUosdVt1NH1KLiM=",
-			"path": "gitlab.booking.com/go/bmc/idrac9",
-			"revision": "178c1d7326aac9133f74a92216379807d3107161",
-			"revisionTime": "2018-04-17T12:58:41Z"
-		},
-		{
-			"checksumSHA1": "hWBQRcs0HVCMQBYGmkZgjzDgphc=",
-			"path": "gitlab.booking.com/go/bmc/ilo",
-			"revision": "178c1d7326aac9133f74a92216379807d3107161",
-			"revisionTime": "2018-04-17T12:58:41Z"
-		},
-		{
-			"checksumSHA1": "qDLcE+wmWbWKFOo/VURfjxQpMZc=",
-			"path": "gitlab.booking.com/go/bmc/m1000e",
-			"revision": "178c1d7326aac9133f74a92216379807d3107161",
-			"revisionTime": "2018-04-17T12:58:41Z"
-		},
-		{
-			"checksumSHA1": "pZzaP2uhYdMRXgTlU43Pa9QQIbA=",
-			"path": "gitlab.booking.com/go/bmc/supermicro",
-			"revision": "178c1d7326aac9133f74a92216379807d3107161",
-			"revisionTime": "2018-04-17T12:58:41Z"
-		},
-		{
-			"checksumSHA1": "LEXK6XatvLbSes7GRp5R2/t8kpk=",
-			"path": "gitlab.booking.com/go/bmc/supermicrox10",
-			"revision": "178c1d7326aac9133f74a92216379807d3107161",
-			"revisionTime": "2018-04-17T12:58:41Z"
-		},
-		{
-			"checksumSHA1": "y3a1tOZVwKCqG2yJZvAYycnelyM=",
-			"path": "golang.org/x/crypto/ssh/terminal",
-			"revision": "8e06e8ddd9629eb88639aba897641bff8031f1d3",
-			"revisionTime": "2016-09-10T18:59:01Z"
 		},
 		{
 			"checksumSHA1": "nt4o3cMOyP9prgVeAZgRf82/Et0=",
