@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bmc-toolbox/bmclib/devices"
 	"github.com/kr/pretty"
 	"github.com/manyminds/api2go/jsonapi"
-	"gitlab.booking.com/go/bmc/devices"
 )
 
 /* READ THIS BEFORE CHANGING THE SCHEMA
@@ -43,6 +43,7 @@ func NewBladeFromDevice(b *devices.Blade) (blade *Blade) {
 			Size:        disk.Size,
 			Status:      disk.Status,
 			Model:       disk.Model,
+			Location:    disk.Location,
 			Type:        disk.Type,
 			FwVersion:   disk.FwVersion,
 			BladeSerial: b.Serial,

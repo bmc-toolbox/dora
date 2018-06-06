@@ -7,10 +7,10 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
+	"github.com/bmc-toolbox/bmclib/devices"
+	"github.com/bmc-toolbox/bmclib/errors"
 	"github.com/kr/pretty"
 	"github.com/manyminds/api2go/jsonapi"
-	"gitlab.booking.com/go/bmc/devices"
-	"gitlab.booking.com/go/bmc/errors"
 )
 
 /* READ THIS BEFORE CHANGING THE SCHEMA

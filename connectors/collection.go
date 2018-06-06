@@ -5,15 +5,15 @@ import (
 	"net"
 	"sync"
 
-	"gitlab.booking.com/go/bmc/errors"
-
+	"github.com/bmc-toolbox/bmclib/devices"
+	"github.com/bmc-toolbox/bmclib/discover"
+	"github.com/bmc-toolbox/bmclib/errors"
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/jinzhu/gorm"
 	nats "github.com/nats-io/go-nats"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"gitlab.booking.com/go/bmc/devices"
-	"gitlab.booking.com/go/bmc/discover"
+
 	"gitlab.booking.com/go/dora/model"
 	"gitlab.booking.com/go/dora/storage"
 )
@@ -380,10 +380,7 @@ func collectBmcChassis(bmc devices.BmcChassis) (err error) {
 					}
 				}
 
-				blade.BmcType, err = b.BmcType()
-				if err != nil {
-					log.WithFields(log.Fields{"operation": "bmc type", "ip": blade.BmcAddress, "name": blade.Name, "serial": blade.Serial, "type": "chassis"}).Warning(err)
-				}
+				blade.BmcType = b.BmcType()
 
 				blade.Processor, blade.ProcessorCount, blade.ProcessorCoreCount, blade.ProcessorThreadCount, err = b.CPU()
 				if err != nil {
@@ -426,6 +423,7 @@ func collectBmcChassis(bmc devices.BmcChassis) (err error) {
 								Size:        disk.Size,
 								Status:      disk.Status,
 								Model:       disk.Model,
+								Location:    disk.Location,
 								Type:        disk.Type,
 								FwVersion:   disk.FwVersion,
 								BladeSerial: blade.Serial,

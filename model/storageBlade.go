@@ -4,9 +4,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bmc-toolbox/bmclib/devices"
 	"github.com/kr/pretty"
 	"github.com/manyminds/api2go/jsonapi"
-	"gitlab.booking.com/go/bmc/devices"
 )
 
 /* READ THIS BEFORE CHANGING THE SCHEMA
