@@ -417,7 +417,11 @@ func collectBmcChassis(bmc devices.BmcChassis) (err error) {
 					if err != nil {
 						log.WithFields(log.Fields{"operation": "reading disks", "ip": blade.BmcAddress, "serial": blade.Serial, "type": "chassis"}).Warning(err)
 					} else {
-						for _, disk := range disks {
+						for pos, disk := range disks {
+							if disk.Serial == "" {
+								disk.Serial = fmt.Sprintf("%s-failed-%d", blade.Serial, pos)
+							}
+
 							blade.Disks = append(blade.Disks, &model.Disk{
 								Serial:      disk.Serial,
 								Size:        disk.Size,

@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -37,7 +38,10 @@ func NewBladeFromDevice(b *devices.Blade) (blade *Blade) {
 		})
 	}
 	blade.Disks = make([]*Disk, 0)
-	for _, disk := range b.Disks {
+	for pos, disk := range b.Disks {
+		if disk.Serial == "" {
+			disk.Serial = fmt.Sprintf("%s-failed-%d", blade.Serial, pos)
+		}
 		blade.Disks = append(blade.Disks, &Disk{
 			Serial:      disk.Serial,
 			Size:        disk.Size,
