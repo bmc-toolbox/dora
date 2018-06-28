@@ -12,29 +12,29 @@ func TestLoadConfig(t *testing.T) {
 		networks []string
 	}{
 		{
-			[]byte(`{"Dhcp4": { "subnet4": [{"option-data": [{"data": "hkg1.lom.booking.com","name": "domain-name" }], "subnet": "10.128.64.0/24"},
-											{"option-data": [{"data": "ams4.corp.booking.com","name": "domain-name"}], "subnet": "10.196.68.0/24"},
-											{"option-data": [{"data": "example.com","name": "domain-name"}], "subnet": "10.196.17.0/24"},
-											{"option-data": [{"data": "lhr4.lom.booking.com","name": "domain-name"}], "subnet": "10.189.15.0/24"}]}}`),
-			[]string{"10.196.17.0/24", "10.189.15.0/24"},
+			[]byte(`{"Dhcp4": { "subnet4": [{"option-data": [{"data": "adc1.bmc.example.com","name": "domain-name" }], "subnet": "192.168.64.0/24"},
+											{"option-data": [{"data": "edc4.ext.example.com","name": "domain-name"}], "subnet": "192.168.68.0/24"},
+											{"option-data": [{"data": "edc4.bmc.example.com","name": "domain-name"}], "subnet": "192.168.17.0/24"},
+											{"option-data": [{"data": "udc4.bmc.example.com","name": "domain-name"}], "subnet": "192.168.15.0/24"}]}}`),
+			[]string{"192.168.17.0/24", "192.168.15.0/24"},
 		},
 		{
-			[]byte(`{"Dhcp4": { "subnet4": [{"option-data": [{"data": "hkg1.lom.booking.com","name": "domain-name" }], "subnet": "10.128.64.0/24"},
-											{"option-data": [{"data": "ams4.corp.booking.com","name": "domain-name"}], "subnet": "10.196.68.0/24"},
-											{"option-data": [{"data": "example.com","name": "domain-name"}], "subnet": "10.196.17.0/24"},
-											{"option-data": [{"data": "lhr4.lom.booking.com","name": "domain-name"}], "subnet": "10.189.15.0/24"}]}}`),
-			[]string{"10.128.64.0/24"},
+			[]byte(`{"Dhcp4": { "subnet4": [{"option-data": [{"data": "adc1.bmc.example.com","name": "domain-name" }], "subnet": "192.168.64.0/24"},
+											{"option-data": [{"data": "edc4.ext.example.com","name": "domain-name"}], "subnet": "192.168.68.0/24"},
+											{"option-data": [{"data": "edc4.bmc.example.com","name": "domain-name"}], "subnet": "192.168.17.0/24"},
+											{"option-data": [{"data": "udc4.bmc.example.com","name": "domain-name"}], "subnet": "192.168.15.0/24"}]}}`),
+			[]string{"192.168.64.0/24"},
 		},
 		{
-			[]byte(`{"Dhcp4": { "subnet4": [{"option-data": [{"data": "hkg1.lom.booking.com","name": "domain-name" }], "subnet": "10.128.64.0/24"},
-											{"option-data": [{"data": "ams4.corp.booking.com","name": "domain-name"}], "subnet": "10.196.68.0/24"},
-											{"option-data": [{"data": "example.com","name": "domain-name"}], "subnet": "10.196.17.0/24"},
-											{"option-data": [{"data": "lhr4.lom.booking.com","name": "domain-name"}], "subnet": "10.189.15.0/24"}]}}`),
-			[]string{"10.128.64.0/24", "10.196.17.0/24", "10.189.15.0/24"},
+			[]byte(`{"Dhcp4": { "subnet4": [{"option-data": [{"data": "adc1.bmc.example.com","name": "domain-name" }], "subnet": "192.168.64.0/24"},
+											{"option-data": [{"data": "edc4.ext.example.com","name": "domain-name"}], "subnet": "192.168.68.0/24"},
+											{"option-data": [{"data": "edc4.bmc.example.com","name": "domain-name"}], "subnet": "192.168.17.0/24"},
+											{"option-data": [{"data": "udc4.bmc.example.com","name": "domain-name"}], "subnet": "192.168.15.0/24"}]}}`),
+			[]string{"192.168.64.0/24", "192.168.17.0/24", "192.168.15.0/24"},
 		},
 	}
 
-	viper.SetDefault("scanner.kea_domain_name_suffix", ".lom.booking.com")
+	viper.SetDefault("scanner.kea_domain_name_suffix", ".bmc.example.com")
 	for _, tc := range tt {
 		networks := LoadSubnetsFromKea(tc.content)
 		found := false
