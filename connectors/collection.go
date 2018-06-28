@@ -36,13 +36,13 @@ func collect(input <-chan string, source *string, db *gorm.DB) {
 		}
 
 		if bmc, ok := conn.(devices.Bmc); ok {
-			err = bmc.Login()
+			err = bmc.CheckCredentials()
 			if err == errors.ErrLoginFailed {
 				bmc.UpdateCredentials(
 					viper.GetString(fmt.Sprintf("collector.default.%s.username", bmc.Vendor())),
 					viper.GetString(fmt.Sprintf("collector.default.%s.password", bmc.Vendor())),
 				)
-				err = bmc.Login()
+				err = bmc.CheckCredentials()
 				if err != nil {
 					log.WithFields(log.Fields{"operation": "connection", "ip": host}).Error(err)
 					continue
@@ -65,13 +65,13 @@ func collect(input <-chan string, source *string, db *gorm.DB) {
 				log.WithFields(log.Fields{"operation": "collection", "ip": host}).Error(err)
 			}
 		} else if bmc, ok := conn.(devices.BmcChassis); ok {
-			err = bmc.Login()
+			err = bmc.CheckCredentials()
 			if err == errors.ErrLoginFailed {
 				bmc.UpdateCredentials(
 					viper.GetString(fmt.Sprintf("collector.default.%s.username", bmc.Vendor())),
 					viper.GetString(fmt.Sprintf("collector.default.%s.password", bmc.Vendor())),
 				)
-				err = bmc.Login()
+				err = bmc.CheckCredentials()
 				if err != nil {
 					log.WithFields(log.Fields{"operation": "connection", "ip": host}).Error(err)
 					continue
@@ -86,7 +86,7 @@ func collect(input <-chan string, source *string, db *gorm.DB) {
 				log.WithFields(log.Fields{"operation": "collection", "ip": host}).Error(err)
 			}
 		} else {
-			log.WithFields(log.Fields{"operation": "collection", "ip": host}).Debug("Unknown hardware skipping...")
+			log.WithFields(log.Fields{"operation": "collection", "ip": host}).Debug("unknown hardware skipping")
 		}
 	}
 }
@@ -191,7 +191,7 @@ func DataCollectionWorker() {
 		log.WithFields(log.Fields{"operation": "registering worker"}).Fatal(err)
 	}
 
-	log.WithFields(log.Fields{"queue": viper.GetString("collector.worker.queue"), "subject": "dora::collect"}).Info("Subscribed to queue")
+	log.WithFields(log.Fields{"queue": viper.GetString("collector.worker.queue"), "subject": "dora::collect"}).Info("subscribed to queue")
 
 	notifyChange = make(chan string)
 	go func(notification <-chan string) {
@@ -208,7 +208,7 @@ func DataCollectionWorker() {
 }
 
 func collectBmc(bmc devices.Bmc) (err error) {
-	defer bmc.Logout()
+	defer bmc.Close()
 
 	serial, err := bmc.Serial()
 	if err != nil {
@@ -278,7 +278,7 @@ func collectBmc(bmc devices.Bmc) (err error) {
 
 		b, ok := server.(*devices.Discrete)
 		if !ok {
-			return fmt.Errorf("Unable to read devices.Discrete")
+			return fmt.Errorf("unable to read devices.Discrete")
 		}
 
 		discrete := model.NewDiscreteFromDevice(b)
@@ -322,7 +322,7 @@ func collectBmc(bmc devices.Bmc) (err error) {
 }
 
 func collectBmcChassis(bmc devices.BmcChassis) (err error) {
-	defer bmc.Logout()
+	defer bmc.Close()
 
 	if !bmc.IsActive() {
 		return err
@@ -349,13 +349,13 @@ func collectBmcChassis(bmc devices.BmcChassis) (err error) {
 	for _, blade := range chassis.Blades {
 		if conn, err := discover.ScanAndConnect(blade.BmcAddress, viper.GetString("bmc_user"), viper.GetString("bmc_pass")); err == nil {
 			if b, ok := conn.(devices.Bmc); ok {
-				err = b.Login()
+				err = b.CheckCredentials()
 				if err == errors.ErrLoginFailed {
 					b.UpdateCredentials(
 						viper.GetString(fmt.Sprintf("collector.default.%s.username", b.Vendor())),
 						viper.GetString(fmt.Sprintf("collector.default.%s.password", b.Vendor())),
 					)
-					err = b.Login()
+					err = b.CheckCredentials()
 					if err != nil {
 						log.WithFields(log.Fields{"operation": "connection", "ip": blade.BmcAddress}).Error(err)
 						continue
