@@ -12,21 +12,21 @@ func TestLoadConfig(t *testing.T) {
 		networks []string
 	}{
 		{
-			[]byte(`{"Dhcp4": { "subnet4": [{"option-data": [{"data": "adc1.bmc.example.com","name": "domain-name" }], "subnet": "192.168.64.0/24"},
+			[]byte(`{"Dhcp4": { "subnet4": [{"option-data": [{"data": "adc1.bmc.example.com","name": "domain-name"}], "subnet": "192.168.64.0/24"},
 											{"option-data": [{"data": "edc4.ext.example.com","name": "domain-name"}], "subnet": "192.168.68.0/24"},
 											{"option-data": [{"data": "edc4.bmc.example.com","name": "domain-name"}], "subnet": "192.168.17.0/24"},
 											{"option-data": [{"data": "udc4.bmc.example.com","name": "domain-name"}], "subnet": "192.168.15.0/24"}]}}`),
 			[]string{"192.168.17.0/24", "192.168.15.0/24"},
 		},
 		{
-			[]byte(`{"Dhcp4": { "subnet4": [{"option-data": [{"data": "adc1.bmc.example.com","name": "domain-name" }], "subnet": "192.168.64.0/24"},
+			[]byte(`{"Dhcp4": { "subnet4": [{"option-data": [{"data": "adc1.bmc.example.com","name": "domain-name"}], "subnet": "192.168.64.0/24"},
 											{"option-data": [{"data": "edc4.ext.example.com","name": "domain-name"}], "subnet": "192.168.68.0/24"},
 											{"option-data": [{"data": "edc4.bmc.example.com","name": "domain-name"}], "subnet": "192.168.17.0/24"},
 											{"option-data": [{"data": "udc4.bmc.example.com","name": "domain-name"}], "subnet": "192.168.15.0/24"}]}}`),
 			[]string{"192.168.64.0/24"},
 		},
 		{
-			[]byte(`{"Dhcp4": { "subnet4": [{"option-data": [{"data": "adc1.bmc.example.com","name": "domain-name" }], "subnet": "192.168.64.0/24"},
+			[]byte(`{"Dhcp4": { "subnet4": [{"option-data": [{"data": "adc1.bmc.example.com","name": "domain-name"}], "subnet": "192.168.64.0/24"},
 											{"option-data": [{"data": "edc4.ext.example.com","name": "domain-name"}], "subnet": "192.168.68.0/24"},
 											{"option-data": [{"data": "edc4.bmc.example.com","name": "domain-name"}], "subnet": "192.168.17.0/24"},
 											{"option-data": [{"data": "udc4.bmc.example.com","name": "domain-name"}], "subnet": "192.168.15.0/24"}]}}`),
