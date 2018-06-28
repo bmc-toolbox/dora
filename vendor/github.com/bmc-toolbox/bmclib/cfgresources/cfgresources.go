@@ -1,13 +1,38 @@
 package cfgresources
 
+type ResourcesSetup struct {
+	FlexAddress  *flexAddress  `yaml:"flexAddress"`
+	IpmiOverLan  *ipmiOverLan  `yaml:"ipmiOverLan"`
+	DynamicPower *dynamicPower `yaml:"dynamicPower"`
+}
+
 type ResourcesConfig struct {
-	Ldap      *Ldap        `yaml:"ldap"`
-	LdapGroup []*LdapGroup `yaml:"ldapGroup"`
-	Network   *Network     `yaml:"network"`
-	Ntp       *Ntp         `yaml:"ntp"`
-	Syslog    *Syslog      `yaml:"syslog"`
-	User      []*User      `yaml:"user"`
-	Ssl       *Ssl         `yaml:"ssl"`
+	Ldap       *Ldap        `yaml:"ldap"`
+	LdapGroup  []*LdapGroup `yaml:"ldapGroup"`
+	Network    *Network     `yaml:"network"`
+	Ntp        *Ntp         `yaml:"ntp"`
+	Syslog     *Syslog      `yaml:"syslog"`
+	User       []*User      `yaml:"user"`
+	Ssl        *Ssl         `yaml:"ssl"`
+	Supermicro *Supermicro  `yaml:"supermicro"` //supermicro specific config, example of issue #34
+}
+
+//Enable/Disable Virtual Mac addresses for blades in a chassis.
+//FlexAddresses in M1000e jargon.
+//Virtual connect in HP C7000 jargon.
+type flexAddress struct {
+	Enable bool `yaml:"enable"`
+}
+
+//Enable/Disable ipmi over lan
+type ipmiOverLan struct {
+	Enable bool `yaml:"enable"`
+}
+
+//'Dynamic Power' in HP C7000 Jargon.
+//'DPSE' (dynamic PSU engagement) in M1000e Dell jargon.
+type dynamicPower struct {
+	Enable bool `yaml:"enable"`
 }
 
 type User struct {
@@ -51,6 +76,11 @@ type Ssl struct {
 type Network struct {
 	Hostname    string `yaml:"hostname"`
 	DNSFromDHCP bool   `yaml:"dnsfromdhcp"`
+	SshEnable   bool   `yaml:"sshEnable"`
+	SshPort     int    `yaml:"sshPort"`
+	IpmiEnable  bool   `yaml:"ipmiEnable"`
+	DhcpEnable  bool   `yaml:"dhcpEnable"`
+	IpmiPort    int    `yaml:"ipmiPort"`
 }
 
 type Ntp struct {

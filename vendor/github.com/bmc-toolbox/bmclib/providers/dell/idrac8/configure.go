@@ -4,18 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/bmc-toolbox/bmclib/cfgresources"
-	log "github.com/sirupsen/logrus"
 	"reflect"
-	"runtime"
 	"strconv"
-)
 
-// returns the calling function.
-func funcName() string {
-	pc, _, _, _ := runtime.Caller(1)
-	return runtime.FuncForPC(pc).Name()
-}
+	"github.com/bmc-toolbox/bmclib/cfgresources"
+	"github.com/bmc-toolbox/bmclib/internal/helper"
+	log "github.com/sirupsen/logrus"
+)
 
 func (i *IDrac8) ApplyCfg(config *cfgresources.ResourcesConfig) (err error) {
 	cfg := reflect.ValueOf(config).Elem()
@@ -43,6 +38,7 @@ func (i *IDrac8) ApplyCfg(config *cfgresources.ResourcesConfig) (err error) {
 							"Resource": cfg.Field(r).Kind(),
 							"IP":       i.ip,
 							"Model":    i.BmcType(),
+							"Serial":   i.serial,
 							"Error":    err,
 						}).Warn("Unable to set user config.")
 					}
@@ -57,6 +53,7 @@ func (i *IDrac8) ApplyCfg(config *cfgresources.ResourcesConfig) (err error) {
 						"resource": cfg.Field(r).Kind(),
 						"IP":       i.ip,
 						"Model":    i.BmcType(),
+						"Serial":   i.serial,
 						"Error":    err,
 					}).Warn("Unable to set Syslog config.")
 				}
@@ -71,6 +68,7 @@ func (i *IDrac8) ApplyCfg(config *cfgresources.ResourcesConfig) (err error) {
 						"resource": cfg.Field(r).Kind(),
 						"IP":       i.ip,
 						"Model":    i.BmcType(),
+						"Serial":   i.serial,
 					}).Warn("Unable to set NTP config.")
 				}
 			case "Ldap":
@@ -85,6 +83,7 @@ func (i *IDrac8) ApplyCfg(config *cfgresources.ResourcesConfig) (err error) {
 						"resource": "Ldap",
 						"IP":       i.ip,
 						"Model":    i.BmcType(),
+						"Serial":   i.serial,
 						"Error":    err,
 					}).Warn("applyLdapGroupParams returned error.")
 				}
@@ -191,26 +190,27 @@ func (i *IDrac8) applyUserParams(cfg *cfgresources.User, Id int) (err error) {
 	payload, err := json.Marshal(data)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"step": funcName(),
+			"step": helper.WhosCalling(),
 		}).Warn("Unable to marshal syslog payload.")
 		return err
 	}
 
 	endpoint := fmt.Sprintf("sysmgmt/2012/server/configgroup/iDRAC.Users.%d", Id)
-	response, err := i.put(endpoint, payload, false)
+	response, err := i.put(endpoint, payload)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"endpoint": endpoint,
-			"step":     funcName(),
+			"step":     helper.WhosCalling(),
 			"response": string(response),
 		}).Warn("PUT request failed.")
 		return err
 	}
 
 	log.WithFields(log.Fields{
-		"IP":    i.ip,
-		"Model": i.BmcType(),
-		"User":  cfg.Name,
+		"IP":     i.ip,
+		"Model":  i.BmcType(),
+		"Serial": i.serial,
+		"User":   cfg.Name,
 	}).Info("User parameters applied.")
 
 	return err
@@ -223,14 +223,14 @@ func (i *IDrac8) applySyslogParams(cfg *cfgresources.Syslog) (err error) {
 
 	if cfg.Server == "" {
 		log.WithFields(log.Fields{
-			"step": funcName(),
+			"step": helper.WhosCalling(),
 		}).Warn("Syslog resource expects parameter: Server.")
 		return
 	}
 
 	if cfg.Port == 0 {
 		log.WithFields(log.Fields{
-			"step": funcName(),
+			"step": helper.WhosCalling(),
 		}).Debug("Syslog resource port set to default: 514.")
 		port = 514
 	} else {
@@ -240,7 +240,7 @@ func (i *IDrac8) applySyslogParams(cfg *cfgresources.Syslog) (err error) {
 	if cfg.Enable != true {
 		enable = "Disabled"
 		log.WithFields(log.Fields{
-			"step": funcName(),
+			"step": helper.WhosCalling(),
 		}).Debug("Syslog resource declared with enable: false.")
 	}
 
@@ -255,25 +255,26 @@ func (i *IDrac8) applySyslogParams(cfg *cfgresources.Syslog) (err error) {
 	payload, err := json.Marshal(data)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"step": funcName(),
+			"step": helper.WhosCalling(),
 		}).Warn("Unable to marshal syslog payload.")
 		return err
 	}
 
 	endpoint := "sysmgmt/2012/server/configgroup/iDRAC.SysLog"
-	response, err := i.put(endpoint, payload, false)
+	response, err := i.put(endpoint, payload)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"endpoint": endpoint,
-			"step":     funcName(),
+			"step":     helper.WhosCalling(),
 			"response": string(response),
 		}).Warn("PUT request failed.")
 		return err
 	}
 
 	log.WithFields(log.Fields{
-		"IP":    i.ip,
-		"Model": i.BmcType(),
+		"IP":     i.ip,
+		"Model":  i.BmcType(),
+		"Serial": i.serial,
 	}).Info("Syslog parameters applied.")
 
 	return err
@@ -306,7 +307,7 @@ func (i *IDrac8) applyNtpServerParam(cfg *cfgresources.Ntp) {
 	var enable int
 	if cfg.Enable != true {
 		log.WithFields(log.Fields{
-			"step": funcName(),
+			"step": helper.WhosCalling(),
 		}).Debug("Ntp resource declared with enable: false.")
 		enable = 0
 	} else {
@@ -331,15 +332,17 @@ func (i *IDrac8) applyNtpServerParam(cfg *cfgresources.Ntp) {
 		log.WithFields(log.Fields{
 			"IP":       i.ip,
 			"Model":    i.BmcType(),
+			"Serial":   i.serial,
 			"endpoint": endpoint,
-			"step":     funcName(),
+			"step":     helper.WhosCalling(),
 			"response": string(response),
 		}).Warn("GET request failed.")
 	}
 
 	log.WithFields(log.Fields{
-		"IP":    i.ip,
-		"Model": i.BmcType(),
+		"IP":     i.ip,
+		"Model":  i.BmcType(),
+		"Serial": i.serial,
 	}).Info("NTP servers param applied.")
 
 }
@@ -364,8 +367,9 @@ func (i *IDrac8) applyLdapParams(cfg *cfgresources.Ldap) {
 	}
 
 	log.WithFields(log.Fields{
-		"IP":    i.ip,
-		"Model": i.BmcType(),
+		"IP":     i.ip,
+		"Model":  i.BmcType(),
+		"Serial": i.serial,
 	}).Info("Ldap config applied.")
 
 }
@@ -387,16 +391,18 @@ func (i *IDrac8) applyLdapServerParam(cfg *cfgresources.Ldap) int {
 		log.WithFields(log.Fields{
 			"IP":       i.ip,
 			"Model":    i.BmcType(),
+			"Serial":   i.serial,
 			"endpoint": endpoint,
-			"step":     funcName(),
+			"step":     helper.WhosCalling(),
 			"response": string(response),
 		}).Warn("GET request failed.")
 		return 1
 	}
 
 	log.WithFields(log.Fields{
-		"IP":    i.ip,
-		"Model": i.BmcType(),
+		"IP":     i.ip,
+		"Model":  i.BmcType(),
+		"Serial": i.serial,
 	}).Info("Ldap server param set.")
 
 	return 0
@@ -418,16 +424,18 @@ func (i *IDrac8) applyLdapSearchFilterParam(cfg *cfgresources.Ldap) int {
 		log.WithFields(log.Fields{
 			"IP":       i.ip,
 			"Model":    i.BmcType(),
+			"Serial":   i.serial,
 			"endpoint": endpoint,
-			"step":     funcName(),
+			"step":     helper.WhosCalling(),
 			"response": string(response),
 		}).Warn("GET request failed.")
 		return 1
 	}
 
 	log.WithFields(log.Fields{
-		"IP":    i.ip,
-		"Model": i.BmcType(),
+		"IP":     i.ip,
+		"Model":  i.BmcType(),
+		"Serial": i.serial,
 	}).Info("Ldap search filter param applied.")
 
 	return 0
@@ -528,6 +536,7 @@ func (i *IDrac8) applyLdapGroupParams(cfgGroup []*cfgresources.LdapGroup, cfgLda
 			log.WithFields(log.Fields{
 				"IP":       i.ip,
 				"Model":    i.BmcType(),
+				"Serial":   i.serial,
 				"endpoint": endpoint,
 				"step":     "applyLdapGroupParams",
 				"response": string(response),
@@ -536,9 +545,10 @@ func (i *IDrac8) applyLdapGroupParams(cfgGroup []*cfgresources.LdapGroup, cfgLda
 		}
 
 		log.WithFields(log.Fields{
-			"IP":    i.ip,
-			"Model": i.BmcType(),
-			"Role":  group.Role,
+			"IP":     i.ip,
+			"Model":  i.BmcType(),
+			"Serial": i.serial,
+			"Role":   group.Role,
 		}).Info("Ldap GroupDN config applied.")
 
 		switch group.Role {
@@ -561,9 +571,10 @@ func (i *IDrac8) applyLdapGroupParams(cfgGroup []*cfgresources.LdapGroup, cfgLda
 	err = i.applyLdapRoleGroupPrivParam(cfgLdap, groupPrivilegeParam)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"IP":    i.ip,
-			"Model": i.BmcType(),
-			"step":  "applyLdapGroupParams",
+			"IP":     i.ip,
+			"Model":  i.BmcType(),
+			"Serial": i.serial,
+			"step":   "applyLdapGroupParams",
 		}).Warn("Unable to set Ldap Role Group Privileges.")
 		return err
 	}
@@ -592,8 +603,9 @@ func (i *IDrac8) applyLdapRoleGroupPrivParam(cfg *cfgresources.Ldap, groupPrivil
 		log.WithFields(log.Fields{
 			"IP":           i.ip,
 			"Model":        i.BmcType(),
+			"Serial":       i.serial,
 			"endpoint":     endpoint,
-			"step":         funcName(),
+			"step":         helper.WhosCalling(),
 			"responseCode": responseCode,
 			"response":     string(responseBody),
 		}).Warn("POST request failed.")
@@ -601,8 +613,9 @@ func (i *IDrac8) applyLdapRoleGroupPrivParam(cfg *cfgresources.Ldap, groupPrivil
 	}
 
 	log.WithFields(log.Fields{
-		"IP":    i.ip,
-		"Model": i.BmcType(),
+		"IP":     i.ip,
+		"Model":  i.BmcType(),
+		"Serial": i.serial,
 	}).Info("Ldap Group role privileges applied.")
 
 	return err
@@ -619,15 +632,17 @@ func (i *IDrac8) applyTimezoneParam(timezone string) {
 		log.WithFields(log.Fields{
 			"IP":       i.ip,
 			"Model":    i.BmcType(),
+			"Serial":   i.serial,
 			"endpoint": endpoint,
-			"step":     funcName(),
+			"step":     helper.WhosCalling(),
 			"response": string(response),
 		}).Warn("GET request failed.")
 	}
 
 	log.WithFields(log.Fields{
-		"IP":    i.ip,
-		"Model": i.BmcType(),
+		"IP":     i.ip,
+		"Model":  i.BmcType(),
+		"Serial": i.serial,
 	}).Info("Timezone param applied.")
 
 }

@@ -6,14 +6,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/bmc-toolbox/bmclib/devices"
 	"github.com/bmc-toolbox/bmclib/errors"
-	"github.com/bmc-toolbox/bmclib/httpclient"
+	"github.com/bmc-toolbox/bmclib/internal/httpclient"
+	"github.com/bmc-toolbox/bmclib/internal/sshclient"
 	"github.com/bmc-toolbox/bmclib/providers/dell"
 
 	// this make possible to setup logging and properties at any stage
@@ -36,10 +36,12 @@ type M1000e struct {
 	ip           string
 	username     string
 	password     string
-	client       *http.Client
+	httpClient   *http.Client
+	sshClient    *sshclient.SSHClient
 	cmcJSON      *dell.CMC
 	cmcTemp      *dell.CMCTemp
 	cmcWWN       *dell.CMCWWN
+	serial       string
 	SessionToken string //required to set config
 }
 
@@ -48,125 +50,9 @@ func New(ip string, username string, password string) (chassis *M1000e, err erro
 	return &M1000e{ip: ip, username: username, password: password}, err
 }
 
-// Login initiates the connection to a chassis device
-func (m *M1000e) Login() (err error) {
-	log.WithFields(log.Fields{"step": "chassis connection", "vendor": dell.VendorID, "ip": m.ip}).Debug("connecting to chassis")
-
-	form := url.Values{}
-	form.Add("user", m.username)
-	form.Add("password", m.password)
-
-	u, err := url.Parse(fmt.Sprintf("https://%s/cgi-bin/webcgi/login", m.ip))
-	if err != nil {
-		return err
-	}
-
-	req, err := http.NewRequest("POST", u.String(), strings.NewReader(form.Encode()))
-	if err != nil {
-		return err
-	}
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-
-	m.client, err = httpclient.Build()
-	if err != nil {
-		return err
-	}
-
-	resp, err := m.client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	auth, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-
-	if strings.Contains(string(auth), "Try Again") {
-		return errors.ErrLoginFailed
-	}
-
-	if resp.StatusCode == 404 {
-		return errors.ErrPageNotFound
-	}
-
-	err = m.loadHwData()
-	if err != nil {
-		return err
-	}
-
-	// retrieve session token to set config params.
-	token, err := m.getSessionToken()
-	if err != nil {
-		return err
-	}
-	m.SessionToken = token
-
-	return err
-}
-
-// retrieves ST2 which is required to submit form data
-func (m *M1000e) getSessionToken() (token string, err error) {
-
-	u := fmt.Sprintf("https://%s/cgi-bin/webcgi/general", m.ip)
-	resp, err := m.client.Get(u)
-
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return token, err
-	}
-
-	defer resp.Body.Close()
-
-	//<input xmlns="" type="hidden" value="2a17b6d37baa526b75e06243d34763da" name="ST2" id="ST2" />
-	reToken := "<input.*value=\\\"(\\w+)\\\" name=\"ST2\""
-	re := regexp.MustCompile(reToken)
-	match := re.FindSubmatch(data)
-	if len(match) == 0 {
-		return token, errors.ErrUnableToGetSessionToken
-	}
-
-	return string(match[1]), err
-}
-
-func (m *M1000e) loadHwData() (err error) {
-	url := "json?method=groupinfo"
-	payload, err := m.get(url)
-	if err != nil {
-		return err
-	}
-
-	m.cmcJSON = &dell.CMC{}
-	err = json.Unmarshal(payload, m.cmcJSON)
-	if err != nil {
-		httpclient.DumpInvalidPayload(url, m.ip, payload)
-		return err
-	}
-
-	if m.cmcJSON.Chassis == nil {
-		return errors.ErrUnableToReadData
-	}
-
-	url = "json?method=blades-wwn-info"
-	payload, err = m.get(url)
-	if err != nil {
-		return err
-	}
-
-	m.cmcWWN = &dell.CMCWWN{}
-	err = json.Unmarshal(payload, m.cmcWWN)
-	if err != nil {
-		httpclient.DumpInvalidPayload(url, m.ip, payload)
-		return err
-	}
-
-	return err
-}
-
-// Logout logs out and close the chassis connection
-func (m *M1000e) Logout() (err error) {
-	_, err = m.client.Get(fmt.Sprintf("https://%s/cgi-bin/webcgi/logout", m.ip))
+// CheckCredentials verify whether the credentials are valid or not
+func (m *M1000e) CheckCredentials() (err error) {
+	err = m.httpLogin()
 	if err != nil {
 		return err
 	}
@@ -176,7 +62,7 @@ func (m *M1000e) Logout() (err error) {
 func (m *M1000e) get(endpoint string) (payload []byte, err error) {
 	log.WithFields(log.Fields{"step": "chassis connection", "vendor": dell.VendorID, "ip": m.ip, "endpoint": endpoint}).Debug("retrieving data from chassis")
 
-	resp, err := m.client.Get(fmt.Sprintf("https://%s/cgi-bin/webcgi/%s", m.ip, endpoint))
+	resp, err := m.httpClient.Get(fmt.Sprintf("https://%s/cgi-bin/webcgi/%s", m.ip, endpoint))
 	if err != nil {
 		return payload, err
 	}
@@ -201,6 +87,10 @@ func (m *M1000e) get(endpoint string) (payload []byte, err error) {
 
 // Name returns the hostname of the machine
 func (m *M1000e) Name() (name string, err error) {
+	err = m.httpLogin()
+	if err != nil {
+		return name, err
+	}
 	return m.cmcJSON.Chassis.ChassisGroupMemberHealthBlob.ChassisStatus.CHASSISName, err
 }
 
@@ -211,16 +101,28 @@ func (m *M1000e) BmcType() (model string) {
 
 // Model returns the full device model string
 func (m *M1000e) Model() (model string, err error) {
+	err = m.httpLogin()
+	if err != nil {
+		return model, err
+	}
 	return strings.TrimSpace(m.cmcJSON.Chassis.ChassisGroupMemberHealthBlob.ChassisStatus.ROChassisProductname), err
 }
 
 // Serial returns the device serial
 func (m *M1000e) Serial() (serial string, err error) {
+	err = m.httpLogin()
+	if err != nil {
+		return serial, err
+	}
 	return strings.ToLower(m.cmcJSON.Chassis.ChassisGroupMemberHealthBlob.ChassisStatus.ROChassisServiceTag), err
 }
 
 // PowerKw returns the current power usage in Kw
 func (m *M1000e) PowerKw() (power float64, err error) {
+	err = m.httpLogin()
+	if err != nil {
+		return power, err
+	}
 	p, err := strconv.Atoi(strings.TrimRight(m.cmcJSON.Chassis.ChassisGroupMemberHealthBlob.PsuStatus.AcPower, " W"))
 	if err != nil {
 		return power, err
@@ -230,6 +132,11 @@ func (m *M1000e) PowerKw() (power float64, err error) {
 
 // TempC returns the current temperature of the machine
 func (m *M1000e) TempC() (temp int, err error) {
+	err = m.httpLogin()
+	if err != nil {
+		return temp, err
+	}
+
 	url := "json?method=temp-sensors"
 	payload, err := m.get(url)
 	if err != nil {
@@ -252,6 +159,10 @@ func (m *M1000e) TempC() (temp int, err error) {
 
 // Status returns health string status from the bmc
 func (m *M1000e) Status() (status string, err error) {
+	err = m.httpLogin()
+	if err != nil {
+		return "", err
+	}
 	if m.cmcJSON.Chassis.ChassisGroupMemberHealthBlob.CMCStatus.CMCActiveError == "No Errors" {
 		status = "OK"
 	} else {
@@ -262,11 +173,20 @@ func (m *M1000e) Status() (status string, err error) {
 
 // FwVersion returns the current firmware version of the bmc
 func (m *M1000e) FwVersion() (version string, err error) {
+	err = m.httpLogin()
+	if err != nil {
+		return version, err
+	}
 	return m.cmcJSON.Chassis.ChassisGroupMemberHealthBlob.ChassisStatus.ROCmcFwVersionString, err
 }
 
 // Nics returns all found Nics in the device
 func (m *M1000e) Nics() (nics []*devices.Nic, err error) {
+	err = m.httpLogin()
+	if err != nil {
+		return nics, err
+	}
+
 	payload, err := m.get("cmc_status?cat=C01&tab=T11&id=P31")
 	if err != nil {
 		return nics, err
@@ -292,6 +212,10 @@ func (m *M1000e) IsActive() bool {
 
 // PassThru returns the type of switch we have for this chassis
 func (m *M1000e) PassThru() (passthru string, err error) {
+	err = m.httpLogin()
+	if err != nil {
+		return passthru, err
+	}
 	passthru = "1G"
 	for _, dellBlade := range m.cmcJSON.Chassis.ChassisGroupMemberHealthBlob.Blades {
 		if dellBlade.BladePresent == 1 && dellBlade.IsStorageBlade == 0 {
@@ -310,7 +234,11 @@ func (m *M1000e) PassThru() (passthru string, err error) {
 
 // Psus returns a list of psus installed on the device
 func (m *M1000e) Psus() (psus []*devices.Psu, err error) {
-	serial, _ := m.Serial()
+	serial, err := m.Serial()
+	if err != nil {
+		return psus, err
+	}
+
 	for _, psu := range m.cmcJSON.Chassis.ChassisGroupMemberHealthBlob.PsuStatus.Psus {
 		if psu.PsuPresent == 0 {
 			continue
@@ -348,6 +276,10 @@ func (m *M1000e) Psus() (psus []*devices.Psu, err error) {
 
 // StorageBlades returns all StorageBlades found in this chassis
 func (m *M1000e) StorageBlades() (storageBlades []*devices.StorageBlade, err error) {
+	err = m.httpLogin()
+	if err != nil {
+		return storageBlades, err
+	}
 	for _, dellBlade := range m.cmcJSON.Chassis.ChassisGroupMemberHealthBlob.Blades {
 		if dellBlade.BladePresent == 1 && dellBlade.IsStorageBlade == 1 {
 			storageBlade := devices.StorageBlade{}
@@ -376,6 +308,10 @@ func (m *M1000e) StorageBlades() (storageBlades []*devices.StorageBlade, err err
 
 // Blades returns all StorageBlades found in this chassis
 func (m *M1000e) Blades() (blades []*devices.Blade, err error) {
+	err = m.httpLogin()
+	if err != nil {
+		return blades, err
+	}
 	for _, dellBlade := range m.cmcJSON.Chassis.ChassisGroupMemberHealthBlob.Blades {
 		if dellBlade.BladePresent == 1 && dellBlade.IsStorageBlade == 0 {
 			blade := devices.Blade{}
@@ -417,6 +353,11 @@ func (m *M1000e) Blades() (blades []*devices.Blade, err error) {
 					Name:       "bmc",
 					MacAddress: strings.ToLower(bmcData.IsNotDoubleHeight.PortFMAC),
 				}
+
+				if bmcData.IsNotDoubleHeight.IsSelected == 1 {
+					blade.FlexAddressEnabled = true
+				}
+
 				blade.Nics = append(blade.Nics, n)
 			}
 
@@ -459,18 +400,55 @@ func (m *M1000e) ChassisSnapshot() (chassis *devices.Chassis, err error) {
 	chassis = &devices.Chassis{}
 	chassis.Vendor = m.Vendor()
 	chassis.BmcAddress = m.ip
-	chassis.Name, _ = m.Name()
-	chassis.Serial, _ = m.Serial()
-	chassis.Model, _ = m.Model()
-	chassis.PowerKw, _ = m.PowerKw()
-	chassis.TempC, _ = m.TempC()
-	chassis.Status, _ = m.Status()
-	chassis.FwVersion, _ = m.FwVersion()
-	chassis.PassThru, _ = m.PassThru()
-	chassis.Blades, _ = m.Blades()
-	chassis.StorageBlades, _ = m.StorageBlades()
-	chassis.Nics, _ = m.Nics()
-	chassis.Psus, _ = m.Psus()
+	chassis.Name, err = m.Name()
+	if err != nil {
+		return nil, err
+	}
+	chassis.Serial, err = m.Serial()
+	if err != nil {
+		return nil, err
+	}
+	chassis.Model, err = m.Model()
+	if err != nil {
+		return nil, err
+	}
+	chassis.PowerKw, err = m.PowerKw()
+	if err != nil {
+		return nil, err
+	}
+	chassis.TempC, err = m.TempC()
+	if err != nil {
+		return nil, err
+	}
+	chassis.Status, err = m.Status()
+	if err != nil {
+		return nil, err
+	}
+	chassis.FwVersion, err = m.FwVersion()
+	if err != nil {
+		return nil, err
+	}
+	chassis.PassThru, err = m.PassThru()
+	if err != nil {
+		return nil, err
+	}
+	chassis.Blades, err = m.Blades()
+	if err != nil {
+		return nil, err
+	}
+	chassis.StorageBlades, err = m.StorageBlades()
+	if err != nil {
+		return nil, err
+	}
+	chassis.Nics, err = m.Nics()
+	if err != nil {
+		return nil, err
+	}
+	chassis.Psus, err = m.Psus()
+	if err != nil {
+		return nil, err
+	}
+
 	return chassis, err
 }
 

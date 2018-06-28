@@ -1,12 +1,11 @@
 package c7000
 
 import (
-	"encoding/xml"
 	"fmt"
+	"reflect"
+
 	"github.com/bmc-toolbox/bmclib/cfgresources"
 	log "github.com/sirupsen/logrus"
-	"reflect"
-	"strings"
 )
 
 func (c *C7000) ApplyCfg(config *cfgresources.ResourcesConfig) (err error) {
@@ -31,6 +30,7 @@ func (c *C7000) ApplyCfg(config *cfgresources.ResourcesConfig) (err error) {
 							"Resource": cfg.Field(r).Kind(),
 							"IP":       c.ip,
 							"Model":    c.BmcType(),
+							"Serial":   c.serial,
 							"Error":    err,
 						}).Warn("Unable to set user config.")
 					}
@@ -45,6 +45,7 @@ func (c *C7000) ApplyCfg(config *cfgresources.ResourcesConfig) (err error) {
 						"resource": cfg.Field(r).Kind(),
 						"IP":       c.ip,
 						"Model":    c.BmcType(),
+						"Serial":   c.serial,
 						"Error":    err,
 					}).Warn("Unable to set Syslog config.")
 				}
@@ -59,6 +60,7 @@ func (c *C7000) ApplyCfg(config *cfgresources.ResourcesConfig) (err error) {
 						"resource": cfg.Field(r).Kind(),
 						"IP":       c.ip,
 						"Model":    c.BmcType(),
+						"Serial":   c.serial,
 						"Error":    err,
 					}).Warn("Unable to set NTP config.")
 				}
@@ -71,6 +73,7 @@ func (c *C7000) ApplyCfg(config *cfgresources.ResourcesConfig) (err error) {
 						"resource": "Ldap",
 						"IP":       c.ip,
 						"Model":    c.BmcType(),
+						"Serial":   c.serial,
 						"Error":    err,
 					}).Warn("applyLdapGroupParams returned error.")
 				}
@@ -117,6 +120,7 @@ func (c *C7000) applyLdapParams(cfg *cfgresources.Ldap) {
 			"resource": "Ldap",
 			"IP":       c.ip,
 			"Model":    c.BmcType(),
+			"Serial":   c.serial,
 			"Error":    err,
 		}).Warn("applyLdapParams returned error.")
 		return
@@ -129,6 +133,7 @@ func (c *C7000) applyLdapParams(cfg *cfgresources.Ldap) {
 			"resource": "Ldap",
 			"IP":       c.ip,
 			"Model":    c.BmcType(),
+			"Serial":   c.serial,
 			"Error":    err,
 		}).Warn("applyLdapParams returned error.")
 		return
@@ -194,26 +199,13 @@ func (c *C7000) applysetLdapInfo4(cfg *cfgresources.Ldap) (err error) {
 		SearchContexts:           searchcontexts,
 	}
 
-	doc := wrapXML(payload, c.XmlToken)
-	output, err := xml.MarshalIndent(doc, "  ", "    ")
-	if err != nil {
-		log.WithFields(log.Fields{
-			"step":  "applysetLdapInfo4",
-			"IP":    c.ip,
-			"Model": c.BmcType(),
-			"Error": err,
-		}).Warn("Unable to marshal ldap payload.")
-		return err
-	}
-
-	// A hack to declare self closing xml tags, until https://github.com/golang/go/issues/21399 is fixed.
-	output = []byte(strings.Replace(string(output), "<hpoa:searchContext></hpoa:searchContext>", "<hpoa:searchContext/>", -1))
-	statusCode, _, err := c.postXML(output)
+	statusCode, _, err := c.postXML(payload)
 	if statusCode != 200 || err != nil {
 		log.WithFields(log.Fields{
 			"step":       "applysetLdapInfo4",
 			"IP":         c.ip,
 			"Model":      c.BmcType(),
+			"Serial":     c.serial,
 			"statusCode": statusCode,
 			"Error":      err,
 		}).Warn("Ldap applysetLdapInfo4 apply request returned non 200.")
@@ -234,24 +226,13 @@ func (c *C7000) applysetLdapInfo4(cfg *cfgresources.Ldap) (err error) {
 func (c *C7000) applyEnableLdapAuth(enable bool) (err error) {
 
 	payload := enableLdapAuthentication{EnableLdap: enable, EnableLocalUsers: true}
-	doc := wrapXML(payload, c.XmlToken)
-	output, err := xml.MarshalIndent(doc, "  ", "    ")
-	if err != nil {
-		log.WithFields(log.Fields{
-			"step":  "applyEnableLdapAuth",
-			"IP":    c.ip,
-			"Model": c.BmcType(),
-			"Error": err,
-		}).Warn("Unable to marshal ldap payload.")
-		return err
-	}
-
-	statusCode, _, err := c.postXML(output)
+	statusCode, _, err := c.postXML(payload)
 	if statusCode != 200 || err != nil {
 		log.WithFields(log.Fields{
 			"step":       "applyEnableLdapAuth",
 			"IP":         c.ip,
 			"Model":      c.BmcType(),
+			"Serial":     c.serial,
 			"statusCode": statusCode,
 			"Error":      err,
 		}).Warn("Ldap applyEnableLdapAuth apply request returned non 200.")
@@ -259,8 +240,9 @@ func (c *C7000) applyEnableLdapAuth(enable bool) (err error) {
 	}
 
 	log.WithFields(log.Fields{
-		"IP":    c.ip,
-		"Model": c.BmcType(),
+		"IP":     c.ip,
+		"Model":  c.BmcType(),
+		"Serial": c.serial,
 	}).Info("Ldap Enabled.")
 	return err
 }
@@ -275,9 +257,10 @@ func (c *C7000) applyLdapGroupParams(cfg []*cfgresources.LdapGroup) (err error) 
 
 		if !c.isRoleValid(group.Role) {
 			log.WithFields(log.Fields{
-				"step":  "applyLdapGroupParams",
-				"role":  group.Role,
-				"Model": c.BmcType(),
+				"step":   "applyLdapGroupParams",
+				"role":   group.Role,
+				"Model":  c.BmcType(),
+				"Serial": c.serial,
 			}).Warn("Ldap resource Role must be a valid role: admin OR user.")
 			return
 		}
@@ -287,6 +270,7 @@ func (c *C7000) applyLdapGroupParams(cfg []*cfgresources.LdapGroup) (err error) 
 				"step":      "applyLdapGroupParams",
 				"Model":     c.BmcType(),
 				"Ldap role": group.Role,
+				"Serial":    c.serial,
 			}).Warn("Ldap resource parameter Group required but not declared.")
 			return
 		}
@@ -299,6 +283,7 @@ func (c *C7000) applyLdapGroupParams(cfg []*cfgresources.LdapGroup) (err error) 
 				"resource": "Ldap",
 				"IP":       c.ip,
 				"Model":    c.BmcType(),
+				"Serial":   c.serial,
 				"Error":    err,
 			}).Warn("addLdapGroup returned error.")
 			return
@@ -312,6 +297,7 @@ func (c *C7000) applyLdapGroupParams(cfg []*cfgresources.LdapGroup) (err error) 
 				"resource": "Ldap",
 				"IP":       c.ip,
 				"Model":    c.BmcType(),
+				"Serial":   c.serial,
 				"Error":    err,
 			}).Warn("addLdapGroup returned error.")
 			return
@@ -325,6 +311,7 @@ func (c *C7000) applyLdapGroupParams(cfg []*cfgresources.LdapGroup) (err error) 
 				"resource": "Ldap",
 				"IP":       c.ip,
 				"Model":    c.BmcType(),
+				"Serial":   c.serial,
 				"Error":    err,
 			}).Warn("addLdapGroup returned error.")
 			return
@@ -332,18 +319,20 @@ func (c *C7000) applyLdapGroupParams(cfg []*cfgresources.LdapGroup) (err error) 
 
 		if err != nil {
 			log.WithFields(log.Fields{
-				"step":  "applyLdapGroupParams",
-				"IP":    c.ip,
-				"Role":  group.Role,
-				"Model": c.BmcType(),
-				"Error": err,
+				"step":   "applyLdapGroupParams",
+				"IP":     c.ip,
+				"Role":   group.Role,
+				"Model":  c.BmcType(),
+				"Serial": c.serial,
+				"Error":  err,
 			}).Warn("Unable to set LdapGroup config for role.")
 		}
 	}
 
 	log.WithFields(log.Fields{
-		"IP":    c.ip,
-		"Model": c.BmcType(),
+		"IP":     c.ip,
+		"Model":  c.BmcType(),
+		"Serial": c.serial,
 	}).Info("Ldap config applied")
 	return
 }
@@ -355,24 +344,13 @@ func (c *C7000) applyLdapGroupParams(cfg []*cfgresources.LdapGroup) (err error) 
 func (c *C7000) applyAddLdapGroup(group string) (err error) {
 
 	payload := addLdapGroup{LdapGroup: ldapGroup{Text: group}}
-	doc := wrapXML(payload, c.XmlToken)
-	output, err := xml.MarshalIndent(doc, "  ", "    ")
-	if err != nil {
-		log.WithFields(log.Fields{
-			"step":  "applyAddLdapGroup",
-			"IP":    c.ip,
-			"Model": c.BmcType(),
-			"Error": err,
-		}).Warn("Unable to marshal ldap payload.")
-		return err
-	}
-
-	statusCode, _, err := c.postXML(output)
+	statusCode, _, err := c.postXML(payload)
 	if statusCode == 200 || statusCode == 500 { // 500 indicates the group exists.
 		log.WithFields(log.Fields{
 			"step":       "applyAddLdapGroup",
 			"IP":         c.ip,
 			"Model":      c.BmcType(),
+			"Serial":     c.serial,
 			"statusCode": statusCode,
 		}).Debug("Ldap applyAddLdapGroup applied.")
 		return nil
@@ -383,6 +361,7 @@ func (c *C7000) applyAddLdapGroup(group string) (err error) {
 			"step":       "applyAddLdapGroup",
 			"IP":         c.ip,
 			"Model":      c.BmcType(),
+			"Serial":     c.serial,
 			"statusCode": statusCode,
 		}).Warn("Ldap applyAddLdapGroup request returned non 200.")
 		return err
@@ -391,7 +370,6 @@ func (c *C7000) applyAddLdapGroup(group string) (err error) {
 	log.WithFields(log.Fields{
 		"IP":    c.ip,
 		"Model": c.BmcType(),
-		"Group": group,
 	}).Info("Ldap group added.")
 	return nil
 }
@@ -412,24 +390,13 @@ func (c *C7000) applyLdapGroupBayAcl(role string, group string) (err error) {
 	}
 
 	payload := setLdapGroupBayAcl{LdapGroup: ldapGroup{Text: group}, Acl: acl{Text: userAcl}}
-
-	doc := wrapXML(payload, c.XmlToken)
-	output, err := xml.MarshalIndent(doc, "  ", "    ")
-	if err != nil {
-		log.WithFields(log.Fields{
-			"step":  "applyLdapGroupBayAcl",
-			"IP":    c.ip,
-			"Model": c.BmcType(),
-			"Error": err,
-		}).Fatal("Unable to marshal ldap payload.")
-	}
-
-	statusCode, _, err := c.postXML(output)
+	statusCode, _, err := c.postXML(payload)
 	if statusCode != 200 || err != nil {
 		log.WithFields(log.Fields{
 			"step":       "applyLdapGroupBayAcl",
 			"IP":         c.ip,
 			"Model":      c.BmcType(),
+			"Serial":     c.serial,
 			"statusCode": statusCode,
 			"Error":      err,
 		}).Warn("LDAP applyLdapGroupBayAcl request returned non 200.")
@@ -437,10 +404,11 @@ func (c *C7000) applyLdapGroupBayAcl(role string, group string) (err error) {
 	}
 
 	log.WithFields(log.Fields{
-		"IP":    c.ip,
-		"Model": c.BmcType(),
-		"Role":  role,
-		"Group": group,
+		"IP":     c.ip,
+		"Model":  c.BmcType(),
+		"Serial": c.serial,
+		"Role":   role,
+		"Group":  group,
 	}).Info("Ldap group ACL added.")
 	return err
 }
@@ -509,23 +477,13 @@ func (c *C7000) applyAddLdapGroupBayAccess(group string) (err error) {
 		Bays:      bayz,
 	}
 
-	doc := wrapXML(payload, c.XmlToken)
-	output, err := xml.MarshalIndent(doc, "  ", "    ")
-	if err != nil {
-		log.WithFields(log.Fields{
-			"step":  "applyAddLdapGroupBayAccess",
-			"IP":    c.ip,
-			"Model": c.BmcType(),
-			"Error": err,
-		}).Fatal("Unable to marshal ldap payload.")
-	}
-
-	statusCode, _, err := c.postXML(output)
+	statusCode, _, err := c.postXML(payload)
 	if statusCode != 200 || err != nil {
 		log.WithFields(log.Fields{
 			"step":       "applyAddLdapGroupBayAccess",
 			"IP":         c.ip,
 			"Model":      c.BmcType(),
+			"Serial":     c.serial,
 			"statusCode": statusCode,
 			"Error":      err,
 		}).Warn("LDAP applyAddLdapGroupBayAccess apply request returned non 200.")
@@ -533,9 +491,10 @@ func (c *C7000) applyAddLdapGroupBayAccess(group string) (err error) {
 	}
 
 	log.WithFields(log.Fields{
-		"IP":    c.ip,
-		"Model": c.BmcType(),
-		"Group": group,
+		"IP":     c.ip,
+		"Model":  c.BmcType(),
+		"Serial": c.serial,
+		"Group":  group,
 	}).Info("Ldap interconnect and bay ACLs added.")
 	return err
 }
@@ -543,9 +502,6 @@ func (c *C7000) applyAddLdapGroupBayAccess(group string) (err error) {
 // attempts to add the user
 // if the user exists, update the users password.
 func (c *C7000) applyUserParams(cfg *cfgresources.User) (err error) {
-	// as of now we care to only set the admin role.
-	// this needs to be updated to support various roles.
-	validRole := "admin"
 
 	if cfg.Name == "" {
 		log.WithFields(log.Fields{
@@ -561,32 +517,19 @@ func (c *C7000) applyUserParams(cfg *cfgresources.User) (err error) {
 		}).Fatal("User resource expects parameter: Password.")
 	}
 
-	if cfg.Role != validRole {
+	if c.isRoleValid(cfg.Role) == false {
 		log.WithFields(log.Fields{
 			"step":  "applyUserParams",
 			"Model": c.BmcType(),
+			"Role":  cfg.Role,
 		}).Fatal("User resource Role must be declared and a valid role: admin.")
 	}
 
 	username := Username{Text: cfg.Name}
 	password := Password{Text: cfg.Password}
-	adduser := AddUser{Username: username, Password: password}
+	payload := AddUser{Username: username, Password: password}
 
-	//wrap the XML payload in the SOAP envelope
-	doc := wrapXML(adduser, c.XmlToken)
-	output, err := xml.MarshalIndent(doc, "  ", "    ")
-	if err != nil {
-		log.WithFields(log.Fields{
-			"step":  "applyUserParams",
-			"user":  cfg.Name,
-			"IP":    c.ip,
-			"Model": c.BmcType(),
-			"Error": err,
-		}).Warn("Unable to marshal user payload.")
-		return err
-	}
-
-	statusCode, _, err := c.postXML(output)
+	statusCode, _, err := c.postXML(payload)
 	if err != nil {
 		return err
 	}
@@ -598,6 +541,7 @@ func (c *C7000) applyUserParams(cfg *cfgresources.User) (err error) {
 			"user":        cfg.Name,
 			"IP":          c.ip,
 			"Model":       c.BmcType(),
+			"Serial":      c.serial,
 			"Return code": statusCode,
 		}).Debug("User already exists, setting password.")
 
@@ -609,9 +553,10 @@ func (c *C7000) applyUserParams(cfg *cfgresources.User) (err error) {
 	}
 
 	log.WithFields(log.Fields{
-		"IP":    c.ip,
-		"Model": c.BmcType(),
-		"user":  cfg.Name,
+		"IP":     c.ip,
+		"Model":  c.BmcType(),
+		"Serial": c.serial,
+		"user":   cfg.Name,
 	}).Debug("User cfg applied.")
 	return err
 }
@@ -620,29 +565,16 @@ func (c *C7000) setUserPassword(user string, password string) (err error) {
 
 	u := Username{Text: user}
 	p := Password{Text: password}
-	setuserpassword := SetUserPassword{Username: u, Password: p}
+	payload := SetUserPassword{Username: u, Password: p}
 
-	//wrap the XML payload in the SOAP envelope
-	doc := wrapXML(setuserpassword, c.XmlToken)
-	output, err := xml.MarshalIndent(doc, "  ", "    ")
-	if err != nil {
-		log.WithFields(log.Fields{
-			"step":  "setUserPassword",
-			"user":  user,
-			"IP":    c.ip,
-			"Model": c.BmcType(),
-			"Error": err,
-		}).Fatal("Unable to marshal payload.")
-	}
-
-	//fmt.Printf("-->> %d\n", statusCode)
-	statusCode, _, err := c.postXML(output)
+	statusCode, _, err := c.postXML(payload)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"step":        "setUserPassword",
 			"user":        user,
 			"IP":          c.ip,
 			"Model":       c.BmcType(),
+			"Serial":      c.serial,
 			"return code": statusCode,
 			"Error":       err,
 		}).Warn("Unable to set user password.")
@@ -650,9 +582,10 @@ func (c *C7000) setUserPassword(user string, password string) (err error) {
 	}
 
 	log.WithFields(log.Fields{
-		"IP":    c.ip,
-		"Model": c.BmcType(),
-		"user":  user,
+		"IP":     c.ip,
+		"Model":  c.BmcType(),
+		"Serial": c.serial,
+		"user":   user,
 	}).Info("User password set.")
 	return err
 }
@@ -700,28 +633,16 @@ func (c *C7000) applyNtpParams(cfg *cfgresources.Ntp) (err error) {
 	ntppoll := NtpPoll{Text: "720"} //default period to poll the NTP server
 	primaryServer := NtpPrimary{Text: cfg.Server1}
 	secondaryServer := NtpSecondary{Text: cfg.Server2}
-	ntp := configureNtp{NtpPrimary: primaryServer, NtpSecondary: secondaryServer, NtpPoll: ntppoll}
-
-	//wrap the XML payload in the SOAP envelope
-	doc := wrapXML(ntp, c.XmlToken)
-	output, err := xml.MarshalIndent(doc, "  ", "    ")
-	if err != nil {
-		log.WithFields(log.Fields{
-			"step":  "applyNtpParams",
-			"IP":    c.ip,
-			"Model": c.BmcType(),
-			"Error": err,
-		}).Warn("Unable to marshal ntp payload.")
-		return err
-	}
+	payload := configureNtp{NtpPrimary: primaryServer, NtpSecondary: secondaryServer, NtpPoll: ntppoll}
 
 	//fmt.Printf("%s\n", output)
-	statusCode, _, err := c.postXML(output)
+	statusCode, _, err := c.postXML(payload)
 	if err != nil || statusCode != 200 {
 		log.WithFields(log.Fields{
 			"step":       "applyNtpParams",
 			"IP":         c.ip,
 			"Model":      c.BmcType(),
+			"Serial":     c.serial,
 			"StatusCode": statusCode,
 			"Error":      err,
 		}).Warn("NTP apply request returned non 200.")
@@ -731,17 +652,19 @@ func (c *C7000) applyNtpParams(cfg *cfgresources.Ntp) (err error) {
 	err = c.applyNtpTimezoneParam(cfg.Timezone)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"step":  "applyNtpParams",
-			"IP":    c.ip,
-			"Model": c.BmcType(),
-			"Error": err,
+			"step":   "applyNtpParams",
+			"IP":     c.ip,
+			"Model":  c.BmcType(),
+			"Serial": c.serial,
+			"Error":  err,
 		}).Warn("Unable to apply NTP timezone config.")
 		return err
 	}
 
 	log.WithFields(log.Fields{
-		"IP":    c.ip,
-		"Model": c.BmcType(),
+		"IP":     c.ip,
+		"Model":  c.BmcType(),
+		"Serial": c.serial,
 	}).Info("Date and time config applied.")
 	return err
 }
@@ -751,28 +674,15 @@ func (c *C7000) applyNtpParams(cfg *cfgresources.Ntp) (err error) {
 func (c *C7000) applyNtpTimezoneParam(timezone string) (err error) {
 
 	//setup timezone XML payload
-	tz := setEnclosureTimeZone{Timezone: timeZone{Text: timezone}}
+	payload := setEnclosureTimeZone{Timezone: timeZone{Text: timezone}}
 
-	//wrap the XML payload in the SOAP envelope
-	doc := wrapXML(tz, c.XmlToken)
-	output, err := xml.MarshalIndent(doc, "  ", "    ")
-	if err != nil {
-		log.WithFields(log.Fields{
-			"step":  "applyNtpTimezoneParam",
-			"IP":    c.ip,
-			"Model": c.BmcType(),
-			"Error": err,
-		}).Warn("Unable to marshal ntp timezone payload.")
-		return err
-	}
-
-	//fmt.Printf("%s\n", output)
-	statusCode, _, err := c.postXML(output)
+	statusCode, _, err := c.postXML(payload)
 	if err != nil || statusCode != 200 {
 		log.WithFields(log.Fields{
 			"step":       "applyNtpTimezoneParam",
 			"IP":         c.ip,
 			"Model":      c.BmcType(),
+			"Serial":     c.serial,
 			"Error":      err,
 			"StatusCode": statusCode,
 		}).Warn("NTP applyNtpTimezoneParam request returned non 200.")
@@ -780,8 +690,9 @@ func (c *C7000) applyNtpTimezoneParam(timezone string) (err error) {
 	}
 
 	log.WithFields(log.Fields{
-		"IP":    c.ip,
-		"Model": c.BmcType(),
+		"IP":     c.ip,
+		"Model":  c.BmcType(),
+		"Serial": c.serial,
 	}).Info("Timezone config applied.")
 	return err
 }
@@ -796,18 +707,20 @@ func (c *C7000) applySyslogParams(cfg *cfgresources.Syslog) (err error) {
 	var port int
 	if cfg.Server == "" {
 		log.WithFields(log.Fields{
-			"step":  "applySyslogParams",
-			"IP":    c.ip,
-			"Model": c.BmcType(),
+			"step":   "applySyslogParams",
+			"IP":     c.ip,
+			"Model":  c.BmcType(),
+			"Serial": c.serial,
 		}).Warn("Syslog resource expects parameter: Server.")
 		return
 	}
 
 	if cfg.Port == 0 {
 		log.WithFields(log.Fields{
-			"step":  "applySyslogParams",
-			"IP":    c.ip,
-			"Model": c.BmcType(),
+			"step":   "applySyslogParams",
+			"IP":     c.ip,
+			"Model":  c.BmcType(),
+			"Serial": c.serial,
 		}).Debug("Syslog resource port set to default: 514.")
 		port = 514
 	} else {
@@ -816,9 +729,10 @@ func (c *C7000) applySyslogParams(cfg *cfgresources.Syslog) (err error) {
 
 	if cfg.Enable != true {
 		log.WithFields(log.Fields{
-			"step":  "applySyslogParams",
-			"IP":    c.ip,
-			"Model": c.BmcType(),
+			"step":   "applySyslogParams",
+			"IP":     c.ip,
+			"Model":  c.BmcType(),
+			"Serial": c.serial,
 		}).Debug("Syslog resource declared with enable: false.")
 	}
 
@@ -827,8 +741,9 @@ func (c *C7000) applySyslogParams(cfg *cfgresources.Syslog) (err error) {
 	c.applySyslogEnabled(cfg.Enable)
 
 	log.WithFields(log.Fields{
-		"IP":    c.ip,
-		"Model": c.BmcType(),
+		"IP":     c.ip,
+		"Model":  c.BmcType(),
+		"Serial": c.serial,
 	}).Info("Syslog config applied.")
 	return err
 }
@@ -840,26 +755,13 @@ func (c *C7000) applySyslogParams(cfg *cfgresources.Syslog) (err error) {
 func (c *C7000) applySyslogServer(server string) {
 
 	payload := SetRemoteSyslogServer{Server: server}
-
-	//wrap the XML payload in the SOAP envelope
-	doc := wrapXML(payload, c.XmlToken)
-	output, err := xml.MarshalIndent(doc, "  ", "    ")
-	if err != nil {
-		log.WithFields(log.Fields{
-			"step":  "applySyslogServer",
-			"IP":    c.ip,
-			"Model": c.BmcType(),
-			"Error": err,
-		}).Warn("Unable to marshal syslog payload.")
-		return
-	}
-
-	statusCode, _, err := c.postXML(output)
+	statusCode, _, err := c.postXML(payload)
 	if err != nil || statusCode != 200 {
 		log.WithFields(log.Fields{
 			"step":       "applySyslogServer",
 			"IP":         c.ip,
 			"Model":      c.BmcType(),
+			"Serial":     c.serial,
 			"Error":      err,
 			"StatusCode": statusCode,
 		}).Warn("Syslog set server request returned non 200.")
@@ -867,8 +769,9 @@ func (c *C7000) applySyslogServer(server string) {
 	}
 
 	log.WithFields(log.Fields{
-		"IP":    c.ip,
-		"Model": c.BmcType(),
+		"IP":     c.ip,
+		"Model":  c.BmcType(),
+		"Serial": c.serial,
 	}).Info("Syslog server set.")
 	return
 }
@@ -879,26 +782,13 @@ func (c *C7000) applySyslogServer(server string) {
 // </hpoa:setRemoteSyslogPort>
 func (c *C7000) applySyslogPort(port int) {
 	payload := SetRemoteSyslogPort{Port: port}
-
-	//wrap the XML payload in the SOAP envelope
-	doc := wrapXML(payload, c.XmlToken)
-	output, err := xml.MarshalIndent(doc, "  ", "    ")
-	if err != nil {
-		log.WithFields(log.Fields{
-			"step":  "applySyslogPort",
-			"IP":    c.ip,
-			"Model": c.BmcType(),
-			"Error": err,
-		}).Warn("Unable to marshal syslog payload.")
-		return
-	}
-
-	statusCode, _, err := c.postXML(output)
+	statusCode, _, err := c.postXML(payload)
 	if err != nil || statusCode != 200 {
 		log.WithFields(log.Fields{
 			"step":       "applySyslogPort",
 			"IP":         c.ip,
 			"Model":      c.BmcType(),
+			"Serial":     c.serial,
 			"Error":      err,
 			"StatusCode": statusCode,
 		}).Warn("Syslog set port request returned non 200.")
@@ -906,8 +796,9 @@ func (c *C7000) applySyslogPort(port int) {
 	}
 
 	log.WithFields(log.Fields{
-		"IP":    c.ip,
-		"Model": c.BmcType(),
+		"IP":     c.ip,
+		"Model":  c.BmcType(),
+		"Serial": c.serial,
 	}).Info("Syslog port set.")
 	return
 }
@@ -919,26 +810,13 @@ func (c *C7000) applySyslogPort(port int) {
 func (c *C7000) applySyslogEnabled(enabled bool) {
 
 	payload := SetRemoteSyslogEnabled{Enabled: enabled}
-
-	//wrap the XML payload in the SOAP envelope
-	doc := wrapXML(payload, c.XmlToken)
-	output, err := xml.MarshalIndent(doc, "  ", "    ")
-	if err != nil {
-		log.WithFields(log.Fields{
-			"step":  "SetRemoteSyslogEnabled",
-			"IP":    c.ip,
-			"Model": c.BmcType(),
-			"Error": err,
-		}).Warn("Unable to marshal syslog payload.")
-		return
-	}
-
-	statusCode, _, err := c.postXML(output)
+	statusCode, _, err := c.postXML(payload)
 	if err != nil || statusCode != 200 {
 		log.WithFields(log.Fields{
 			"step":       "SetRemoteSyslogEnabled",
 			"IP":         c.ip,
 			"Model":      c.BmcType(),
+			"Serial":     c.serial,
 			"Error":      err,
 			"StatusCode": statusCode,
 		}).Warn("Syslog enable request returned non 200.")
@@ -946,8 +824,9 @@ func (c *C7000) applySyslogEnabled(enabled bool) {
 	}
 
 	log.WithFields(log.Fields{
-		"IP":    c.ip,
-		"Model": c.BmcType(),
+		"IP":     c.ip,
+		"Model":  c.BmcType(),
+		"Serial": c.serial,
 	}).Info("Syslog enabled.")
 	return
 
