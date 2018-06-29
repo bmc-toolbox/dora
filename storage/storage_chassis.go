@@ -151,8 +151,14 @@ func (c *ChassisStorage) RemoveOldBladesRefs(chassis *model.Chassis) (count int,
 		connectedSerials = append(connectedSerials, blade.Serial)
 	}
 
-	if err = c.db.Model(&model.Blade{}).Where("serial not in (?) and chassis_serial = ?", connectedSerials, chassis.Serial).Pluck("serial", &serials).Count(&count).Error; err != nil {
-		return count, serials, err
+	if len(chassis.Blades) == 0 {
+		if err = c.db.Model(&model.Blade{}).Where("serial not null and chassis_serial = ?", chassis.Serial).Pluck("serial", &serials).Count(&count).Error; err != nil {
+			return count, serials, err
+		}
+	} else {
+		if err = c.db.Model(&model.Blade{}).Where("serial not in (?) and chassis_serial = ?", connectedSerials, chassis.Serial).Pluck("serial", &serials).Count(&count).Error; err != nil {
+			return count, serials, err
+		}
 	}
 
 	if count > 0 {
@@ -171,8 +177,14 @@ func (c *ChassisStorage) RemoveOldStorageBladesRefs(chassis *model.Chassis) (cou
 		connectedSerials = append(connectedSerials, blade.Serial)
 	}
 
-	if err = c.db.Model(&model.StorageBlade{}).Where("serial not in (?) and chassis_serial = ?", connectedSerials, chassis.Serial).Pluck("serial", &serials).Count(&count).Error; err != nil {
-		return count, serials, err
+	if len(chassis.StorageBlades) == 0 {
+		if err = c.db.Model(&model.StorageBlade{}).Where("serial not null and chassis_serial = ?", chassis.Serial).Pluck("serial", &serials).Count(&count).Error; err != nil {
+			return count, serials, err
+		}
+	} else {
+		if err = c.db.Model(&model.StorageBlade{}).Where("serial not in (?) and chassis_serial = ?", connectedSerials, chassis.Serial).Pluck("serial", &serials).Count(&count).Error; err != nil {
+			return count, serials, err
+		}
 	}
 
 	if count > 0 {
@@ -191,8 +203,14 @@ func (c *ChassisStorage) RemoveOldNicRefs(chassis *model.Chassis) (count int, ma
 		connectedMacAddresses = append(connectedMacAddresses, nic.MacAddress)
 	}
 
-	if err = c.db.Model(&model.Nic{}).Where("mac_address not in (?) and chassis_serial = ?", connectedMacAddresses, chassis.Serial).Pluck("mac_address", &macAddresses).Count(&count).Error; err != nil {
-		return count, macAddresses, err
+	if len(chassis.Nics) == 0 {
+		if err = c.db.Model(&model.Nic{}).Where("mac_address not null and chassis_serial = ?", chassis.Serial).Pluck("mac_address", &macAddresses).Count(&count).Error; err != nil {
+			return count, macAddresses, err
+		}
+	} else {
+		if err = c.db.Model(&model.Nic{}).Where("mac_address not in (?) and chassis_serial = ?", connectedMacAddresses, chassis.Serial).Pluck("mac_address", &macAddresses).Count(&count).Error; err != nil {
+			return count, macAddresses, err
+		}
 	}
 
 	if count > 0 {
@@ -211,8 +229,14 @@ func (c *ChassisStorage) RemoveOldPsuRefs(chassis *model.Chassis) (count int, se
 		connectedSerials = append(connectedSerials, psu.Serial)
 	}
 
-	if err = c.db.Model(&model.Psu{}).Where("serial not in (?) and chassis_serial = ?", connectedSerials, chassis.Serial).Pluck("serial", &serials).Count(&count).Error; err != nil {
-		return count, serials, err
+	if len(chassis.Psus) == 0 {
+		if err = c.db.Model(&model.Psu{}).Where("serial not null and chassis_serial = ?", chassis.Serial).Pluck("serial", &serials).Count(&count).Error; err != nil {
+			return count, serials, err
+		}
+	} else {
+		if err = c.db.Model(&model.Psu{}).Where("serial not in (?) and chassis_serial = ?", connectedSerials, chassis.Serial).Pluck("serial", &serials).Count(&count).Error; err != nil {
+			return count, serials, err
+		}
 	}
 
 	if count > 0 {
