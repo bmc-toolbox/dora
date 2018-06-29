@@ -152,7 +152,7 @@ func (c *ChassisStorage) RemoveOldBladesRefs(chassis *model.Chassis) (count int,
 	}
 
 	if len(chassis.Blades) == 0 {
-		if err = c.db.Model(&model.Blade{}).Where("serial not null and chassis_serial = ?", chassis.Serial).Pluck("serial", &serials).Count(&count).Error; err != nil {
+		if err = c.db.Model(&model.Blade{}).Where("serial is not null and chassis_serial = ?", chassis.Serial).Pluck("serial", &serials).Count(&count).Error; err != nil {
 			return count, serials, err
 		}
 	} else {
@@ -178,7 +178,7 @@ func (c *ChassisStorage) RemoveOldStorageBladesRefs(chassis *model.Chassis) (cou
 	}
 
 	if len(chassis.StorageBlades) == 0 {
-		if err = c.db.Model(&model.StorageBlade{}).Where("serial not null and chassis_serial = ?", chassis.Serial).Pluck("serial", &serials).Count(&count).Error; err != nil {
+		if err = c.db.Model(&model.StorageBlade{}).Where("serial is not null and chassis_serial = ?", chassis.Serial).Pluck("serial", &serials).Count(&count).Error; err != nil {
 			return count, serials, err
 		}
 	} else {
@@ -204,7 +204,7 @@ func (c *ChassisStorage) RemoveOldNicRefs(chassis *model.Chassis) (count int, ma
 	}
 
 	if len(chassis.Nics) == 0 {
-		if err = c.db.Model(&model.Nic{}).Where("mac_address not null and chassis_serial = ?", chassis.Serial).Pluck("mac_address", &macAddresses).Count(&count).Error; err != nil {
+		if err = c.db.Model(&model.Nic{}).Where("mac_address is not null and chassis_serial = ?", chassis.Serial).Pluck("mac_address", &macAddresses).Count(&count).Error; err != nil {
 			return count, macAddresses, err
 		}
 	} else {
@@ -230,7 +230,7 @@ func (c *ChassisStorage) RemoveOldPsuRefs(chassis *model.Chassis) (count int, se
 	}
 
 	if len(chassis.Psus) == 0 {
-		if err = c.db.Model(&model.Psu{}).Where("serial not null and chassis_serial = ?", chassis.Serial).Pluck("serial", &serials).Count(&count).Error; err != nil {
+		if err = c.db.Model(&model.Psu{}).Where("serial is not null and chassis_serial = ?", chassis.Serial).Pluck("serial", &serials).Count(&count).Error; err != nil {
 			return count, serials, err
 		}
 	} else {
