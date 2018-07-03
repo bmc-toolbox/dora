@@ -336,6 +336,7 @@ func collectBmcChassis(bmc devices.BmcChassis) (err error) {
 	}
 
 	chassis := model.NewChassisFromDevice(ch)
+	chassis.BmcAuth = true
 	scans := []model.ScannedPort{}
 	db.Where("ip = ?", chassis.BmcAddress).Find(&scans)
 	for _, scan := range scans {
