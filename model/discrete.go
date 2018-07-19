@@ -53,6 +53,7 @@ func NewDiscreteFromDevice(d *devices.Discrete) (discrete *Discrete) {
 	discrete.PowerKw = d.PowerKw
 	discrete.Status = d.Status
 	discrete.Vendor = d.Vendor
+	discrete.PowerState = d.PowerState
 	discrete.Processor = d.Processor
 	discrete.ProcessorCount = d.ProcessorCount
 	discrete.ProcessorCoreCount = d.ProcessorCoreCount
