@@ -9,12 +9,14 @@ type ResourcesSetup struct {
 type ResourcesConfig struct {
 	Ldap       *Ldap        `yaml:"ldap"`
 	LdapGroup  []*LdapGroup `yaml:"ldapGroup"`
+	License    *License     `yaml:"license"`
 	Network    *Network     `yaml:"network"`
-	Ntp        *Ntp         `yaml:"ntp"`
 	Syslog     *Syslog      `yaml:"syslog"`
 	User       []*User      `yaml:"user"`
 	Ssl        *Ssl         `yaml:"ssl"`
+	Ntp        *Ntp         `yaml:"ntp"`
 	Supermicro *Supermicro  `yaml:"supermicro"` //supermicro specific config, example of issue #34
+	Dell       *Dell        `yaml:"dell"`
 }
 
 //Enable/Disable Virtual Mac addresses for blades in a chassis.
@@ -53,12 +55,17 @@ type Ldap struct {
 	Port           int    `yaml:"port"`
 	Enable         bool   `yaml:"enable"`
 	Role           string `yaml:"role"`
-	BaseDn         string `yaml:"baseDn"`
+	BaseDn         string `yaml:"baseDn"` //BaseDN is the starting point of the LDAP tree search.
+	BindDn         string `yaml:"bindDn"` //BindDN is used to gain access to the LDAP tree.
 	Group          string `yaml:"group"`
 	GroupBaseDn    string `yaml:"groupBaseDn"`
 	UserAttribute  string `yaml:"userAttribute"`
 	GroupAttribute string `yaml:"groupAttribute"`
 	SearchFilter   string `yaml:"searchFilter"`
+}
+
+type License struct {
+	Key string `yaml:"key"`
 }
 
 type LdapGroup struct {
@@ -75,9 +82,10 @@ type Ssl struct {
 
 type Network struct {
 	Hostname    string `yaml:"hostname"`
-	DNSFromDHCP bool   `yaml:"dnsfromdhcp"`
+	DNSFromDHCP bool   `yaml:"dnsFromDhcp"`
 	SshEnable   bool   `yaml:"sshEnable"`
 	SshPort     int    `yaml:"sshPort"`
+	SolEnable   bool   `yaml:"solEnable"` //Serial over lan
 	IpmiEnable  bool   `yaml:"ipmiEnable"`
 	DhcpEnable  bool   `yaml:"dhcpEnable"`
 	IpmiPort    int    `yaml:"ipmiPort"`

@@ -142,8 +142,8 @@ func (s *SupermicroX10) ApplyCfg(config *cfgresources.ResourcesConfig) (err erro
 				//since supermicro does not have separate ldap group config,
 				//for generic ldap configuration.
 				continue
+			case "License":
 			case "Ssl":
-				fmt.Printf("%s: %v : %s\n", resourceName, cfg.Field(r), cfg.Field(r).Kind())
 			case "Supermicro":
 				err := s.applyVendorSpecificConfig(config.Supermicro)
 				if err != nil {
@@ -159,10 +159,8 @@ func (s *SupermicroX10) ApplyCfg(config *cfgresources.ResourcesConfig) (err erro
 			default:
 				log.WithFields(log.Fields{
 					"step":     "ApplyCfg",
-					"Resource": cfg.Field(r).Kind(),
+					"Resource": resourceName,
 				}).Warn("Unknown resource definition.")
-				//fmt.Printf("%v\n", cfg.Field(r))
-
 			}
 		}
 	}
@@ -266,7 +264,7 @@ func (s *SupermicroX10) applyUserParams(users []*cfgresources.User) (err error) 
 			"Model":  s.BmcType(),
 			"Serial": s.serial,
 			"User":   user.Name,
-		}).Info("User parameters applied.")
+		}).Debug("User parameters applied.")
 
 		userId += 1
 	}
@@ -326,7 +324,7 @@ func (s *SupermicroX10) applyNetworkParams(cfg *cfgresources.Network) (err error
 		"IP":     s.ip,
 		"Model":  s.BmcType(),
 		"Serial": s.serial,
-	}).Info("Network config parameters applied.")
+	}).Debug("Network config parameters applied.")
 	return err
 }
 
@@ -422,7 +420,7 @@ func (s *SupermicroX10) applyNtpParams(cfg *cfgresources.Ntp) (err error) {
 		"IP":     s.ip,
 		"Model":  s.BmcType(),
 		"Serial": s.serial,
-	}).Info("NTP config parameters applied.")
+	}).Debug("NTP config parameters applied.")
 	return err
 }
 
@@ -460,6 +458,15 @@ func (s *SupermicroX10) applyLdapParams(cfgLdap *cfgresources.Ldap, cfgGroup []*
 		return
 	} else {
 		enable = "on"
+	}
+
+	if cfgLdap.BaseDn == "" {
+		msg := "Ldap resource parameter BaseDn required but not declared."
+		log.WithFields(log.Fields{
+			"step":  helper.WhosCalling(),
+			"Model": s.BmcType(),
+		}).Warn(msg)
+		return errors.New(msg)
 	}
 
 	serverIp, err := net.LookupIP(cfgLdap.Server)
@@ -523,8 +530,8 @@ func (s *SupermicroX10) applyLdapParams(cfgLdap *cfgresources.Ldap, cfgGroup []*
 			LdapIp:       fmt.Sprintf("%s", serverIp[0]),
 			BaseDn:       group.Group,
 			LdapPort:     cfgLdap.Port,
-			BindDn:       "undefined", //default value
-			BindPassword: "********",  //default value
+			BindDn:       cfgLdap.BindDn,
+			BindPassword: "********", //default value
 		}
 
 		endpoint := fmt.Sprintf("op.cgi")
@@ -548,7 +555,7 @@ func (s *SupermicroX10) applyLdapParams(cfgLdap *cfgresources.Ldap, cfgGroup []*
 	log.WithFields(log.Fields{
 		"IP":    s.ip,
 		"Model": s.BmcType(),
-	}).Info("Ldap config parameters applied.")
+	}).Debug("Ldap config parameters applied.")
 	return err
 }
 
@@ -626,7 +633,7 @@ func (s *SupermicroX10) applySyslogParams(cfg *cfgresources.Syslog) (err error) 
 		"IP":     s.ip,
 		"Model":  s.BmcType(),
 		"Serial": s.serial,
-	}).Info("Syslog config parameters applied.")
+	}).Debug("Syslog config parameters applied.")
 	return err
 }
 

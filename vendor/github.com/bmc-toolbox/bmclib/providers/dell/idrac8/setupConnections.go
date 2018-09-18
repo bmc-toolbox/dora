@@ -110,13 +110,13 @@ func (i *IDrac8) loadHwData() (err error) {
 	return err
 }
 
-// sshLogin initiates the connection to a chassis device
+// sshLogin initiates the connection to a bmc device
 func (i *IDrac8) sshLogin() (err error) {
 	if i.sshClient != nil {
 		return
 	}
 
-	log.WithFields(log.Fields{"step": "chassis connection", "vendor": dell.VendorID, "ip": i.ip}).Debug("connecting to chassis")
+	log.WithFields(log.Fields{"step": "bmc connection", "vendor": dell.VendorID, "ip": i.ip}).Debug("connecting to bmc")
 	i.sshClient, err = sshclient.New(i.ip, i.username, i.password)
 	if err != nil {
 		return err
@@ -129,11 +129,12 @@ func (i *IDrac8) sshLogin() (err error) {
 func (i *IDrac8) Close() (err error) {
 	if i.httpClient != nil {
 		resp, e := i.httpClient.Get(fmt.Sprintf("https://%s/data/logout", i.ip))
-		if err != nil {
+		if e != nil {
 			err = multierror.Append(e, err)
+		} else {
+			defer resp.Body.Close()
+			defer io.Copy(ioutil.Discard, resp.Body)
 		}
-		defer resp.Body.Close()
-		io.Copy(ioutil.Discard, resp.Body)
 	}
 
 	if i.sshClient != nil {

@@ -19,7 +19,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Login initiates the connection to a chassis device
+// Login initiates the connection to a bmc device
 func (i *Ilo) httpLogin() (err error) {
 	if i.httpClient != nil {
 		return
@@ -108,13 +108,13 @@ func (i *Ilo) httpLogin() (err error) {
 	return err
 }
 
-// Login initiates the connection to a chassis device
+// Login initiates the connection to a bmc device
 func (i *Ilo) sshLogin() (err error) {
 	if i.sshClient != nil {
 		return
 	}
 
-	log.WithFields(log.Fields{"step": "chassis connection", "vendor": hp.VendorID, "ip": i.ip}).Debug("connecting to chassis")
+	log.WithFields(log.Fields{"step": "bmc connection", "vendor": hp.VendorID, "ip": i.ip}).Debug("connecting to bmc")
 	i.sshClient, err = sshclient.New(i.ip, i.username, i.password)
 	if err != nil {
 		return err
@@ -137,11 +137,12 @@ func (i *Ilo) Close() (err error) {
 			req.Header.Set("Content-Type", "application/json")
 
 			resp, e := i.httpClient.Do(req)
-			if err != nil {
+			if e != nil {
 				err = multierror.Append(e, err)
+			} else {
+				defer resp.Body.Close()
+				defer io.Copy(ioutil.Discard, resp.Body)
 			}
-			io.Copy(ioutil.Discard, resp.Body)
-			defer resp.Body.Close()
 		}
 	}
 

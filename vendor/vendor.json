@@ -15,112 +15,112 @@
 			"revisionTime": "2017-04-20T13:57:05Z"
 		},
 		{
-			"checksumSHA1": "HUsfiTY/vByQD5pYDzip9UvprBc=",
+			"checksumSHA1": "V/kt2W5UqhBUfEzx7qJWOgd+6ak=",
 			"path": "github.com/bmc-toolbox/bmclib/cfgresources",
-			"revision": "b06a68585b46b7180a5395ee40df78fc3e4fbf7a",
-			"revisionTime": "2018-07-19T12:05:31Z"
+			"revision": "985ffbd8b6643332fe848438696e390e74dbb138",
+			"revisionTime": "2018-09-17T08:58:19Z"
 		},
 		{
-			"checksumSHA1": "dDFkVpFqkrY3ZwcmX1hKE+gHFmA=",
+			"checksumSHA1": "4WIAHemwwgv00bpz3YrfVTJ2JVk=",
 			"path": "github.com/bmc-toolbox/bmclib/devices",
-			"revision": "b06a68585b46b7180a5395ee40df78fc3e4fbf7a",
-			"revisionTime": "2018-07-19T12:05:31Z"
+			"revision": "985ffbd8b6643332fe848438696e390e74dbb138",
+			"revisionTime": "2018-09-17T08:58:19Z"
 		},
 		{
 			"checksumSHA1": "Om6NyNkr7P4oeHCIjD2tXS3b1H8=",
 			"path": "github.com/bmc-toolbox/bmclib/discover",
-			"revision": "b06a68585b46b7180a5395ee40df78fc3e4fbf7a",
-			"revisionTime": "2018-07-19T12:05:31Z"
+			"revision": "985ffbd8b6643332fe848438696e390e74dbb138",
+			"revisionTime": "2018-09-17T08:58:19Z"
 		},
 		{
-			"checksumSHA1": "5rDuyM7NKgRWJe/GEtGWp1Z1W7k=",
+			"checksumSHA1": "4vD9BlJazCgS5S0QmOAaPdkvSoo=",
 			"path": "github.com/bmc-toolbox/bmclib/errors",
-			"revision": "b06a68585b46b7180a5395ee40df78fc3e4fbf7a",
-			"revisionTime": "2018-07-19T12:05:31Z"
+			"revision": "985ffbd8b6643332fe848438696e390e74dbb138",
+			"revisionTime": "2018-09-17T08:58:19Z"
 		},
 		{
 			"checksumSHA1": "VqpKB+pp2Ub7o3M0kS9WKWQtSdY=",
 			"path": "github.com/bmc-toolbox/bmclib/internal/helper",
-			"revision": "b06a68585b46b7180a5395ee40df78fc3e4fbf7a",
-			"revisionTime": "2018-07-19T12:05:31Z"
+			"revision": "985ffbd8b6643332fe848438696e390e74dbb138",
+			"revisionTime": "2018-09-17T08:58:19Z"
 		},
 		{
-			"checksumSHA1": "h73TlPFYM58+D1qRQIBKaZ0Bp+I=",
+			"checksumSHA1": "4uV/VSUWZQ6eJggiDI6uFgsQF3I=",
 			"path": "github.com/bmc-toolbox/bmclib/internal/httpclient",
-			"revision": "b06a68585b46b7180a5395ee40df78fc3e4fbf7a",
-			"revisionTime": "2018-07-19T12:05:31Z"
+			"revision": "985ffbd8b6643332fe848438696e390e74dbb138",
+			"revisionTime": "2018-09-17T08:58:19Z"
 		},
 		{
 			"checksumSHA1": "NyRI2YcZJkVw+LLMvmSwqHwPk8E=",
 			"path": "github.com/bmc-toolbox/bmclib/internal/ipmi",
-			"revision": "b06a68585b46b7180a5395ee40df78fc3e4fbf7a",
-			"revisionTime": "2018-07-19T12:05:31Z"
+			"revision": "985ffbd8b6643332fe848438696e390e74dbb138",
+			"revisionTime": "2018-09-17T08:58:19Z"
 		},
 		{
 			"checksumSHA1": "MujZilmUdhJYyWWHiFrgbyHtTa4=",
 			"path": "github.com/bmc-toolbox/bmclib/internal/sshclient",
-			"revision": "b06a68585b46b7180a5395ee40df78fc3e4fbf7a",
-			"revisionTime": "2018-07-19T12:05:31Z"
+			"revision": "985ffbd8b6643332fe848438696e390e74dbb138",
+			"revisionTime": "2018-09-17T08:58:19Z"
 		},
 		{
 			"checksumSHA1": "mNILaVea4KJc5PNxSyoSdqQ6F/g=",
 			"path": "github.com/bmc-toolbox/bmclib/logging",
-			"revision": "b06a68585b46b7180a5395ee40df78fc3e4fbf7a",
-			"revisionTime": "2018-07-19T12:05:31Z"
+			"revision": "985ffbd8b6643332fe848438696e390e74dbb138",
+			"revisionTime": "2018-09-17T08:58:19Z"
 		},
 		{
 			"checksumSHA1": "Ce3RMxW6sDFW6cwpMmkKmGxg8Lc=",
 			"path": "github.com/bmc-toolbox/bmclib/providers/dell",
-			"revision": "b06a68585b46b7180a5395ee40df78fc3e4fbf7a",
-			"revisionTime": "2018-07-19T12:05:31Z"
+			"revision": "985ffbd8b6643332fe848438696e390e74dbb138",
+			"revisionTime": "2018-09-17T08:58:19Z"
 		},
 		{
-			"checksumSHA1": "De4PTBoAFv2HF9u3UTABrkHA4IM=",
+			"checksumSHA1": "tJzyaMl4Wtu0bc7PiggIscxhJA8=",
 			"path": "github.com/bmc-toolbox/bmclib/providers/dell/idrac8",
-			"revision": "b06a68585b46b7180a5395ee40df78fc3e4fbf7a",
-			"revisionTime": "2018-07-19T12:05:31Z"
+			"revision": "985ffbd8b6643332fe848438696e390e74dbb138",
+			"revisionTime": "2018-09-17T08:58:19Z"
 		},
 		{
-			"checksumSHA1": "oeJHs1mx7ixUE5Cv/rMFVgnjB9U=",
+			"checksumSHA1": "0U2SjMcXm4XcrcchZSmXYYev3xE=",
 			"path": "github.com/bmc-toolbox/bmclib/providers/dell/idrac9",
-			"revision": "b06a68585b46b7180a5395ee40df78fc3e4fbf7a",
-			"revisionTime": "2018-07-19T12:05:31Z"
+			"revision": "985ffbd8b6643332fe848438696e390e74dbb138",
+			"revisionTime": "2018-09-17T08:58:19Z"
 		},
 		{
-			"checksumSHA1": "1kfrabnl1QC8HVCVFVhbX9cVXmw=",
+			"checksumSHA1": "ygUbrHLtPZkjeJwrRhdipauFt3g=",
 			"path": "github.com/bmc-toolbox/bmclib/providers/dell/m1000e",
-			"revision": "b06a68585b46b7180a5395ee40df78fc3e4fbf7a",
-			"revisionTime": "2018-07-19T12:05:31Z"
+			"revision": "985ffbd8b6643332fe848438696e390e74dbb138",
+			"revisionTime": "2018-09-17T08:58:19Z"
 		},
 		{
 			"checksumSHA1": "sGYzYB11bfvyT46e+GQMHvmTl5k=",
 			"path": "github.com/bmc-toolbox/bmclib/providers/hp",
-			"revision": "b06a68585b46b7180a5395ee40df78fc3e4fbf7a",
-			"revisionTime": "2018-07-19T12:05:31Z"
+			"revision": "985ffbd8b6643332fe848438696e390e74dbb138",
+			"revisionTime": "2018-09-17T08:58:19Z"
 		},
 		{
-			"checksumSHA1": "Ww9qhaI21aaCW+li4LgYHUMJHso=",
+			"checksumSHA1": "fc6zB4LCs5k92WT/POzC74C0Tbc=",
 			"path": "github.com/bmc-toolbox/bmclib/providers/hp/c7000",
-			"revision": "b06a68585b46b7180a5395ee40df78fc3e4fbf7a",
-			"revisionTime": "2018-07-19T12:05:31Z"
+			"revision": "985ffbd8b6643332fe848438696e390e74dbb138",
+			"revisionTime": "2018-09-17T08:58:19Z"
 		},
 		{
-			"checksumSHA1": "LUUwfE3qzn16+dgZG/+VFAIBmjE=",
+			"checksumSHA1": "XKRKUf0srbdFozoBi6pijj2GYJU=",
 			"path": "github.com/bmc-toolbox/bmclib/providers/hp/ilo",
-			"revision": "b06a68585b46b7180a5395ee40df78fc3e4fbf7a",
-			"revisionTime": "2018-07-19T12:05:31Z"
+			"revision": "985ffbd8b6643332fe848438696e390e74dbb138",
+			"revisionTime": "2018-09-17T08:58:19Z"
 		},
 		{
 			"checksumSHA1": "yqCKz1tkSCuaCkZ0ccl+T1pP/+w=",
 			"path": "github.com/bmc-toolbox/bmclib/providers/supermicro",
-			"revision": "b06a68585b46b7180a5395ee40df78fc3e4fbf7a",
-			"revisionTime": "2018-07-19T12:05:31Z"
+			"revision": "985ffbd8b6643332fe848438696e390e74dbb138",
+			"revisionTime": "2018-09-17T08:58:19Z"
 		},
 		{
-			"checksumSHA1": "o8duvM6LZpON9S9W9V76BfzQflA=",
+			"checksumSHA1": "mUIXHtI5pktxybxOx+gDhConw0w=",
 			"path": "github.com/bmc-toolbox/bmclib/providers/supermicro/supermicrox10",
-			"revision": "b06a68585b46b7180a5395ee40df78fc3e4fbf7a",
-			"revisionTime": "2018-07-19T12:05:31Z"
+			"revision": "985ffbd8b6643332fe848438696e390e74dbb138",
+			"revisionTime": "2018-09-17T08:58:19Z"
 		},
 		{
 			"checksumSHA1": "8i+beEgcVf0q/I7lTqo2ERZM/OU=",
@@ -169,6 +169,24 @@
 			"path": "github.com/gin-gonic/gin/render",
 			"revision": "6d913fc343cfac80d656db5be67a0ffb1323ba0d",
 			"revisionTime": "2018-03-29T06:33:07Z"
+		},
+		{
+			"checksumSHA1": "b4DmyMT9bicTRVJw1hJXHLhIH+0=",
+			"path": "github.com/go-playground/locales",
+			"revision": "f63010822830b6fe52288ee52d5a1151088ce039",
+			"revisionTime": "2018-03-23T16:04:04Z"
+		},
+		{
+			"checksumSHA1": "JgF260rC9YpWyY5WEljjimWLUXs=",
+			"path": "github.com/go-playground/locales/currency",
+			"revision": "f63010822830b6fe52288ee52d5a1151088ce039",
+			"revisionTime": "2018-03-23T16:04:04Z"
+		},
+		{
+			"checksumSHA1": "7QcjNTtW0Rc/5BPw1MPaQ6YNjso=",
+			"path": "github.com/go-playground/universal-translator",
+			"revision": "71201497bace774495daed26a3874fd339e0b538",
+			"revisionTime": "2017-03-27T19:17:03Z"
 		},
 		{
 			"checksumSHA1": "jEXpLrWXoQvH/zk1lW5Si0swr6Y=",
@@ -558,6 +576,12 @@
 			"path": "gopkg.in/go-playground/validator.v8",
 			"revision": "5f1438d3fca68893a817e4a66806cea46a9e4ebf",
 			"revisionTime": "2017-07-30T05:02:35Z"
+		},
+		{
+			"checksumSHA1": "LcpDN/u5Z3GhXVqGDdsuiMdGoww=",
+			"path": "gopkg.in/go-playground/validator.v9",
+			"revision": "e69e9a28bb62b977fdc58d051f1bb477b7cbe486",
+			"revisionTime": "2018-08-13T14:34:31Z"
 		},
 		{
 			"checksumSHA1": "ZSWoOPUNRr5+3dhkLK3C4cZAQPk=",

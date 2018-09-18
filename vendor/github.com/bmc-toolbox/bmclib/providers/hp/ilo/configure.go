@@ -3,7 +3,6 @@ package ilo
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"reflect"
 
 	"github.com/bmc-toolbox/bmclib/cfgresources"
@@ -64,7 +63,6 @@ func (i *Ilo) ApplyCfg(config *cfgresources.ResourcesConfig) (err error) {
 					}).Warn("Unable to set Syslog config.")
 				}
 			case "Network":
-				fmt.Printf("%s: %v : %s\n", resourceName, cfg.Field(r), cfg.Field(r).Kind())
 			case "Ntp":
 				ntpCfg := cfg.Field(r).Interface().(*cfgresources.Ntp)
 				err := i.applyNtpParams(ntpCfg)
@@ -104,15 +102,25 @@ func (i *Ilo) ApplyCfg(config *cfgresources.ResourcesConfig) (err error) {
 						"Error":    err,
 					}).Warn("applyLdapGroupParams returned error.")
 				}
+			case "License":
+				licenseCfg := cfg.Field(r).Interface()
+				err := i.applyLicenseParams(licenseCfg.(*cfgresources.License))
+				if err != nil {
+					log.WithFields(log.Fields{
+						"step":     "applyLicenseParams",
+						"resource": "License",
+						"IP":       i.ip,
+						"Model":    i.BmcType(),
+						"Serial":   i.serial,
+						"Error":    err,
+					}).Warn("applyLicenseParams returned error.")
+				}
 			case "Ssl":
-				fmt.Printf("%s: %v : %s\n", resourceName, cfg.Field(r), cfg.Field(r).Kind())
 			default:
 				log.WithFields(log.Fields{
 					"step":     "ApplyCfg",
-					"Resource": cfg.Field(r).Kind(),
+					"resource": resourceName,
 				}).Warn("Unknown resource definition.")
-				//fmt.Printf("%v\n", cfg.Field(r))
-
 			}
 		}
 	}
@@ -251,7 +259,7 @@ func (i *Ilo) applyUserParams(users []*cfgresources.User) (err error) {
 				"Model":  i.BmcType(),
 				"Serial": i.serial,
 				"User":   user.Name,
-			}).Info("User disabled in config, will be removed.")
+			}).Debug("User disabled in config, will be removed.")
 			postPayload = true
 		}
 
@@ -270,7 +278,7 @@ func (i *Ilo) applyUserParams(users []*cfgresources.User) (err error) {
 			}
 
 			endpoint := "json/user_info"
-			statusCode, response, err := i.post(endpoint, payload, false)
+			statusCode, response, err := i.post(endpoint, payload)
 			if err != nil || statusCode != 200 {
 				log.WithFields(log.Fields{
 					"IP":         i.ip,
@@ -291,7 +299,7 @@ func (i *Ilo) applyUserParams(users []*cfgresources.User) (err error) {
 				"Model":  i.BmcType(),
 				"Serial": i.serial,
 				"User":   user.Name,
-			}).Info("User parameters applied.")
+			}).Debug("User parameters applied.")
 
 		}
 	}
@@ -350,7 +358,7 @@ func (i *Ilo) applySyslogParams(cfg *cfgresources.Syslog) (err error) {
 	}
 
 	endpoint := "json/remote_syslog"
-	statusCode, response, err := i.post(endpoint, payload, false)
+	statusCode, response, err := i.post(endpoint, payload)
 	if err != nil || statusCode != 200 {
 		msg := "POST request to set User config returned error."
 		log.WithFields(log.Fields{
@@ -370,7 +378,62 @@ func (i *Ilo) applySyslogParams(cfg *cfgresources.Syslog) (err error) {
 		"IP":     i.ip,
 		"Model":  i.BmcType(),
 		"Serial": i.serial,
-	}).Info("Syslog parameters applied.")
+	}).Debug("Syslog parameters applied.")
+
+	return err
+}
+
+func (i *Ilo) applyLicenseParams(cfg *cfgresources.License) (err error) {
+
+	if cfg.Key == "" {
+		msg := "License resource expects parameter: Key."
+		log.WithFields(log.Fields{
+			"step": helper.WhosCalling(),
+		}).Warn(msg)
+		return errors.New(msg)
+	}
+
+	license := LicenseInfo{
+		Key:        cfg.Key,
+		Method:     "activate",
+		SessionKey: i.sessionKey,
+	}
+
+	payload, err := json.Marshal(license)
+	if err != nil {
+		msg := "Unable to marshal License payload to activate License."
+		log.WithFields(log.Fields{
+			"IP":     i.ip,
+			"Model":  i.BmcType(),
+			"Serial": i.serial,
+			"step":   helper.WhosCalling(),
+			"Error":  err,
+		}).Warn(msg)
+		return errors.New(msg)
+	}
+
+	endpoint := "json/license_info"
+	statusCode, response, err := i.post(endpoint, payload)
+	if err != nil || statusCode != 200 {
+		msg := "POST request to set User config returned error."
+		log.WithFields(log.Fields{
+			"IP":         i.ip,
+			"Model":      i.BmcType(),
+			"Serial":     i.serial,
+			"endpoint":   endpoint,
+			"step":       helper.WhosCalling(),
+			"StatusCode": statusCode,
+			"response":   string(response),
+			"Error":      err,
+		}).Warn(msg)
+		return errors.New(msg)
+	}
+
+	log.WithFields(log.Fields{
+		"IP":     i.ip,
+		"Model":  i.BmcType(),
+		"Serial": i.serial,
+	}).Debug("License activated.")
 
 	return err
 }
@@ -459,7 +522,7 @@ func (i *Ilo) applyNtpParams(cfg *cfgresources.Ntp) (err error) {
 	}
 
 	endpoint := "json/network_sntp"
-	statusCode, response, err := i.post(endpoint, payload, false)
+	statusCode, response, err := i.post(endpoint, payload)
 	if err != nil || statusCode != 200 {
 		msg := "POST request to set NTP config returned error."
 		log.WithFields(log.Fields{
@@ -478,7 +541,7 @@ func (i *Ilo) applyNtpParams(cfg *cfgresources.Ntp) (err error) {
 	log.WithFields(log.Fields{
 		"IP":    i.ip,
 		"Model": i.BmcType(),
-	}).Info("NTP parameters applied.")
+	}).Debug("NTP parameters applied.")
 
 	return err
 }
@@ -562,7 +625,7 @@ func (i *Ilo) applyLdapGroupParams(cfg []*cfgresources.LdapGroup) (err error) {
 				"Model":  i.BmcType(),
 				"Serial": i.serial,
 				"User":   group.Group,
-			}).Info("Ldap role group disabled in config, will be removed.")
+			}).Debug("Ldap role group disabled in config, will be removed.")
 			postPayload = true
 		}
 
@@ -581,7 +644,7 @@ func (i *Ilo) applyLdapGroupParams(cfg []*cfgresources.LdapGroup) (err error) {
 			}
 
 			endpoint := "json/directory_groups"
-			statusCode, response, err := i.post(endpoint, payload, false)
+			statusCode, response, err := i.post(endpoint, payload)
 			if err != nil || statusCode != 200 {
 				log.WithFields(log.Fields{
 					"IP":         i.ip,
@@ -602,7 +665,7 @@ func (i *Ilo) applyLdapGroupParams(cfg []*cfgresources.LdapGroup) (err error) {
 				"Model":  i.BmcType(),
 				"Serial": i.serial,
 				"User":   group.Group,
-			}).Info("LdapGroup parameters applied.")
+			}).Debug("LdapGroup parameters applied.")
 
 		}
 
@@ -673,7 +736,7 @@ func (i *Ilo) applyLdapParams(cfg *cfgresources.Ldap) (err error) {
 	}
 
 	endpoint := "json/directory"
-	statusCode, response, err := i.post(endpoint, payload, false)
+	statusCode, response, err := i.post(endpoint, payload)
 	if err != nil || statusCode != 200 {
 		msg := "POST request to set Ldap config returned error."
 		log.WithFields(log.Fields{
@@ -693,7 +756,7 @@ func (i *Ilo) applyLdapParams(cfg *cfgresources.Ldap) (err error) {
 		"IP":     i.ip,
 		"Model":  i.BmcType(),
 		"Serial": i.serial,
-	}).Info("Ldap parameters applied.")
+	}).Debug("Ldap parameters applied.")
 
 	return err
 
