@@ -67,6 +67,9 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is /etc/bmc-toolbox/dora.yaml)")
+
+	RootCmd.PersistentFlags().Bool("debug", false, "set logging to debug")
+	viper.BindPFlag("debug", RootCmd.PersistentFlags().Lookup("debug"))
 }
 
 // initConfig reads in config file and ENV variables if set.
