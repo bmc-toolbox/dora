@@ -28,6 +28,7 @@ type Bmc interface {
 	Status() (string, error)
 	TempC() (int, error)
 	Vendor() string
+	Screenshot() ([]byte, string, error)
 	ServerSnapshot() (interface{}, error)
 	UpdateCredentials(string, string)
 }
@@ -62,6 +63,9 @@ type BmcChassis interface {
 	PxeOnceBlade(int) (bool, error)
 	ReseatBlade(int) (bool, error)
 	Serial() (string, error)
+	RemoveBladeBmcUser(string) error
+	AddBladeBmcAdmin(string, string) error
+	ModBladeBmcUser(string, string) error
 	SetDynamicPower(bool) (bool, error)
 	SetIpmiOverLan(int, bool) (bool, error)
 	SetFlexAddressState(int, bool) (bool, error)

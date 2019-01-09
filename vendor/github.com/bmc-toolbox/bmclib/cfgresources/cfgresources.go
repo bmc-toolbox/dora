@@ -1,22 +1,34 @@
 package cfgresources
 
-type ResourcesSetup struct {
-	FlexAddress  *flexAddress  `yaml:"flexAddress"`
-	IpmiOverLan  *ipmiOverLan  `yaml:"ipmiOverLan"`
-	DynamicPower *dynamicPower `yaml:"dynamicPower"`
+// SetupChassis struct holds attributes for one time chassis setup.
+type SetupChassis struct {
+	FlexAddress         *flexAddress       `yaml:"flexAddress"`
+	IpmiOverLan         *ipmiOverLan       `yaml:"ipmiOverLan"`
+	DynamicPower        *dynamicPower      `yaml:"dynamicPower"`
+	BladesPower         *bladesPower       `yaml:"bladesPower"`
+	AddBladeBmcAdmins   []*BladeBmcAccount `yaml:"addBladeBmcAdmins"`
+	RemoveBladeBmcUsers []*BladeBmcAccount `yaml:"removeBladeBmcUsers"`
 }
 
+// ResourcesConfig struct holds all the configuration to be applied.
 type ResourcesConfig struct {
-	Ldap       *Ldap        `yaml:"ldap"`
-	LdapGroup  []*LdapGroup `yaml:"ldapGroup"`
-	License    *License     `yaml:"license"`
-	Network    *Network     `yaml:"network"`
-	Syslog     *Syslog      `yaml:"syslog"`
-	User       []*User      `yaml:"user"`
-	Ssl        *Ssl         `yaml:"ssl"`
-	Ntp        *Ntp         `yaml:"ntp"`
-	Supermicro *Supermicro  `yaml:"supermicro"` //supermicro specific config, example of issue #34
-	Dell       *Dell        `yaml:"dell"`
+	Ldap         *Ldap         `yaml:"ldap"`
+	LdapGroup    []*LdapGroup  `yaml:"ldapGroup"`
+	License      *License      `yaml:"license"`
+	Network      *Network      `yaml:"network"`
+	Syslog       *Syslog       `yaml:"syslog"`
+	User         []*User       `yaml:"user"`
+	Ssl          *Ssl          `yaml:"ssl"`
+	Ntp          *Ntp          `yaml:"ntp"`
+	Supermicro   *Supermicro   `yaml:"supermicro"` //supermicro specific config, example of issue #34
+	Dell         *Dell         `yaml:"dell"`
+	SetupChassis *SetupChassis `yaml:"setupChassis"`
+}
+
+// BladeBmcAccount declares attributes for a Blade BMC user to be managed through the chassis.
+type BladeBmcAccount struct {
+	Name     string `yaml:"name"`
+	Password string `yaml:"password"`
 }
 
 //Enable/Disable Virtual Mac addresses for blades in a chassis.
@@ -37,6 +49,12 @@ type dynamicPower struct {
 	Enable bool `yaml:"enable"`
 }
 
+// Ensure power state on all blades in chassis.
+type bladesPower struct {
+	Enable bool `yaml:"enable"`
+}
+
+// User struct holds a BMC user account configuration.
 type User struct {
 	Name     string `yaml:"name"`
 	Password string `yaml:"password"`
@@ -44,12 +62,14 @@ type User struct {
 	Enable   bool   `yaml:"enable,omitempty"`
 }
 
+// Syslog struct holds BMC syslog configuration.
 type Syslog struct {
 	Server string `yaml:"server"`
-	Port   int    `yaml:"port",omitempty`
-	Enable bool   `yaml:"enable",omitempty`
+	Port   int    `yaml:"port,omitempty"`
+	Enable bool   `yaml:"enable,omitempty"`
 }
 
+// Ldap struct holds BMC LDAP configuration.
 type Ldap struct {
 	Server         string `yaml:"server"`
 	Port           int    `yaml:"port"`
@@ -64,10 +84,12 @@ type Ldap struct {
 	SearchFilter   string `yaml:"searchFilter"`
 }
 
+// License struct holds BMC licencing configuration.
 type License struct {
 	Key string `yaml:"key"`
 }
 
+// LdapGroup struct holds BMC LDAP role group configuration.
 type LdapGroup struct {
 	Role        string `yaml:"role"`
 	Group       string `yaml:"group"`
@@ -75,11 +97,13 @@ type LdapGroup struct {
 	Enable      bool   `yaml:"enable"`
 }
 
+// Ssl struct holds BMC SSL configuration.
 type Ssl struct {
 	CertFile string `yaml:"certfile"`
 	KeyFile  string `yaml:"keyfile"`
 }
 
+// Network struct holds BMC network configuration.
 type Network struct {
 	Hostname    string `yaml:"hostname"`
 	DNSFromDHCP bool   `yaml:"dnsFromDhcp"`
