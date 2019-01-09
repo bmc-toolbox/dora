@@ -35,6 +35,7 @@ func NewBladeFromDevice(b *devices.Blade) (blade *Blade) {
 			MacAddress:  nic.MacAddress,
 			Name:        nic.Name,
 			BladeSerial: b.Serial,
+			Speed:       nic.Speed,
 		})
 	}
 	blade.Disks = make([]*Disk, 0)

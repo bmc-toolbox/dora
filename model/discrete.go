@@ -33,6 +33,7 @@ func NewDiscreteFromDevice(d *devices.Discrete) (discrete *Discrete) {
 			MacAddress:     nic.MacAddress,
 			Name:           nic.Name,
 			DiscreteSerial: d.Serial,
+			Speed:          nic.Speed,
 		})
 	}
 	discrete.Disks = make([]*Disk, 0)

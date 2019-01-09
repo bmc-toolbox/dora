@@ -18,6 +18,7 @@ To make the magic of dynamic filtering work, we need to define each json field m
 type Nic struct {
 	MacAddress     string    `json:"mac_address" gorm:"primary_key"`
 	Name           string    `json:"name"`
+	Speed          string    `json:"speed"`
 	UpdatedAt      time.Time `json:"updated_at"`
 	BladeSerial    string    `json:"-"`
 	DiscreteSerial string    `json:"-"`
