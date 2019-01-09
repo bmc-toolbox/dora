@@ -91,7 +91,6 @@ func initConfig() {
 	}
 
 	viper.SetDefault("site", []string{"all"})
-	viper.SetDefault("debug", false)
 	viper.SetDefault("noop", false)
 
 	// Collector
