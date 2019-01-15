@@ -12,12 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main // import "gitlab.booking.com/go/dora"
+package main // import "github.com/bmc-toolbox/dora"
 
 import (
-	"gitlab.booking.com/go/dora/cmd"
+	"log"
+
+	"github.com/bmc-toolbox/dora/cmd"
+	"github.com/google/gops/agent"
 )
 
 func main() {
+	if err := agent.Listen(agent.Options{}); err != nil {
+		log.Fatal(err)
+	}
 	cmd.Execute()
 }

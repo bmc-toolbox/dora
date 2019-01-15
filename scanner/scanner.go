@@ -12,8 +12,8 @@ import (
 	nats "github.com/nats-io/go-nats"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"gitlab.booking.com/go/dora/model"
-	"gitlab.booking.com/go/dora/storage"
+	"github.com/bmc-toolbox/dora/model"
+	"github.com/bmc-toolbox/dora/storage"
 )
 
 // Kea is the main entry for parsing the kea config file

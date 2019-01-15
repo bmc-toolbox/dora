@@ -18,9 +18,9 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/bmc-toolbox/dora/connectors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"gitlab.booking.com/go/dora/connectors"
 )
 
 var force bool

@@ -32,8 +32,8 @@ bmc_user: Priest
 bmc_pass: Wololo
 notify_api_user: Priest
 notify_api_key: Wololo
-notify_url: https://serverdb-201.lhr4.example.com
-url: http://example.com/dora/v1
+notify_api_url: https://notify.example.com
+url: http://service.example.com/v1
 database_type: postgres
 database_options: host=0.0.0.0 user=postgres port=32768 dbname=postgres password=mysecretpassword
 database_max_connections: 10
@@ -73,9 +73,8 @@ scanner:
 	scanned_by: anomalia
 	concurrency: 100
 	kea_config: /etc/kea/kea-dhcp4.conf
-	nmap: /usr/local/bin/nmap
 	subnet_source: kea
-	kea_domain_name_suffix: .lom.booking.com  
+	kea_domain_name_suffix: .bmc.example.com
 `)
 
 // createCmd represents the create command

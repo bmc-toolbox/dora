@@ -14,12 +14,9 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 
-	"gitlab.booking.com/go/dora/model"
-	"gitlab.booking.com/go/dora/storage"
-)
-
-var (
-	notifyChange chan string
+	"github.com/bmc-toolbox/dora/internal/notification"
+	"github.com/bmc-toolbox/dora/model"
+	"github.com/bmc-toolbox/dora/storage"
 )
 
 func collect(input <-chan string, source *string, db *gorm.DB) {
@@ -107,16 +104,6 @@ func DataCollection(ips []string, source string) {
 		}(cc, &source, db, &wg)
 	}
 
-	notifyChange = make(chan string)
-	go func(notification <-chan string) {
-		for callback := range notification {
-			err := assetNotify(callback)
-			if err != nil {
-				log.WithFields(log.Fields{"operation": "ServerDB callback", "url": callback}).Error(err)
-			}
-		}
-	}(notifyChange)
-
 	if ips[0] == "all" {
 		hosts := []model.ScannedPort{}
 		if err := db.Where("port = 443 and protocol = 'tcp' and state = 'open'").Find(&hosts).Error; err != nil {
@@ -193,16 +180,6 @@ func DataCollectionWorker() {
 
 	log.WithFields(log.Fields{"queue": viper.GetString("collector.worker.queue"), "subject": "dora::collect"}).Info("subscribed to queue")
 
-	notifyChange = make(chan string)
-	go func(notification <-chan string) {
-		for callback := range notification {
-			err := assetNotify(callback)
-			if err != nil {
-				log.WithFields(log.Fields{"operation": "ServerDB callback", "url": callback}).Error(err)
-			}
-		}
-	}(notifyChange)
-
 	//close(cc)
 	//wg.Wait()
 }
@@ -263,7 +240,7 @@ func collectBmc(bmc devices.Bmc) (err error) {
 		}
 
 		if len(blade.Diff(&existingData)) != 0 {
-			notifyChange <- fmt.Sprintf("%s/%s/%s", viper.GetString("url"), "blades", blade.Serial)
+			notification.NotifyChange(fmt.Sprintf("%s/%s/%s", viper.GetString("url"), "blades", blade.Serial))
 		}
 
 		err = bladeStorage.RemoveOldRefs(blade)
@@ -309,7 +286,7 @@ func collectBmc(bmc devices.Bmc) (err error) {
 		}
 
 		if len(discrete.Diff(&existingData)) != 0 {
-			notifyChange <- fmt.Sprintf("%s/%s/%s", viper.GetString("url"), "discretes", discrete.Serial)
+			notification.NotifyChange(fmt.Sprintf("%s/%s/%s", viper.GetString("url"), "discretes", discrete.Serial))
 		}
 
 		err = discreteStorage.RemoveOldRefs(discrete)
@@ -452,7 +429,7 @@ func collectBmcChassis(bmc devices.BmcChassis) (err error) {
 	}
 
 	if len(chassis.Diff(&existingData)) != 0 {
-		notifyChange <- fmt.Sprintf("%s/%s/%s", viper.GetString("url"), "chassis", chassis.Serial)
+		notification.NotifyChange(fmt.Sprintf("%s/%s/%s", viper.GetString("url"), "chassis", chassis.Serial))
 	}
 
 	var merror *multierror.Error

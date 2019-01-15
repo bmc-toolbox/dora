@@ -5,9 +5,9 @@ import (
 
 	"github.com/jinzhu/gorm"
 	"github.com/manyminds/api2go"
-	"gitlab.booking.com/go/dora/filter"
-	"gitlab.booking.com/go/dora/model"
-	"gitlab.booking.com/go/dora/storage"
+	"github.com/bmc-toolbox/dora/filter"
+	"github.com/bmc-toolbox/dora/model"
+	"github.com/bmc-toolbox/dora/storage"
 )
 
 // ChassisResource for api2go routes

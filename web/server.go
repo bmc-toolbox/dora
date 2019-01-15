@@ -15,10 +15,10 @@ import (
 	"github.com/manyminds/api2go-adapter/gingonic"
 	nats "github.com/nats-io/go-nats"
 	"github.com/spf13/viper"
-	"gitlab.booking.com/go/dora/model"
-	"gitlab.booking.com/go/dora/resource"
-	"gitlab.booking.com/go/dora/scanner"
-	"gitlab.booking.com/go/dora/storage"
+	"github.com/bmc-toolbox/dora/model"
+	"github.com/bmc-toolbox/dora/resource"
+	"github.com/bmc-toolbox/dora/scanner"
+	"github.com/bmc-toolbox/dora/storage"
 
 	"github.com/gin-gonic/gin"
 )

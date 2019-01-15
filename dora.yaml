@@ -5,47 +5,52 @@ bmc_user: Priest
 bmc_pass: Wololo
 notify_api_user: Priest
 notify_api_key: Wololo
-notify_url: https://serverdb-201.lhr4.example.com
-url: http://example.com/dora/v1
+notify_api_url: https://notify.example.com
+url: http://service.example.com/v1
 database_type: postgres
 database_options: host=0.0.0.0 user=postgres port=32768 dbname=postgres password=mysecretpassword
 database_max_connections: 10
 
+notification:
+  enabled: false
+  script_or_http: script
+  script: /usr/local/bin/notify-on-dora-change
+  http: https://my-notifycation.example.com
+
 api:
-	http_server_port: 8000
+  http_server_port: 8000
 
 collector:
-	concurrency: 60
+  concurrency: 60
 
-	scheduler:                                                                                               
-		enabled: false                                                                                         
-		interval: 15                                                                                           
-																											
-	worker:                                                                                                  
-		enabled: false                                                                                          
-		server: nats://172.17.0.3:4222                                                                         
-		queue: dora                                                                                            
-		username:                                                                                              
-		password: 
-	
-	try_default_credentials: false
-	default:
-      dell:
-        username: Priest
-	    password: Wololo
-		
-	  supermicro:
-	    username: Priest
-	    password: Wololo
+  scheduler:                                                                                               
+    enabled: false                                                                                         
+    interval: 15                                                                                           
+                                                      
+  worker:                                                                                                  
+    enabled: false                                                                                          
+    server: nats://172.17.0.3:4222                                                                         
+    queue: dora                                                                                            
+    username:                                                                                              
+    password: 
   
-	  hp:
-	    username: Priest
-        password: Wololo
+  try_default_credentials: false
+  default:
+    dell:
+      username: Priest
+      password: Wololo
+    
+    supermicro:
+      username: Priest
+      password: Wololo
+  
+    hp:
+      username: Priest
+      password: Wololo
 
 scanner:
-	scanned_by: anomalia
-	concurrency: 100
-	kea_config: /etc/kea/kea.conf
-	nmap: /usr/local/bin/nmap
-	subnet_source: kea
-	kea_domain_name_suffix: .lom.booking.com  
+  scanned_by: anomalia
+  concurrency: 100
+  kea_config: /etc/kea/kea.conf
+  subnet_source: kea
+  kea_domain_name_suffix: .bmc.example.com

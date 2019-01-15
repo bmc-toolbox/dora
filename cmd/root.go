@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/google/gops/agent"
 	homedir "github.com/mitchellh/go-homedir"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -53,10 +52,6 @@ func Execute() {
 }
 
 func init() {
-	if err := agent.Listen(agent.Options{}); err != nil {
-		log.Fatal(err)
-	}
-
 	log.SetFormatter(&log.JSONFormatter{})
 	log.SetOutput(os.Stdout)
 	log.SetLevel(log.InfoLevel)
@@ -101,7 +96,7 @@ func initConfig() {
 	viper.SetDefault("api.http_server_port", 8000)
 
 	// Scan
-	viper.SetDefault("scanner.kea_domain_name_suffix", ".lom.booking.com")
+	viper.SetDefault("scanner.kea_domain_name_suffix", ".bmc.example.com")
 	viper.SetDefault("scanner.kea_config", "/etc/kea/kea-dhcp4.conf")
 	viper.SetDefault("scanner.subnet_source", "kea")
 	viper.SetDefault("scanner.nmap", "/usr/bin/nmap")

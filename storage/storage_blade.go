@@ -3,8 +3,8 @@ package storage
 import (
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/jinzhu/gorm"
-	"gitlab.booking.com/go/dora/filter"
-	"gitlab.booking.com/go/dora/model"
+	"github.com/bmc-toolbox/dora/filter"
+	"github.com/bmc-toolbox/dora/model"
 )
 
 // NewBladeStorage initializes the storage

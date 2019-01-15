@@ -21,9 +21,9 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"gitlab.booking.com/go/dora/model"
-	"gitlab.booking.com/go/dora/scanner"
-	"gitlab.booking.com/go/dora/storage"
+	"github.com/bmc-toolbox/dora/model"
+	"github.com/bmc-toolbox/dora/scanner"
+	"github.com/bmc-toolbox/dora/storage"
 )
 
 // publishCmd represents the publish command

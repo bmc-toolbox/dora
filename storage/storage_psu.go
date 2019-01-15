@@ -2,8 +2,8 @@ package storage
 
 import (
 	"github.com/jinzhu/gorm"
-	"gitlab.booking.com/go/dora/filter"
-	"gitlab.booking.com/go/dora/model"
+	"github.com/bmc-toolbox/dora/filter"
+	"github.com/bmc-toolbox/dora/model"
 )
 
 // NewPsuStorage initializes the storage

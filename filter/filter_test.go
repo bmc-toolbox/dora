@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/manyminds/api2go"
-	"gitlab.booking.com/go/dora/filter"
-	"gitlab.booking.com/go/dora/model"
+	"github.com/bmc-toolbox/dora/filter"
+	"github.com/bmc-toolbox/dora/model"
 )
 
 func ExampleFilters() {

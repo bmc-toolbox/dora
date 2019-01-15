@@ -19,8 +19,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"gitlab.booking.com/go/dora/connectors"
-	"gitlab.booking.com/go/dora/scanner"
+	"github.com/bmc-toolbox/dora/connectors"
+	"github.com/bmc-toolbox/dora/scanner"
 )
 
 // workerCmd represents the worker command
