@@ -20,9 +20,14 @@ type ResourcesConfig struct {
 	User         []*User       `yaml:"user"`
 	Ssl          *Ssl          `yaml:"ssl"`
 	Ntp          *Ntp          `yaml:"ntp"`
+	Bios         *Bios         `yaml:"bios"`
 	Supermicro   *Supermicro   `yaml:"supermicro"` //supermicro specific config, example of issue #34
-	Dell         *Dell         `yaml:"dell"`
 	SetupChassis *SetupChassis `yaml:"setupChassis"`
+}
+
+// Bios struct holds bios configuration for each vendor.
+type Bios struct {
+	Dell *Dell `yaml:"dell"`
 }
 
 // BladeBmcAccount declares attributes for a Blade BMC user to be managed through the chassis.
@@ -107,14 +112,15 @@ type Ssl struct {
 type Network struct {
 	Hostname    string `yaml:"hostname"`
 	DNSFromDHCP bool   `yaml:"dnsFromDhcp"`
-	SshEnable   bool   `yaml:"sshEnable"`
-	SshPort     int    `yaml:"sshPort"`
+	SSHEnable   bool   `yaml:"sshEnable"`
+	SSHPort     int    `yaml:"sshPort"`
 	SolEnable   bool   `yaml:"solEnable"` //Serial over lan
 	IpmiEnable  bool   `yaml:"ipmiEnable"`
 	DhcpEnable  bool   `yaml:"dhcpEnable"`
 	IpmiPort    int    `yaml:"ipmiPort"`
 }
 
+// Ntp struct holds BMC NTP configuration.
 type Ntp struct {
 	Enable   bool   `yaml:"enable"`
 	Server1  string `yaml:"server1"`

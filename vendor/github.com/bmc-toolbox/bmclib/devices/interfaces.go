@@ -7,6 +7,8 @@ import (
 // Bmc represents the requirement of items to be collected a server
 type Bmc interface {
 	ApplyCfg(*cfgresources.ResourcesConfig) error
+	// embed Configure interface
+	Configure
 	BiosVersion() (string, error)
 	BmcType() string
 	BmcVersion() (string, error)
@@ -22,6 +24,9 @@ type Bmc interface {
 	Nics() ([]*Nic, error)
 	PowerKw() (float64, error)
 	PowerState() (string, error)
+	PowerOn() (status bool, err error)
+	PowerOff() (status bool, err error)
+	PxeOnce() (status bool, err error)
 	PowerCycleBmc() (status bool, err error)
 	PowerCycle() (status bool, err error)
 	Serial() (string, error)
@@ -31,11 +36,14 @@ type Bmc interface {
 	Screenshot() ([]byte, string, error)
 	ServerSnapshot() (interface{}, error)
 	UpdateCredentials(string, string)
+	UpdateFirmware(string, string) (bool, error)
 }
 
 // BmcChassis represents the requirement of items to be collected from a chassis
 type BmcChassis interface {
 	ApplyCfg(*cfgresources.ResourcesConfig) error
+	// embed Configure interface
+	Configure
 	Blades() ([]*Blade, error)
 	BmcType() string
 	ChassisSnapshot() (*Chassis, error)
@@ -73,5 +81,20 @@ type BmcChassis interface {
 	StorageBlades() ([]*StorageBlade, error)
 	TempC() (int, error)
 	UpdateCredentials(string, string)
+	UpdateFirmware(string, string) (bool, error)
 	Vendor() string
+}
+
+// Configure interface declares methods implemented
+// to apply configuration to BMCs.
+type Configure interface {
+	Resources() []string
+	User([]*cfgresources.User) error
+	Syslog(*cfgresources.Syslog) error
+	Ntp(*cfgresources.Ntp) error
+	Ldap(*cfgresources.Ldap) error
+	LdapGroup([]*cfgresources.LdapGroup, *cfgresources.Ldap) error
+	Network(*cfgresources.Network) error
+	SetLicense(*cfgresources.License) error
+	Bios(*cfgresources.Bios) error
 }

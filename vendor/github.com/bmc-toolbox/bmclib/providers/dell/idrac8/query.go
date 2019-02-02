@@ -11,8 +11,12 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Grab screen preview.
+// Screenshot Grab screen preview.
 func (i *IDrac8) Screenshot() (response []byte, extension string, err error) {
+	err = i.httpLogin()
+	if err != nil {
+		return response, extension, err
+	}
 
 	endpoint1 := fmt.Sprintf("data?get=consolepreview[auto%%20%d]",
 		time.Now().UnixNano()/int64(time.Millisecond))
@@ -59,7 +63,7 @@ func (i *IDrac8) queryUsers() (userInfo UserInfo, err error) {
 		return userInfo, err
 	}
 
-	xmlData := XmlRoot{}
+	xmlData := XMLRoot{}
 	err = xml.Unmarshal(response, &xmlData)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -72,7 +76,7 @@ func (i *IDrac8) queryUsers() (userInfo UserInfo, err error) {
 		return userInfo, err
 	}
 
-	for _, userAccount := range xmlData.XmlUserAccount {
+	for _, userAccount := range xmlData.XMLUserAccount {
 
 		user := User{
 			UserName:  userAccount.Name,
@@ -98,7 +102,7 @@ func (i *IDrac8) queryUsers() (userInfo UserInfo, err error) {
 			user.Enable = "disabled"
 		}
 
-		userInfo[userAccount.Id] = user
+		userInfo[userAccount.ID] = user
 	}
 
 	return userInfo, err

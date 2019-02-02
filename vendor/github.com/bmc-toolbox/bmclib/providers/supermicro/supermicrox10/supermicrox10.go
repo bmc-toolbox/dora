@@ -33,7 +33,6 @@ type SupermicroX10 struct {
 	username   string
 	password   string
 	httpClient *http.Client
-	serial     string
 }
 
 // New returns a new SupermicroX10 instance ready to be used
@@ -207,7 +206,7 @@ func (s *SupermicroX10) Model() (model string, err error) {
 	}
 
 	if ipmi.FruInfo != nil && ipmi.FruInfo.Board != nil {
-		return ipmi.FruInfo.Board.ProdName, err
+		return ipmi.FruInfo.Board.PartNum, err
 	}
 
 	return model, err
@@ -367,19 +366,21 @@ func (s *SupermicroX10) Nics() (nics []*devices.Nic, err error) {
 		return nics, err
 	}
 
-	bmcNic := &devices.Nic{
-		Name:       "bmc",
-		MacAddress: ipmi.GenericInfo.Generic.BmcMac,
-	}
+	if ipmi != nil && ipmi.GenericInfo != nil && ipmi.GenericInfo.Generic != nil {
+		bmcNic := &devices.Nic{
+			Name:       "bmc",
+			MacAddress: ipmi.GenericInfo.Generic.BmcMac,
+		}
 
-	nics = append(nics, bmcNic)
+		nics = append(nics, bmcNic)
+	}
 
 	ipmi, err = s.query("Get_PlatformInfo.XML=(0,0)")
 	if err != nil {
 		return nics, err
 	}
 
-	// TODO: (ncode) This needs to become dinamic somehow
+	// TODO: (ncode) This needs to become dynamic somehow
 	if ipmi.PlatformInfo != nil {
 		if ipmi.PlatformInfo.MbMacAddr1 != "" {
 			bmcNic := &devices.Nic{
