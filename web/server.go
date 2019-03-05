@@ -7,20 +7,19 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/gin-gonic/gin/binding"
-	log "github.com/sirupsen/logrus"
-
 	"github.com/GeertJohan/go.rice"
+	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 	"github.com/manyminds/api2go"
-	"github.com/manyminds/api2go-adapter/gingonic"
+	"github.com/manyminds/api2go/routing"
 	nats "github.com/nats-io/go-nats"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+
 	"github.com/bmc-toolbox/dora/model"
 	"github.com/bmc-toolbox/dora/resource"
 	"github.com/bmc-toolbox/dora/scanner"
 	"github.com/bmc-toolbox/dora/storage"
-
-	"github.com/gin-gonic/gin"
 )
 
 type scanRequest struct {
@@ -58,7 +57,7 @@ func RunGin(port int, debug bool) {
 	api := api2go.NewAPIWithRouting(
 		"v1",
 		api2go.NewStaticResolver("/"),
-		gingonic.New(r),
+		routing.Gin(r),
 	)
 
 	db := storage.InitDB()
