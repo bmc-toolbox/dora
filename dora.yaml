@@ -18,10 +18,6 @@ api:
 collector:
   concurrency: 60
 
-  scheduler:                                                                                               
-    enabled: false                                                                                         
-    interval: 15                                                                                           
-                                                      
   worker:                                                                                                  
     enabled: false                                                                                          
     server: nats://172.17.0.3:4222                                                                         

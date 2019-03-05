@@ -17,13 +17,10 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"time"
 
+	"github.com/bmc-toolbox/dora/web"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/bmc-toolbox/dora/connectors"
-	"github.com/bmc-toolbox/dora/scanner"
-	"github.com/bmc-toolbox/dora/web"
 )
 
 var port int
@@ -48,16 +45,6 @@ usage: dora server
 				fmt.Printf("Parameter %s is missing in the config file\n", param)
 				os.Exit(1)
 			}
-		}
-
-		if viper.GetBool("collector.scheduler.enabled") {
-			go func(sleepFor time.Duration) {
-				for {
-					time.Sleep(sleepFor * time.Minute)
-					scanner.ScanNetworks([]string{"all"}, viper.GetStringSlice("site"))
-					connectors.DataCollection([]string{"all"}, "service")
-				}
-			}(viper.GetDuration("collector.scheduler.interval"))
 		}
 
 		web.RunGin(viper.GetInt("api.http_server_port"), viper.GetBool("debug"))
