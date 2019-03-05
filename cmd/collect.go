@@ -46,9 +46,6 @@ usage: dora collect
 			"database_type",
 			"database_options",
 			"site",
-			"notify_api_user",
-			"notify_api_key",
-			"notify_url",
 			"url",
 		}
 

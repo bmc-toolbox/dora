@@ -95,6 +95,10 @@ func initConfig() {
 	// Api
 	viper.SetDefault("api.http_server_port", 8000)
 
+	// Notification
+	viper.SetDefault("notification.enabled", false)
+	viper.SetDefault("notification.script", "/usr/local/bin/notify-on-dora-change")
+
 	// Scan
 	viper.SetDefault("scanner.kea_domain_name_suffix", ".bmc.example.com")
 	viper.SetDefault("scanner.kea_config", "/etc/kea/kea-dhcp4.conf")

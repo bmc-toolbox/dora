@@ -14,14 +14,17 @@ var (
 func init() {
 	notifyChange = make(chan string)
 	go func(notification <-chan string) {
-		method := viper.GetString("notification.script_or_http")
-		for asset := range notification {
+		// Notification
+		viper.SetDefault("notification.enabled", false)
+		viper.SetDefault("notification.script", "/usr/local/bin/notify-on-dora-change")
+		method := viper.GetString("notification.enabled")
+		for endpoint := range notification {
 			switch method {
 			case "script":
-				cmd := exec.Command(viper.GetString("notification.script"), asset)
+				cmd := exec.Command(viper.GetString("notification.script"), endpoint)
 				err := cmd.Run()
 				if err != nil {
-					log.WithFields(log.Fields{"operation": "notification", "asset": asset}).Error(err)
+					log.WithFields(log.Fields{"operation": "notification", "endpoint": endpoint}).Error(err)
 					continue
 				}
 			}
