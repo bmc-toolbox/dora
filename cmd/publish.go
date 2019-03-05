@@ -17,13 +17,13 @@ package cmd
 import (
 	"encoding/json"
 
+	"github.com/bmc-toolbox/dora/model"
+	"github.com/bmc-toolbox/dora/scanner"
+	"github.com/bmc-toolbox/dora/storage"
 	"github.com/nats-io/go-nats"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/bmc-toolbox/dora/model"
-	"github.com/bmc-toolbox/dora/scanner"
-	"github.com/bmc-toolbox/dora/storage"
 )
 
 // publishCmd represents the publish command
@@ -92,7 +92,7 @@ usage: dora publish 192.168.0.1/24 -q dora -s scan
 				}
 			}
 		default:
-			log.WithFields(log.Fields{"queue": queue, "subject": subject}).Error("unknown subject: %s", subject)
+			log.WithFields(log.Fields{"queue": queue, "subject": subject}).Errorf("unknown subject: %s", subject)
 		}
 	},
 }

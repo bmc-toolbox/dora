@@ -30,9 +30,6 @@ site:
    - all 
 bmc_user: Priest
 bmc_pass: Wololo
-notify_api_user: Priest
-notify_api_key: Wololo
-notify_api_url: https://notify.example.com
 url: http://service.example.com/v1
 database_type: postgres
 database_options: host=0.0.0.0 user=postgres port=32768 dbname=postgres password=mysecretpassword
@@ -41,13 +38,13 @@ database_max_connections: 10
 api:
 	http_server_port: 8000
 
+notification:
+	enabled: false
+	script: /usr/local/bin/notify-on-dora-change
+
 collector:
 	concurrency: 60
-
-	scheduler:                                                                                               
-		enabled: false                                                                                         
-		interval: 15                                                                                           
-																											
+																				
 	worker:                                                                                                  
 		enabled: false                                                                                          
 		server: nats://172.17.0.3:4222                                                                         
