@@ -139,6 +139,7 @@ func (i *IDrac9) Bios(cfg *cfgresources.Bios) (err error) {
 // if the user exists, it updates the users password,
 // User implements the Configure interface.
 // Iterate over iDrac users and adds/removes/modifies user accounts
+// nolint: gocyclo
 func (i *IDrac9) User(cfgUsers []*cfgresources.User) (err error) {
 
 	err = i.validateCfg(cfgUsers)
@@ -327,6 +328,7 @@ func (i *IDrac9) Ldap(cfg *cfgresources.Ldap) (err error) {
 
 // LdapGroup applies LDAP Group/Role related configuration
 // LdapGroup implements the Configure interface.
+// nolint: gocyclo
 func (i *IDrac9) LdapGroup(cfg []*cfgresources.LdapGroup, cfgLdap *cfgresources.Ldap) (err error) {
 
 	idracLdapRoleGroups, err := i.queryLdapRoleGroups()
@@ -561,7 +563,7 @@ func (i *IDrac9) Syslog(cfg *cfgresources.Syslog) (err error) {
 
 // Network method implements the Configure interface
 // applies various network parameters.
-func (i *IDrac9) Network(cfg *cfgresources.Network) (err error) {
+func (i *IDrac9) Network(cfg *cfgresources.Network) (reset bool, err error) {
 
 	params := map[string]string{
 		"EnableIPv4":              "Enabled",
@@ -652,7 +654,7 @@ func (i *IDrac9) Network(cfg *cfgresources.Network) (err error) {
 		"IP":    i.ip,
 		"Model": i.BmcType(),
 	}).Debug("Network config parameters applied.")
-	return err
+	return reset, err
 }
 
 // SetLicense implements the Configure interface.
@@ -674,6 +676,7 @@ func (i *IDrac9) GenerateCSR(cert *cfgresources.HTTPSCertAttributes) ([]byte, er
 		OrganizationUnit: cert.OrganizationUnit,
 		StateName:        cert.StateName,
 		EmailAddr:        cert.Email,
+		SubjectAltName:   cert.SubjectAltName,
 	}
 
 	// 1. PUT CSR params
@@ -696,7 +699,7 @@ func (i *IDrac9) GenerateCSR(cert *cfgresources.HTTPSCertAttributes) ([]byte, er
 // returns true if the BMC needs a reset.
 // 1. POST upload signed x509 cert in multipart form.
 // 2. POST returned resource URI
-func (i *IDrac9) UploadHTTPSCert(cert []byte, fileName string) (bool, error) {
+func (i *IDrac9) UploadHTTPSCert(cert []byte, certFileName string, key []byte, keyFileName string) (bool, error) {
 
 	endpoint := "sysmgmt/2012/server/transient/filestore"
 
@@ -705,7 +708,7 @@ func (i *IDrac9) UploadHTTPSCert(cert []byte, fileName string) (bool, error) {
 	w := multipart.NewWriter(&form)
 
 	// setup the ssl cert part
-	formWriter, err := w.CreateFormFile("fileName", fileName)
+	formWriter, err := w.CreateFormFile("fileName", certFileName)
 	if err != nil {
 		return false, err
 	}

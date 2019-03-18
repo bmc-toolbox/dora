@@ -396,6 +396,7 @@ func (i *IDrac8) applyLdapSearchFilterParam(cfg *cfgresources.Ldap) error {
 
 // LdapGroup applies LDAP Group/Role related configuration
 // LdapGroup implements the Configure interface.
+// nolint: gocyclo
 func (i *IDrac8) LdapGroup(cfgGroup []*cfgresources.LdapGroup, cfgLdap *cfgresources.Ldap) (err error) {
 
 	groupID := 1
@@ -610,7 +611,7 @@ func (i *IDrac8) applyTimezoneParam(timezone string) {
 
 // Network method implements the Configure interface
 // applies various network parameters.
-func (i *IDrac8) Network(cfg *cfgresources.Network) (err error) {
+func (i *IDrac8) Network(cfg *cfgresources.Network) (reset bool, err error) {
 
 	params := map[string]int{
 		"EnableIPv4":              1,
@@ -653,14 +654,14 @@ func (i *IDrac8) Network(cfg *cfgresources.Network) (err error) {
 			"responseCode": responseCode,
 			"response":     string(responseBody),
 		}).Warn("POST request to set Network params failed.")
-		return err
+		return reset, err
 	}
 
 	log.WithFields(log.Fields{
 		"IP":    i.ip,
 		"Model": i.BmcType(),
 	}).Debug("Network config parameters applied.")
-	return err
+	return reset, err
 }
 
 // GenerateCSR generates a CSR request on the BMC.
@@ -701,7 +702,7 @@ func (i *IDrac8) GenerateCSR(cert *cfgresources.HTTPSCertAttributes) ([]byte, er
 // returns true if the BMC needs a reset.
 // 1. POST upload signed x509 cert in multipart form.
 // 2. POST returned resource URI
-func (i *IDrac8) UploadHTTPSCert(cert []byte, fileName string) (bool, error) {
+func (i *IDrac8) UploadHTTPSCert(cert []byte, certFileName string, key []byte, keyFileName string) (bool, error) {
 
 	endpoint := "sysmgmt/2012/server/transient/filestore?fileupload=true"
 	endpoint += fmt.Sprintf("&ST1=%s", i.st1)
@@ -724,7 +725,7 @@ func (i *IDrac8) UploadHTTPSCert(cert []byte, fileName string) (bool, error) {
 	}
 
 	// setup the ssl cert part
-	formWriter, err := w.CreateFormFile("serverSSLCertificate", fileName)
+	formWriter, err := w.CreateFormFile("serverSSLCertificate", certFileName)
 	if err != nil {
 		return false, err
 	}
