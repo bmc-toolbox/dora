@@ -6,14 +6,17 @@ A tool to build a dynamic database of you datacenter assets
 
 Small installations / Dev Setup:
 
+```console
 git clone github.com/bmc-toolbox/dora
 cd dora
 go build -tags="gingonic" -ldflags="-s -w"
 ./dora --config dora-simple.yaml server
+```
 
 Kea config file to load subnets:
 
 kea-dhcp4.json
+```json
 {
     "Dhcp4": {
           "subnet4": [
@@ -43,6 +46,7 @@ kea-dhcp4.json
           ]
     }
 }
+```
 
 ## Requirements
 
