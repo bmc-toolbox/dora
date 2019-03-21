@@ -11,6 +11,8 @@ git clone github.com/bmc-toolbox/dora
 cd dora
 go build -tags="gingonic" -ldflags="-s -w"
 ./dora --config dora-simple.yaml server
+./dora scan 192.168.0.0/24
+./dora collect
 ```
 
 Kea config file to load subnets:
@@ -41,7 +43,7 @@ kea-dhcp4.json
                         "pool": "192.168.0.10 - 192.168.0.200"
                     }
                 ],
-                "subnet": "192.168.0.1/24"
+                "subnet": "192.168.0.0/24"
                 }
           ]
     }
