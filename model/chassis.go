@@ -36,6 +36,7 @@ func NewChassisFromDevice(c *devices.Chassis) (chassis *Chassis) {
 	for _, b := range c.Blades {
 		blade := NewBladeFromDevice(b)
 		if blade.Serial == "" || blade.Serial == "[unknown]" || blade.Serial == "0000000000" || blade.Serial == "_" {
+			c.FaultySlots = append(c.FaultySlots, s.BladePosition)
 			log.WithFields(log.Fields{"operation": "chassis scan", "position": blade.BladePosition, "type": "chassis", "chassis_serial": chassis.Serial}).Error(errors.ErrInvalidSerial)
 			continue
 		}
@@ -46,6 +47,7 @@ func NewChassisFromDevice(c *devices.Chassis) (chassis *Chassis) {
 	for _, s := range c.StorageBlades {
 		storageBlade := NewStorageBladeFromDevice(s)
 		if storageBlade.Serial == "" || storageBlade.Serial == "[unknown]" || storageBlade.Serial == "0000000000" || storageBlade.Serial == "_" {
+			c.FaultySlots = append(c.FaultySlots, s.BladePosition)
 			log.WithFields(log.Fields{"operation": "chassis scan", "position": storageBlade.BladePosition, "type": "chassis", "chassis_serial": chassis.Serial}).Error(errors.ErrInvalidSerial)
 			continue
 		}
@@ -87,6 +89,7 @@ type Chassis struct {
 	BmcWEBReachable bool            `json:"bmc_web_reachable"`
 	BmcAuth         bool            `json:"bmc_auth"`
 	Blades          []*Blade        `json:"-" gorm:"ForeignKey:ChassisSerial"`
+	FaultySlots     []int           `json:"faulty_slots"`
 	StorageBlades   []*StorageBlade `json:"-" gorm:"ForeignKey:ChassisSerial"`
 	Nics            []*Nic          `json:"-" gorm:"ForeignKey:ChassisSerial"`
 	Psus            []*Psu          `json:"-" gorm:"ForeignKey:ChassisSerial"`
