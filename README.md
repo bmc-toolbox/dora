@@ -46,7 +46,7 @@ kea-dhcp4.json
 
 ## Requirements
 
-Database (any compatible with gorm, I've only tested with MySQL and PostgreSQL)
+Database - Any compatible with gorm
 
 #### Acknowledgment
 
