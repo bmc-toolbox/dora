@@ -129,6 +129,12 @@
 			"revisionTime": "2019-03-18T12:40:48Z"
 		},
 		{
+			"checksumSHA1": "/6H1rhQmbq8mEP29pnmLmdwBKUE=",
+			"path": "github.com/cyberdelia/go-metrics-graphite",
+			"revision": "39f87cc3b432bbb898d7c643c0e93cac2bc865ad",
+			"revisionTime": "2016-12-19T23:08:53Z"
+		},
+		{
 			"checksumSHA1": "8i+beEgcVf0q/I7lTqo2ERZM/OU=",
 			"path": "github.com/daaku/go.zipexe",
 			"revision": "a5fe2436ffcb3236e175e5149162b41cd28bd27d",
@@ -320,6 +326,12 @@
 			"revisionTime": "2017-07-23T08:05:43Z"
 		},
 		{
+			"checksumSHA1": "4VZ1gLZHMumRjV3fclS1aX8S1aQ=",
+			"path": "github.com/jinzhu/gorm/dialects/sqlite",
+			"revision": "8b07437717e71c2ff00602ae19f8353ba10aafbb",
+			"revisionTime": "2019-03-10T12:17:21Z"
+		},
+		{
 			"checksumSHA1": "VIp1lZm6joWhlNdwhady8u//qRw=",
 			"path": "github.com/jinzhu/inflection",
 			"revision": "1c35d901db3da928c72a72d8458480cc9ade058f",
@@ -399,6 +411,12 @@
 			"revisionTime": "2019-02-25T17:38:24Z"
 		},
 		{
+			"checksumSHA1": "CmknXrMVBRJrx4LsIA9jEOmsLQQ=",
+			"path": "github.com/mattn/go-sqlite3",
+			"revision": "47fc4e5e9153645da45af6a86a5bce95e63a0f9e",
+			"revisionTime": "2017-07-10T14:00:56Z"
+		},
+		{
 			"checksumSHA1": "7zLQC+jG19ndjH24FVh/+ZliHac=",
 			"path": "github.com/mitchellh/go-homedir",
 			"revision": "af06845cf3004701891bf4fdb884bfe4920b3727",
@@ -439,6 +457,12 @@
 			"path": "github.com/pelletier/go-toml",
 			"revision": "e1803f96f6945c1061f538abc1a01a18f4d963fb",
 			"revisionTime": "2019-03-05T06:35:03Z"
+		},
+		{
+			"checksumSHA1": "LmajbO3+qtbE7JA0MQ29PXbmKNM=",
+			"path": "github.com/rcrowley/go-metrics",
+			"revision": "3113b8401b8a98917cde58f8bbd42a1b1c03b1fd",
+			"revisionTime": "2018-10-16T18:43:25Z"
 		},
 		{
 			"checksumSHA1": "Rq+zqkFV0wJgi0MARcgx0QT+9lE=",
@@ -548,6 +572,12 @@
 			"path": "golang.org/x/crypto/ssh/terminal",
 			"revision": "505ab145d0a99da450461ae2c1a9f6cd10d1f447",
 			"revisionTime": "2018-09-26T22:07:39Z"
+		},
+		{
+			"checksumSHA1": "GtamqiJoL7PGHsN454AoffBFMa8=",
+			"path": "golang.org/x/net/context",
+			"revision": "ab555f366c4508dbe0802550b1b20c46c5c18aa0",
+			"revisionTime": "2018-01-10T21:41:16Z"
 		},
 		{
 			"checksumSHA1": "+7gSOeJWKSUhXho9cQPtyzJL+ok=",

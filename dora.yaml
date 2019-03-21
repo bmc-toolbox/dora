@@ -44,4 +44,4 @@ scanner:
   concurrency: 100
   kea_config: /etc/kea/kea.conf
   subnet_source: kea
-  kea_domain_name_suffix: .bmc.example.com
+  kea_domain_name_suffix: bmc.example.com

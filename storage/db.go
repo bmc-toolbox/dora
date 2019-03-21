@@ -1,18 +1,17 @@
 package storage
 
 import (
-	// Imports for the suported database backends
-	_ "github.com/go-sql-driver/mysql"
+	"github.com/bmc-toolbox/dora/model"
 	"github.com/jinzhu/gorm"
-	// Imports for the suported database backends
-	_ "github.com/go-sql-driver/mysql"
-	// Imports for the suported database backends
-	_ "github.com/lib/pq"
-	// Imports for the suported database backends
-	_ "github.com/go-sql-driver/mysql"
+
+	// Imports for the PostgreSQL database backends
+	_ "github.com/jinzhu/gorm/dialects/postgres"
+	// Imports for the MySQL database backends
+	_ "github.com/jinzhu/gorm/dialects/mysql"
+	// Imports for the sqlite database backends
+	_ "github.com/jinzhu/gorm/dialects/sqlite"
 
 	"github.com/spf13/viper"
-	"github.com/bmc-toolbox/dora/model"
 )
 
 var (
