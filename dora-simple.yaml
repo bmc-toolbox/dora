@@ -1,0 +1,25 @@
+debug: true
+site:
+   - all 
+bmc_user: Priest
+bmc_pass: Wololo
+url: http://service.example.com/v1
+database_type: sqlite3
+database_options: /tmp/dora.db
+database_max_connections: 10
+
+notification:
+  enabled: false
+  script: /usr/local/bin/notify-on-dora-change
+
+api:
+  http_server_port: 8000
+
+collector:
+  concurrency: 10
+
+scanner:
+  scanned_by: anomalia
+  kea_config: kea.conf
+  subnet_source: kea
+  kea_domain_name_suffix: .bmc.example.com
