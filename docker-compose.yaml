@@ -12,7 +12,7 @@ services:
     volumes:
       - ./dora-simple.yaml:/etc/bmc-toolbox/dora.yaml:ro
       # For /tmp/dora.db
-      - ./tmp:/tmp
+      - /tmp:/tmp
 
   dora:
     build: .
@@ -23,4 +23,4 @@ services:
       # To get a list of networks with BMCs
       - ./kea-simple.conf:/etc/kea/kea.conf:ro
       # For /tmp/dora.db
-      - ./tmp:/tmp
+      - /tmp:/tmp
