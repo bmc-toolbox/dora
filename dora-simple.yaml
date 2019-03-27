@@ -1,6 +1,6 @@
 debug: true
 site:
-   - all 
+  - all
 bmc_user: Priest
 bmc_pass: Wololo
 url: http://service.example.com/v1
@@ -20,6 +20,6 @@ collector:
 
 scanner:
   scanned_by: anomalia
-  kea_config: kea.conf
+  kea_config: /etc/kea/kea.conf
   subnet_source: kea
   kea_domain_name_suffix: .bmc.example.com

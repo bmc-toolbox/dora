@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"os"
 
-	homedir "github.com/mitchellh/go-homedir"
+	"github.com/mitchellh/go-homedir"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -36,9 +36,7 @@ var RootCmd = &cobra.Command{
 
 Dora scan the networks found in the kea.conf from there it discovers 
 all types of BMCs and Chassis. Dora can also configure chassis and/or 
-make ad-hoc queries to specific devices and/or ips. 
-
-We currently support HP, Dell and Supermicros.
+make ad-hoc queries to specific devices and/or ips.
 `,
 }
 
