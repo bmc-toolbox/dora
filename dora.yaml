@@ -1,6 +1,6 @@
 debug: true
 site:
-   - all 
+  - all
 bmc_user: Priest
 bmc_pass: Wololo
 url: http://service.example.com/v1
@@ -18,23 +18,23 @@ api:
 collector:
   concurrency: 60
 
-  worker:                                                                                                  
-    enabled: false                                                                                          
-    server: nats://172.17.0.3:4222                                                                         
-    queue: dora                                                                                            
-    username:                                                                                              
-    password: 
-  
+  worker:
+    enabled: false
+    server: nats://172.17.0.3:4222
+    queue: dora
+    username:
+    password:
+
   try_default_credentials: false
   default:
     dell:
       username: Priest
       password: Wololo
-    
+
     supermicro:
       username: Priest
       password: Wololo
-  
+
     hp:
       username: Priest
       password: Wololo
