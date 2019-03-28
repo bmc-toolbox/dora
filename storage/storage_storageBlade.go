@@ -1,9 +1,9 @@
 package storage
 
 import (
-	"github.com/jinzhu/gorm"
 	"github.com/bmc-toolbox/dora/filter"
 	"github.com/bmc-toolbox/dora/model"
+	"github.com/jinzhu/gorm"
 )
 
 // NewStorageBladeStorage initializes the storage

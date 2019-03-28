@@ -8,9 +8,9 @@ import (
 	"github.com/bmc-toolbox/bmclib/devices"
 	"github.com/bmc-toolbox/bmclib/discover"
 	"github.com/bmc-toolbox/bmclib/errors"
-	multierror "github.com/hashicorp/go-multierror"
+	"github.com/hashicorp/go-multierror"
 	"github.com/jinzhu/gorm"
-	nats "github.com/nats-io/go-nats"
+	"github.com/nats-io/go-nats"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 

@@ -19,7 +19,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	homedir "github.com/mitchellh/go-homedir"
+	"github.com/mitchellh/go-homedir"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -27,7 +27,7 @@ import (
 var sampleConfig = []byte(`---
 debug: true
 site:
-   - all 
+   - all
 bmc_user: Priest
 bmc_pass: Wololo
 url: http://service.example.com/v1
@@ -45,12 +45,12 @@ notification:
 collector:
 	concurrency: 60
 																				
-	worker:                                                                                                  
-		enabled: false                                                                                          
-		server: nats://172.17.0.3:4222                                                                         
-		queue: dora                                                                                            
-		username:                                                                                              
-		password: 
+	worker:
+		enabled: false
+		server: nats://172.17.0.3:4222
+		queue: dora
+		username:
+		password:
 	
 	try_default_credentials: false
 	default:
@@ -61,7 +61,7 @@ collector:
 	  supermicro:
 	    username: Priest
 	    password: Wololo
-  
+
 	  hp:
 	    username: Priest
         password: Wololo

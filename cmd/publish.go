@@ -33,10 +33,10 @@ var publishCmd = &cobra.Command{
 	Long: `Dora publish adds a job to one of the dora queues, checking
 wheter it's valid for the given queue.
 
-usage: dora publish 192.168.0.1/24 -q dora -s scan 
-       dora publish 192.168.0.1 -q dora -s collect 
-       dora publish all -q dora -s scan 
-       dora publish all -q dora -s collect 
+usage: dora publish 192.168.0.1/24 -q dora -s scan
+       dora publish 192.168.0.1 -q dora -s collect
+       dora publish all -q dora -s scan
+       dora publish all -q dora -s collect
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		nc, err := nats.Connect(viper.GetString("collector.worker.server"), nats.UserInfo(viper.GetString("collector.worker.username"), viper.GetString("collector.worker.password")))

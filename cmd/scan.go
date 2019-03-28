@@ -19,9 +19,9 @@ import (
 	"net"
 	"os"
 
+	"github.com/bmc-toolbox/dora/scanner"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/bmc-toolbox/dora/scanner"
 )
 
 // scanCmd represents the scan command
@@ -32,7 +32,7 @@ var scanCmd = &cobra.Command{
 for the required tcp and udp ports for the hardware discovery. It will build a list of 
 discoverable assets to be later used by dora collector
 
-usage: dora scan  
+usage: dora scan
 	   dora scan 192.168.0.1/24
 	   dora scan list
 	   dora scan loadSubnets <subnetSource>

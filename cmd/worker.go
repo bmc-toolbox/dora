@@ -17,10 +17,10 @@ package cmd
 import (
 	"runtime"
 
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"github.com/bmc-toolbox/dora/connectors"
 	"github.com/bmc-toolbox/dora/scanner"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // workerCmd represents the worker command

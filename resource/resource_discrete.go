@@ -3,11 +3,11 @@ package resource
 import (
 	"net/http"
 
-	"github.com/jinzhu/gorm"
-	"github.com/manyminds/api2go"
 	"github.com/bmc-toolbox/dora/filter"
 	"github.com/bmc-toolbox/dora/model"
 	"github.com/bmc-toolbox/dora/storage"
+	"github.com/jinzhu/gorm"
+	"github.com/manyminds/api2go"
 )
 
 // DiscreteResource for api2go routes

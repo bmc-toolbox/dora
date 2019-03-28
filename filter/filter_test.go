@@ -3,9 +3,9 @@ package filter_test
 import (
 	"fmt"
 
-	"github.com/manyminds/api2go"
 	"github.com/bmc-toolbox/dora/filter"
 	"github.com/bmc-toolbox/dora/model"
+	"github.com/manyminds/api2go"
 )
 
 func ExampleFilters() {

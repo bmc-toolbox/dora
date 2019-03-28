@@ -8,12 +8,12 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/jinzhu/gorm"
-	nats "github.com/nats-io/go-nats"
-	log "github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 	"github.com/bmc-toolbox/dora/model"
 	"github.com/bmc-toolbox/dora/storage"
+	"github.com/jinzhu/gorm"
+	"github.com/nats-io/go-nats"
+	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 )
 
 // Kea is the main entry for parsing the kea config file
