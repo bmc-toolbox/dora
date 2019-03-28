@@ -30,11 +30,6 @@ var (
 	emm *emitter
 )
 
-//TODO:
-// Implement a counter increment method that accepts string, float32 value
-// increment method sends the metric down the channel
-// a go routine reads from the channel and updates the metricsData map
-
 // emitter struct holds attributes for the metrics emitter.
 type emitter struct {
 	registry    gometrics.Registry
