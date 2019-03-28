@@ -39,7 +39,7 @@ usage: dora scan
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 0 && args[0] != "all" {
-			subnets := []string{}
+			var subnets []string
 			for _, subnet := range args {
 				_, _, err := net.ParseCIDR(subnet)
 				if err != nil {

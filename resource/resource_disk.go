@@ -36,7 +36,7 @@ func (d DiskResource) PaginatedFindAll(r api2go.Request) (uint, api2go.Responder
 	return uint(count), &Response{Res: disks}, err
 }
 
-// queryAndCountAllWrapper retrieve the data to be used for FindAll and PaginatedFindAll in a stardard way
+// queryAndCountAllWrapper retrieve the data to be used for FindAll and PaginatedFindAll in a standard way
 func (d DiskResource) queryAndCountAllWrapper(r api2go.Request) (count int, disks []model.Disk, err error) {
 	for _, invalidQuery := range []string{"page[number]", "page[size]"} {
 		_, invalid := r.QueryParams[invalidQuery]

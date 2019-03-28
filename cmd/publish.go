@@ -72,7 +72,7 @@ usage: dora publish 192.168.0.1/24 -q dora -s scan
 			subject = "dora::collect"
 			if args[0] == "all" {
 				db := storage.InitDB()
-				hosts := []model.ScannedPort{}
+				var hosts []model.ScannedPort
 				if err := db.Where("port = 443 and protocol = 'tcp' and state = 'open'").Find(&hosts).Error; err != nil {
 					log.WithFields(log.Fields{"queue": queue, "subject": subject, "operation": "retrieving scanned hosts", "ip": "all"}).Error(err)
 				} else {

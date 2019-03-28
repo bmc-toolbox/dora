@@ -19,7 +19,7 @@ To make the magic of dynamic filtering work, we need to define each json field m
 
 */
 
-// NewChassisFromDevice will create a new object comming from the bmc discrete devices
+// NewChassisFromDevice will create a new object coming from the bmc discrete devices
 func NewChassisFromDevice(c *devices.Chassis) (chassis *Chassis) {
 	chassis = &Chassis{}
 	chassis.Vendor = c.Vendor
@@ -136,7 +136,7 @@ func (c Chassis) GetReferences() []jsonapi.Reference {
 
 // GetReferencedIDs to satisfy the jsonapi.MarshalLinkedRelations interface
 func (c Chassis) GetReferencedIDs() []jsonapi.ReferenceID {
-	result := []jsonapi.ReferenceID{}
+	var result []jsonapi.ReferenceID
 	for _, blade := range c.Blades {
 		result = append(result, jsonapi.ReferenceID{
 			ID:           blade.GetID(),

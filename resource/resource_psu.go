@@ -36,7 +36,7 @@ func (p PsuResource) PaginatedFindAll(r api2go.Request) (uint, api2go.Responder,
 	return uint(count), &Response{Res: psus}, err
 }
 
-// queryAndCountAllWrapper retrieve the data to be used for FindAll and PaginatedFindAll in a stardard way
+// queryAndCountAllWrapper retrieve the data to be used for FindAll and PaginatedFindAll in a standard way
 func (p PsuResource) queryAndCountAllWrapper(r api2go.Request) (count int, psus []model.Psu, err error) {
 	for _, invalidQuery := range []string{"page[number]", "page[size]"} {
 		_, invalid := r.QueryParams[invalidQuery]

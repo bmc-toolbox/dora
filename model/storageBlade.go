@@ -15,7 +15,7 @@ To make the magic of dynamic filtering work, we need to define each json field m
 
 */
 
-// NewStorageBladeFromDevice will create a new object comming from the bmc blade devices
+// NewStorageBladeFromDevice will create a new object coming from the bmc blade devices
 func NewStorageBladeFromDevice(b *devices.StorageBlade) (blade *StorageBlade) {
 	blade = &StorageBlade{}
 	blade.Serial = b.Serial
