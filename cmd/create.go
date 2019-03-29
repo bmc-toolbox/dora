@@ -19,7 +19,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	homedir "github.com/mitchellh/go-homedir"
+	"github.com/mitchellh/go-homedir"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -27,7 +27,7 @@ import (
 var sampleConfig = []byte(`---
 debug: true
 site:
-   - all 
+  - all
 bmc_user: Priest
 bmc_pass: Wololo
 url: http://service.example.com/v1
@@ -36,42 +36,50 @@ database_options: host=0.0.0.0 user=postgres port=32768 dbname=postgres password
 database_max_connections: 10
 
 api:
-	http_server_port: 8000
+  http_server_port: 8000
 
 notification:
-	enabled: false
-	script: /usr/local/bin/notify-on-dora-change
+  enabled: false
+  script: /usr/local/bin/notify-on-dora-change
+
+metrics:
+  enabled: false
+  type: graphite
+  host: localhost
+  port: 2003
+  prefix:
+    publish: dora.publish
 
 collector:
-	concurrency: 60
-																				
-	worker:                                                                                                  
-		enabled: false                                                                                          
-		server: nats://172.17.0.3:4222                                                                         
-		queue: dora                                                                                            
-		username:                                                                                              
-		password: 
-	
-	try_default_credentials: false
-	default:
-      dell:
-        username: Priest
-	    password: Wololo
-		
-	  supermicro:
-	    username: Priest
-	    password: Wololo
-  
-	  hp:
-	    username: Priest
-        password: Wololo
+  concurrency: 60
+
+  worker:
+    enabled: false
+    server: nats://172.17.0.3:4222
+    queue: dora
+    username:
+    password:
+
+  try_default_credentials: false
+  default:
+    dell:
+      username: Priest
+      password: Wololo
+
+    supermicro:
+      username: Priest
+      password: Wololo
+
+    hp:
+      username: Priest
+      password: Wololo
 
 scanner:
-	scanned_by: anomalia
-	concurrency: 100
-	kea_config: /etc/kea/kea-dhcp4.conf
-	subnet_source: kea
-	kea_domain_name_suffix: .bmc.example.com
+  scanned_by: anomalia
+  concurrency: 100
+  kea_config: /etc/kea/kea-dhcp4.conf
+  subnet_source: kea
+  kea_domain_name_suffix: bmc.example.com
 `)
 
 // createCmd represents the create command

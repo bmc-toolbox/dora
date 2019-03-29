@@ -31,9 +31,9 @@ var collectCmd = &cobra.Command{
 	Short: "Collects hosts found by the scanner or collect a given list of hosts",
 	Long: `Collects hosts found by the scanner or collect a given list of hosts, we will
 use the data from the scanner and will only try to collect hosts that have the required 
-ports opened. 
+ports opened.
 
-usage: dora collect 
+usage: dora collect
        dora collect 192.168.0.1
 `,
 	Run: func(cmd *cobra.Command, args []string) {

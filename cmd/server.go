@@ -52,7 +52,7 @@ usage: dora server
 }
 
 func init() {
-	RootCmd.Flags().IntVar(&port, "port", 8080, "Port to bind the webwerver")
+	RootCmd.Flags().IntVar(&port, "port", 8080, "Port to bind the webserver")
 	viper.BindPFlag("api.http_server_port", RootCmd.Flags().Lookup("port"))
 
 	RootCmd.AddCommand(serverCmd)

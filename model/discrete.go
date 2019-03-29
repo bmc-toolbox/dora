@@ -16,7 +16,7 @@ To make the magic of dynamic filtering work, we need to define each json field m
 
 */
 
-// NewDiscreteFromDevice will create a new object comming from the bmc discrete devices
+// NewDiscreteFromDevice will create a new object coming from the bmc discrete devices
 func NewDiscreteFromDevice(d *devices.Discrete) (discrete *Discrete) {
 	discrete = &Discrete{}
 	discrete.Name = d.Name
@@ -133,7 +133,7 @@ func (d Discrete) GetReferences() []jsonapi.Reference {
 
 // GetReferencedIDs to satisfy the jsonapi.MarshalLinkedRelations interface
 func (d Discrete) GetReferencedIDs() []jsonapi.ReferenceID {
-	result := []jsonapi.ReferenceID{}
+	var result []jsonapi.ReferenceID
 	for _, nic := range d.Nics {
 		result = append(result, jsonapi.ReferenceID{
 			ID:           nic.GetID(),

@@ -8,9 +8,9 @@ import (
 	"github.com/bmc-toolbox/bmclib/devices"
 	"github.com/bmc-toolbox/bmclib/discover"
 	"github.com/bmc-toolbox/bmclib/errors"
-	multierror "github.com/hashicorp/go-multierror"
+	"github.com/hashicorp/go-multierror"
 	"github.com/jinzhu/gorm"
-	nats "github.com/nats-io/go-nats"
+	"github.com/nats-io/go-nats"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 
@@ -105,7 +105,7 @@ func DataCollection(ips []string, source string) {
 	}
 
 	if ips[0] == "all" {
-		hosts := []model.ScannedPort{}
+		var hosts []model.ScannedPort
 		if err := db.Where("port = 443 and protocol = 'tcp' and state = 'open'").Find(&hosts).Error; err != nil {
 			log.WithFields(log.Fields{"operation": "retrieving scanned hosts", "ip": "all"}).Error(err)
 		} else {
@@ -210,13 +210,13 @@ func collectBmc(bmc devices.Bmc) (err error) {
 
 		b, ok := server.(*devices.Blade)
 		if !ok {
-			return fmt.Errorf("Unable to read devices.Blade")
+			return fmt.Errorf("unable to read devices.Blade")
 		}
 
 		blade := model.NewBladeFromDevice(b)
 		blade.BmcAuth = true
 		blade.BmcWEBReachable = true
-		scans := []model.ScannedPort{}
+		var scans []model.ScannedPort
 		db.Where("ip = ?", blade.BmcAddress).Find(&scans)
 		for _, scan := range scans {
 			if scan.Port == 22 && scan.Protocol == "tcp" && scan.State == "open" {
@@ -262,7 +262,7 @@ func collectBmc(bmc devices.Bmc) (err error) {
 		discrete.BmcAuth = true
 		discrete.BmcWEBReachable = true
 
-		scans := []model.ScannedPort{}
+		var scans []model.ScannedPort
 		db.Where("ip = ?", discrete.BmcAddress).Find(&scans)
 		for _, scan := range scans {
 			if scan.Port == 22 && scan.Protocol == "tcp" && scan.State == "open" {
@@ -314,7 +314,7 @@ func collectBmcChassis(bmc devices.BmcChassis) (err error) {
 
 	chassis := model.NewChassisFromDevice(ch)
 	chassis.BmcAuth = true
-	scans := []model.ScannedPort{}
+	var scans []model.ScannedPort
 	db.Where("ip = ?", chassis.BmcAddress).Find(&scans)
 	for _, scan := range scans {
 		if scan.Port == 443 && scan.Protocol == "tcp" && scan.State == "open" {
@@ -346,7 +346,7 @@ func collectBmcChassis(bmc devices.BmcChassis) (err error) {
 				blade.BmcAuth = true
 				blade.BmcWEBReachable = true
 
-				scans := []model.ScannedPort{}
+				var scans []model.ScannedPort
 				db.Where("ip = ?", blade.BmcAddress).Find(&scans)
 				for _, scan := range scans {
 					if scan.Port == 22 && scan.Protocol == "tcp" && scan.State == "open" {

@@ -17,7 +17,7 @@ To make the magic of dynamic filtering work, we need to define each json field m
 
 */
 
-// NewBladeFromDevice will create a new object comming from the bmc blade devices
+// NewBladeFromDevice will create a new object coming from the bmc blade devices
 func NewBladeFromDevice(b *devices.Blade) (blade *Blade) {
 	blade = &Blade{}
 	blade.Name = b.Name
@@ -136,7 +136,7 @@ func (b Blade) GetReferences() []jsonapi.Reference {
 
 // GetReferencedIDs to satisfy the jsonapi.MarshalLinkedRelations interface
 func (b Blade) GetReferencedIDs() []jsonapi.ReferenceID {
-	result := []jsonapi.ReferenceID{}
+	var result []jsonapi.ReferenceID
 
 	if b.ChassisSerial != "" {
 		result = append(result, jsonapi.ReferenceID{

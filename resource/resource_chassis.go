@@ -3,11 +3,11 @@ package resource
 import (
 	"net/http"
 
-	"github.com/jinzhu/gorm"
-	"github.com/manyminds/api2go"
 	"github.com/bmc-toolbox/dora/filter"
 	"github.com/bmc-toolbox/dora/model"
 	"github.com/bmc-toolbox/dora/storage"
+	"github.com/jinzhu/gorm"
+	"github.com/manyminds/api2go"
 )
 
 // ChassisResource for api2go routes
@@ -36,7 +36,7 @@ func (c ChassisResource) PaginatedFindAll(r api2go.Request) (uint, api2go.Respon
 	return uint(count), &Response{Res: chassis}, err
 }
 
-// queryAndCountAllWrapper retrieve the data to be used for FindAll and PaginatedFindAll in a stardard way
+// queryAndCountAllWrapper retrieve the data to be used for FindAll and PaginatedFindAll in a standard way
 func (c ChassisResource) queryAndCountAllWrapper(r api2go.Request) (count int, chassis []model.Chassis, err error) {
 	for _, invalidQuery := range []string{"page[number]", "page[size]"} {
 		_, invalid := r.QueryParams[invalidQuery]
