@@ -89,7 +89,7 @@ type Chassis struct {
 	BmcWEBReachable bool            `json:"bmc_web_reachable"`
 	BmcAuth         bool            `json:"bmc_auth"`
 	Blades          []*Blade        `json:"-" gorm:"ForeignKey:ChassisSerial"`
-	FaultySlots     []int           `json:"faulty_slots" gorm:"type:int(2)[]"`
+	FaultySlots     []int           `json:"faulty_slots" gorm:"type:integer[2]"`
 	StorageBlades   []*StorageBlade `json:"-" gorm:"ForeignKey:ChassisSerial"`
 	Nics            []*Nic          `json:"-" gorm:"ForeignKey:ChassisSerial"`
 	Psus            []*Psu          `json:"-" gorm:"ForeignKey:ChassisSerial"`

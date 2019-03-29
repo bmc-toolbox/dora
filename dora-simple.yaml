@@ -17,9 +17,11 @@ api:
 
 collector:
   concurrency: 10
+  worker:
+    server: nats://localhost:4222
 
 scanner:
   scanned_by: anomalia
   kea_config: /etc/kea/kea.conf
   subnet_source: kea
-  kea_domain_name_suffix: .bmc.example.com
+  kea_domain_name_suffix: bmc.example.com

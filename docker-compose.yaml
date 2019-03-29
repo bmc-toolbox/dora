@@ -2,7 +2,6 @@ version: '3'
 services:
 
   server:
-    build: .
     image: dora
     command: server
 

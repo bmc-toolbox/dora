@@ -44,20 +44,20 @@ notification:
 
 collector:
 	concurrency: 60
-																				
+
 	worker:
 		enabled: false
 		server: nats://172.17.0.3:4222
 		queue: dora
 		username:
 		password:
-	
+
 	try_default_credentials: false
 	default:
       dell:
         username: Priest
 	    password: Wololo
-		
+
 	  supermicro:
 	    username: Priest
 	    password: Wololo
@@ -71,7 +71,7 @@ scanner:
 	concurrency: 100
 	kea_config: /etc/kea/kea-dhcp4.conf
 	subnet_source: kea
-	kea_domain_name_suffix: .bmc.example.com
+	kea_domain_name_suffix: bmc.example.com
 `)
 
 // createCmd represents the create command
