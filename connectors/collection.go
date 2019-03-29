@@ -147,16 +147,13 @@ func DataCollectionWorker() {
 
 	concurrency := viper.GetInt("collector.concurrency")
 	cc := make(chan string, concurrency)
-	wg := sync.WaitGroup{}
 	db := storage.InitDB()
 	source := "worker"
 
-	wg.Add(concurrency)
 	for i := 0; i < concurrency; i++ {
-		go func(input <-chan string, source *string, db *gorm.DB, wg *sync.WaitGroup) {
-			defer wg.Done()
+		go func(input <-chan string, source *string, db *gorm.DB) {
 			collect(input, source, db)
-		}(cc, &source, db, &wg)
+		}(cc, &source, db)
 	}
 
 	nc.QueueSubscribe("dora::collect", viper.GetString("collector.worker.queue"), func(msg *nats.Msg) {
