@@ -18,7 +18,6 @@ package metrics
 import (
 	"fmt"
 	"net"
-	"os"
 	"strings"
 	"time"
 
@@ -172,7 +171,7 @@ func UpdateGauge(key []string, value float32) {
 
 // MeasureRuntime measures time elapsed since invocation
 func MeasureRuntime(key []string, start time.Time) {
-	//convert time.Duration to miliseconds
+	//convert time.Duration to milliseconds
 	elapsed := float32(time.Since(start).Seconds() * 1e3) //1e3 == 1000
 	UpdateGauge(key, elapsed)
 }
@@ -184,10 +183,4 @@ func Close(printStats bool) {
 	if printStats {
 		emm.dumpStats()
 	}
-}
-
-// GetShortname returns shortname of the current host
-func GetShortname() string {
-	hostname, _ := os.Hostname()
-	return strings.Split(hostname, ".")[0]
 }

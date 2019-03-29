@@ -49,6 +49,8 @@ metrics:
   port: 2003
   prefix:
     publish: dora.publish
+    server: dora.server
+    worker: dora.worker
 
 collector:
   concurrency: 60

@@ -16,7 +16,9 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/bmc-toolbox/dora/internal/metrics"
 	"os"
+	"time"
 
 	"github.com/bmc-toolbox/dora/web"
 	"github.com/spf13/cobra"
@@ -43,6 +45,20 @@ usage: dora server
 		for _, param := range configItems {
 			if !viper.IsSet(param) {
 				fmt.Printf("Parameter %s is missing in the config file\n", param)
+				os.Exit(1)
+			}
+		}
+
+		if viper.GetBool("metrics.enabled") {
+			err := metrics.Setup(
+				viper.GetString("metrics.type"),
+				viper.GetString("metrics.host"),
+				viper.GetInt("metrics.port"),
+				viper.GetString("metrics.prefix.server"),
+				time.Minute,
+			)
+			if err != nil {
+				fmt.Printf("Failed to set up monitoring: %s", err)
 				os.Exit(1)
 			}
 		}

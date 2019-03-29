@@ -1,4 +1,4 @@
-// Copyright © 2018 NAME HERE <EMAIL ADDRESS>
+// Copyright © 2018 Juliano Martinez <juliano.martinez@booking.com>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,7 +15,11 @@
 package cmd
 
 import (
+	"fmt"
+	"github.com/bmc-toolbox/dora/internal/metrics"
+	"os"
 	"runtime"
+	"time"
 
 	"github.com/bmc-toolbox/dora/connectors"
 	"github.com/bmc-toolbox/dora/scanner"
@@ -34,6 +38,19 @@ define the queues via config file.
 usage: dora worker
 `,
 	Run: func(cmd *cobra.Command, args []string) {
+		if viper.GetBool("metrics.enabled") {
+			err := metrics.Setup(
+				viper.GetString("metrics.type"),
+				viper.GetString("metrics.host"),
+				viper.GetInt("metrics.port"),
+				viper.GetString("metrics.prefix.worker"),
+				time.Minute,
+			)
+			if err != nil {
+				fmt.Printf("Failed to set up monitoring: %s\n", err)
+				os.Exit(1)
+			}
+		}
 		scanner.ScanNetworksWorker()
 		connectors.DataCollectionWorker()
 		runtime.Goexit()

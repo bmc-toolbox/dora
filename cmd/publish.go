@@ -1,4 +1,4 @@
-// Copyright © 2018 NAME HERE <EMAIL ADDRESS>
+// Copyright © 2018 Juliano Martinez <juliano.martinez@booking.com>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -59,7 +59,7 @@ usage: dora publish 192.168.0.0/24 -q dora -s scan
 				viper.GetString("metrics.type"),
 				viper.GetString("metrics.host"),
 				viper.GetInt("metrics.port"),
-				viper.GetString("metrics.prefix.publish")+"."+metrics.GetShortname(),
+				viper.GetString("metrics.prefix.publish"),
 				flushInterval,
 			)
 			if err != nil {
