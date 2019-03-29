@@ -16,6 +16,10 @@ package cmd
 
 import (
 	"encoding/json"
+	"fmt"
+	"github.com/bmc-toolbox/dora/internal/metrics"
+	"os"
+	"time"
 
 	"github.com/bmc-toolbox/dora/model"
 	"github.com/bmc-toolbox/dora/scanner"
@@ -49,6 +53,21 @@ usage: dora publish 192.168.0.0/24 -q dora -s scan
 			return
 		}
 
+		flushInterval := time.Second
+		if viper.GetBool("metrics.enabled") {
+			err := metrics.Setup(
+				viper.GetString("metrics.type"),
+				viper.GetString("metrics.host"),
+				viper.GetInt("metrics.port"),
+				viper.GetString("metrics.prefix.publish"),
+				flushInterval,
+			)
+			if err != nil {
+				fmt.Printf("Failed to set up monitoring: %s\n", err)
+				os.Exit(1)
+			}
+		}
+
 		switch subject {
 		case "scan":
 			subject = "dora::scan"
@@ -62,10 +81,15 @@ usage: dora publish 192.168.0.0/24 -q dora -s scan
 				}
 				nc.Publish(subject, s)
 				nc.Flush()
+				graphiteKey := "scan.send_successfully"
 				if err := nc.LastError(); err != nil {
 					log.WithFields(log.Fields{"queue": queue, "subject": subject, "payload": s}).Error(err)
+					graphiteKey = "scan.send_failed"
 				} else {
 					log.WithFields(log.Fields{"queue": queue, "subject": subject, "payload": s}).Info("sent")
+				}
+				if viper.GetBool("metrics.enabled") {
+					metrics.IncrCounter([]string{graphiteKey}, 1)
 				}
 			}
 		case "collect":
@@ -85,14 +109,24 @@ usage: dora publish 192.168.0.0/24 -q dora -s scan
 			for _, payload := range args {
 				nc.Publish(subject, []byte(payload))
 				nc.Flush()
+				graphiteKey := "collect.send_successfully"
 				if err := nc.LastError(); err != nil {
 					log.WithFields(log.Fields{"queue": queue, "subject": subject, "payload": payload}).Error(err)
+					graphiteKey = "collect.send_failed"
 				} else {
 					log.WithFields(log.Fields{"queue": queue, "subject": subject, "payload": payload}).Info("sent")
+				}
+				if viper.GetBool("metrics.enabled") {
+					metrics.IncrCounter([]string{graphiteKey}, 1)
 				}
 			}
 		default:
 			log.WithFields(log.Fields{"queue": queue, "subject": subject}).Errorf("unknown subject: %s", subject)
+			return
+		}
+		if viper.GetBool("metrics.enabled") {
+			log.Infof("Sleeping %v * 3 to flush data into Graphite", flushInterval)
+			time.Sleep(flushInterval * 3)
 		}
 	},
 }

@@ -16,9 +16,6 @@ package cmd
 
 import (
 	"fmt"
-	"net"
-	"os"
-
 	"github.com/bmc-toolbox/dora/scanner"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

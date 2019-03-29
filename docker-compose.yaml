@@ -23,3 +23,18 @@ services:
       - ./kea-simple.conf:/etc/kea/kea.conf:ro
       # For /tmp/dora.db
       - /tmp:/tmp
+
+  # for testing queues
+  # use collector.worker.server=nats://host.docker.internal:4222 under Docker for Mac\Windows
+  nats:
+    image: nats
+    ports:
+      - "4222:4222"
+
+  # for testing metrics
+  # use metrics.host=host.docker.internal under Docker for Mac\Windows
+  graphite:
+    image: graphiteapp/graphite-statsd
+    ports:
+      - "80:80"
+      - "2003-2004:2003-2004"

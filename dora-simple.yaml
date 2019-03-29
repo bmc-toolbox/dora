@@ -12,6 +12,14 @@ notification:
   enabled: false
   script: /usr/local/bin/notify-on-dora-change
 
+metrics:
+  enabled: false
+  type: graphite
+  host: localhost
+  port: 2003
+  prefix:
+    publish: dora.publish
+
 api:
   http_server_port: 8000
 
