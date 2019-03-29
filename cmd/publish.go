@@ -16,6 +16,10 @@ package cmd
 
 import (
 	"encoding/json"
+	"fmt"
+	"github.com/bmc-toolbox/dora/internal/metrics"
+	"os"
+	"time"
 
 	"github.com/bmc-toolbox/dora/model"
 	"github.com/bmc-toolbox/dora/scanner"
@@ -33,10 +37,10 @@ var publishCmd = &cobra.Command{
 	Long: `Dora publish adds a job to one of the dora queues, checking
 wheter it's valid for the given queue.
 
-usage: dora publish 192.168.0.1/24 -q dora -s scan 
-       dora publish 192.168.0.1 -q dora -s collect 
-       dora publish all -q dora -s scan 
-       dora publish all -q dora -s collect 
+usage: dora publish 192.168.0.0/24 -q dora -s scan
+       dora publish 192.168.0.1 -q dora -s collect
+       dora publish all -q dora -s scan
+       dora publish all -q dora -s collect
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		nc, err := nats.Connect(viper.GetString("collector.worker.server"), nats.UserInfo(viper.GetString("collector.worker.username"), viper.GetString("collector.worker.password")))
@@ -47,6 +51,21 @@ usage: dora publish 192.168.0.1/24 -q dora -s scan
 		if len(args) == 0 || queue == "" || subject == "" {
 			cmd.Help()
 			return
+		}
+
+		flushInterval := time.Second
+		if viper.GetBool("metrics.enabled") {
+			err := metrics.Setup(
+				viper.GetString("metrics.type"),
+				viper.GetString("metrics.host"),
+				viper.GetInt("metrics.port"),
+				viper.GetString("metrics.prefix.publish")+"."+metrics.GetShortname(),
+				flushInterval,
+			)
+			if err != nil {
+				fmt.Printf("Failed to set up monitoring: %s\n", err)
+				os.Exit(1)
+			}
 		}
 
 		switch subject {
@@ -62,17 +81,22 @@ usage: dora publish 192.168.0.1/24 -q dora -s scan
 				}
 				nc.Publish(subject, s)
 				nc.Flush()
+				graphiteKey := "scan.send_successfully"
 				if err := nc.LastError(); err != nil {
 					log.WithFields(log.Fields{"queue": queue, "subject": subject, "payload": s}).Error(err)
+					graphiteKey = "scan.send_failed"
 				} else {
 					log.WithFields(log.Fields{"queue": queue, "subject": subject, "payload": s}).Info("sent")
+				}
+				if viper.GetBool("metrics.enabled") {
+					metrics.IncrCounter([]string{graphiteKey}, 1)
 				}
 			}
 		case "collect":
 			subject = "dora::collect"
 			if args[0] == "all" {
 				db := storage.InitDB()
-				hosts := []model.ScannedPort{}
+				var hosts []model.ScannedPort
 				if err := db.Where("port = 443 and protocol = 'tcp' and state = 'open'").Find(&hosts).Error; err != nil {
 					log.WithFields(log.Fields{"queue": queue, "subject": subject, "operation": "retrieving scanned hosts", "ip": "all"}).Error(err)
 				} else {
@@ -85,14 +109,24 @@ usage: dora publish 192.168.0.1/24 -q dora -s scan
 			for _, payload := range args {
 				nc.Publish(subject, []byte(payload))
 				nc.Flush()
+				graphiteKey := "collect.send_successfully"
 				if err := nc.LastError(); err != nil {
 					log.WithFields(log.Fields{"queue": queue, "subject": subject, "payload": payload}).Error(err)
+					graphiteKey = "collect.send_failed"
 				} else {
 					log.WithFields(log.Fields{"queue": queue, "subject": subject, "payload": payload}).Info("sent")
+				}
+				if viper.GetBool("metrics.enabled") {
+					metrics.IncrCounter([]string{graphiteKey}, 1)
 				}
 			}
 		default:
 			log.WithFields(log.Fields{"queue": queue, "subject": subject}).Errorf("unknown subject: %s", subject)
+			return
+		}
+		if viper.GetBool("metrics.enabled") {
+			log.Infof("Sleeping %v * 3 to flush data into Graphite", flushInterval)
+			time.Sleep(flushInterval * 3)
 		}
 	},
 }

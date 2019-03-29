@@ -1,10 +1,10 @@
 package storage
 
 import (
-	multierror "github.com/hashicorp/go-multierror"
-	"github.com/jinzhu/gorm"
 	"github.com/bmc-toolbox/dora/filter"
 	"github.com/bmc-toolbox/dora/model"
+	"github.com/hashicorp/go-multierror"
+	"github.com/jinzhu/gorm"
 )
 
 // NewDiscreteStorage initializes the storage

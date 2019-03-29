@@ -16,12 +16,11 @@ package cmd
 
 import (
 	"fmt"
-	"net"
-	"os"
-
+	"github.com/bmc-toolbox/dora/scanner"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/bmc-toolbox/dora/scanner"
+	"net"
+	"os"
 )
 
 // scanCmd represents the scan command
@@ -32,14 +31,14 @@ var scanCmd = &cobra.Command{
 for the required tcp and udp ports for the hardware discovery. It will build a list of 
 discoverable assets to be later used by dora collector
 
-usage: dora scan  
-	   dora scan 192.168.0.1/24
+usage: dora scan
+	   dora scan 192.168.0.0/24
 	   dora scan list
 	   dora scan loadSubnets <subnetSource>
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 0 && args[0] != "all" {
-			subnets := []string{}
+			var subnets []string
 			for _, subnet := range args {
 				_, _, err := net.ParseCIDR(subnet)
 				if err != nil {

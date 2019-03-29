@@ -44,7 +44,7 @@ Database - any compatible with [GORM](http://gorm.io/)
 
 Dora is a service which gather data about database assets from BMCs
  via HTTP\SSH and give ability to retrieve that data via REST API.
- 
+
 List of supported assets can be found in [bmclib](https://github.com/bmc-toolbox/bmclib#data-collection-support) Readme.
 
 ### Architecture

@@ -16,7 +16,7 @@ const (
 )
 
 // ErrUnsupportedProtocol returned when requested to scan an unsupported protocol
-var ErrUnsupportedProtocol = errors.New("Unsupported protocol")
+var ErrUnsupportedProtocol = errors.New("unsupported protocol")
 
 // Result is the result of the probe; the appropriate "IsXXXX()" function
 // should be used to evaluate it.

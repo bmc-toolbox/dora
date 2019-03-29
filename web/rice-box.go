@@ -38,7 +38,6 @@ func init() {
 			file3, // "favicon.ico"
 			file4, // "ie10-viewport-bug-workaround.js"
 			file5, // "narrow-jumbotron.css"
-
 		},
 	}
 
@@ -76,7 +75,6 @@ func init() {
 		DirModTime: time.Unix(1547557217, 0),
 		ChildFiles: []*embedded.EmbeddedFile{
 			file7, // "doc.tmpl"
-
 		},
 	}
 

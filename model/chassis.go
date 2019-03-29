@@ -19,7 +19,7 @@ To make the magic of dynamic filtering work, we need to define each json field m
 
 */
 
-// NewChassisFromDevice will create a new object comming from the bmc discrete devices
+// NewChassisFromDevice will create a new object coming from the bmc discrete devices
 func NewChassisFromDevice(c *devices.Chassis) (chassis *Chassis) {
 	chassis = &Chassis{}
 	chassis.Vendor = c.Vendor
@@ -89,7 +89,7 @@ type Chassis struct {
 	BmcWEBReachable bool            `json:"bmc_web_reachable"`
 	BmcAuth         bool            `json:"bmc_auth"`
 	Blades          []*Blade        `json:"-" gorm:"ForeignKey:ChassisSerial"`
-	FaultySlots     []int           `json:"faulty_slots" gorm:"type:int(2)[]"`
+	FaultySlots     []int           `json:"faulty_slots" gorm:"type:integer[2]"`
 	StorageBlades   []*StorageBlade `json:"-" gorm:"ForeignKey:ChassisSerial"`
 	Nics            []*Nic          `json:"-" gorm:"ForeignKey:ChassisSerial"`
 	Psus            []*Psu          `json:"-" gorm:"ForeignKey:ChassisSerial"`
@@ -136,7 +136,7 @@ func (c Chassis) GetReferences() []jsonapi.Reference {
 
 // GetReferencedIDs to satisfy the jsonapi.MarshalLinkedRelations interface
 func (c Chassis) GetReferencedIDs() []jsonapi.ReferenceID {
-	result := []jsonapi.ReferenceID{}
+	var result []jsonapi.ReferenceID
 	for _, blade := range c.Blades {
 		result = append(result, jsonapi.ReferenceID{
 			ID:           blade.GetID(),

@@ -17,9 +17,9 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/bmc-toolbox/dora/scanner"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/bmc-toolbox/dora/scanner"
 )
 
 // listCmd represents the list command

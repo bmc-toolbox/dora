@@ -10,7 +10,7 @@ type Response struct {
 
 var (
 	// ErrPageSizeAndNumber is returned when page[number] and page[size] are sent on the http request
-	ErrPageSizeAndNumber = errors.New("Filters page[number] and page[size] are not supported, please stick to page[offset] and page[limit]")
+	ErrPageSizeAndNumber = errors.New("filters page[number] and page[size] are not supported, please stick to page[offset] and page[limit]")
 )
 
 // Metadata returns additional meta data

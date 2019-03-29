@@ -12,7 +12,7 @@ import (
 	"github.com/gin-gonic/gin/binding"
 	"github.com/manyminds/api2go"
 	"github.com/manyminds/api2go/routing"
-	nats "github.com/nats-io/go-nats"
+	"github.com/nats-io/go-nats"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 

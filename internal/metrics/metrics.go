@@ -18,6 +18,7 @@ package metrics
 import (
 	"fmt"
 	"net"
+	"os"
 	"strings"
 	"time"
 
@@ -29,11 +30,6 @@ import (
 var (
 	emm *emitter
 )
-
-//TODO:
-// Implement a counter increment method that accepts string, float32 value
-// increment method sends the metric down the channel
-// a go routine reads from the channel and updates the metricsData map
 
 // emitter struct holds attributes for the metrics emitter.
 type emitter struct {
@@ -188,4 +184,10 @@ func Close(printStats bool) {
 	if printStats {
 		emm.dumpStats()
 	}
+}
+
+// GetShortname returns shortname of the current host
+func GetShortname() string {
+	hostname, _ := os.Hostname()
+	return strings.Split(hostname, ".")[0]
 }
