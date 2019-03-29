@@ -18,6 +18,7 @@ package metrics
 import (
 	"fmt"
 	"net"
+	"os"
 	"strings"
 	"time"
 
@@ -183,4 +184,10 @@ func Close(printStats bool) {
 	if printStats {
 		emm.dumpStats()
 	}
+}
+
+// GetShortname returns shortname of the current host
+func GetShortname() string {
+	hostname, _ := os.Hostname()
+	return strings.Split(hostname, ".")[0]
 }

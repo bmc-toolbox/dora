@@ -59,7 +59,7 @@ usage: dora publish 192.168.0.0/24 -q dora -s scan
 				viper.GetString("metrics.type"),
 				viper.GetString("metrics.host"),
 				viper.GetInt("metrics.port"),
-				viper.GetString("metrics.prefix.publish"),
+				viper.GetString("metrics.prefix.publish")+"."+metrics.GetShortname(),
 				flushInterval,
 			)
 			if err != nil {
