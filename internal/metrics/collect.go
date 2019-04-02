@@ -15,8 +15,41 @@
 package metrics
 
 import (
+	"reflect"
 	"runtime"
+	"time"
+
+	log "github.com/sirupsen/logrus"
 )
+
+// Scheduler starts passed function at start and then every "interval" value
+func Scheduler(interval time.Duration, fn interface{}, args ...interface{}) {
+	// Set up the wrapper
+	f := reflect.ValueOf(fn)
+	if f.Type().NumIn() != len(args) {
+		log.Errorf("incorrect number of parameters for function %v, won't be scheduled",
+			runtime.FuncForPC(f.Pointer()).Name())
+		return
+	}
+	for i := 0; i < f.Type().NumIn(); i++ {
+		if f.Type().In(i) != reflect.TypeOf(args[i]) {
+			log.Errorf("parameter #%v for function %v is wrong type (should be %v)",
+				i,
+				runtime.FuncForPC(f.Pointer()).Name(),
+				f.Type().In(i))
+			return
+		}
+	}
+	inputs := make([]reflect.Value, len(args))
+	for k, in := range args {
+		inputs[k] = reflect.ValueOf(in)
+	}
+	// Run function once at interval, plus once right after start
+	f.Call(inputs)
+	for range time.Tick(interval) {
+		f.Call(inputs)
+	}
+}
 
 // GoRuntimeStats collects go runtime stats.
 // prefix is a slice of metric namespace nodes.

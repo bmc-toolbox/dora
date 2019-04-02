@@ -16,12 +16,12 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/bmc-toolbox/dora/internal/metrics"
 	"os"
 	"runtime"
 	"time"
 
 	"github.com/bmc-toolbox/dora/connectors"
+	"github.com/bmc-toolbox/dora/internal/metrics"
 	"github.com/bmc-toolbox/dora/scanner"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -50,6 +50,7 @@ usage: dora worker
 				fmt.Printf("Failed to set up monitoring: %s\n", err)
 				os.Exit(1)
 			}
+			go metrics.Scheduler(time.Second, metrics.GoRuntimeStats, []string{""})
 		}
 		scanner.ScanNetworksWorker()
 		connectors.DataCollectionWorker()

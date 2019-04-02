@@ -17,10 +17,10 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/bmc-toolbox/dora/internal/metrics"
 	"os"
 	"time"
 
+	"github.com/bmc-toolbox/dora/internal/metrics"
 	"github.com/bmc-toolbox/dora/model"
 	"github.com/bmc-toolbox/dora/scanner"
 	"github.com/bmc-toolbox/dora/storage"
