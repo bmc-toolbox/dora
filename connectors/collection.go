@@ -61,7 +61,7 @@ func collect(input <-chan string, source *string, db *gorm.DB) {
 			if err != nil {
 				log.WithFields(log.Fields{"operation": "collection", "ip": host}).Error(err)
 			}
-		} else if bmc, ok := conn.(devices.BmcChassis); ok {
+		} else if bmc, ok := conn.(devices.Cmc); ok {
 			err = bmc.CheckCredentials()
 			if err == errors.ErrLoginFailed {
 				bmc.UpdateCredentials(
@@ -78,7 +78,7 @@ func collect(input <-chan string, source *string, db *gorm.DB) {
 				continue
 			}
 
-			err := collectBmcChassis(bmc)
+			err := collectCmc(bmc)
 			if err != nil {
 				log.WithFields(log.Fields{"operation": "collection", "ip": host}).Error(err)
 			}
@@ -176,9 +176,6 @@ func DataCollectionWorker() {
 	}
 
 	log.WithFields(log.Fields{"queue": viper.GetString("collector.worker.queue"), "subject": "dora::collect"}).Info("subscribed to queue")
-
-	//close(cc)
-	//wg.Wait()
 }
 
 func collectBmc(bmc devices.Bmc) (err error) {
@@ -295,7 +292,7 @@ func collectBmc(bmc devices.Bmc) (err error) {
 	return nil
 }
 
-func collectBmcChassis(bmc devices.BmcChassis) (err error) {
+func collectCmc(bmc devices.Cmc) (err error) {
 	defer bmc.Close()
 
 	if !bmc.IsActive() {
