@@ -71,6 +71,7 @@ func RunGin(port int, debug bool) {
 	scannedPortStorage := storage.NewScannedPortStorage(db)
 	psuStorage := storage.NewPsuStorage(db)
 	diskStorage := storage.NewDiskStorage(db)
+	fanStorage := storage.NewFanStorage(db)
 
 	api.AddResource(model.Chassis{}, resource.ChassisResource{ChassisStorage: chassisStorage})
 	api.AddResource(model.Blade{}, resource.BladeResource{BladeStorage: bladeStorage})
@@ -80,6 +81,7 @@ func RunGin(port int, debug bool) {
 	api.AddResource(model.ScannedPort{}, resource.ScannedPortResource{ScannedPortStorage: scannedPortStorage})
 	api.AddResource(model.Psu{}, resource.PsuResource{PsuStorage: psuStorage})
 	api.AddResource(model.Disk{}, resource.DiskResource{DiskStorage: diskStorage})
+	api.AddResource(model.Fan{}, resource.FanResource{FanStorage: fanStorage})
 
 	r.POST("/api/v1/collect", func(c *gin.Context) {
 		subject := "dora::collect"
@@ -183,5 +185,8 @@ func RunGin(port int, debug bool) {
 		}
 	})
 
-	r.Run(fmt.Sprintf(":%d", port))
+	err = r.Run(fmt.Sprintf(":%d", port))
+	if err != nil {
+		log.Error(err)
+	}
 }

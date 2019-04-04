@@ -20,6 +20,7 @@ type Psu struct {
 	CapacityKw     float64   `json:"capacity_kw"`
 	PowerKw        float64   `json:"power_kw"`
 	Status         string    `json:"status"`
+	PartNumber     string    `json:"part_number"`
 	UpdatedAt      time.Time `json:"updated_at"`
 	DiscreteSerial string    `json:"-"`
 	ChassisSerial  string    `json:"-"`
