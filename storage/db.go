@@ -43,6 +43,7 @@ func InitDB() *gorm.DB {
 		&model.ScannedPort{},
 		&model.Psu{},
 		&model.Disk{},
+		&model.Fan{},
 	)
 
 	return db

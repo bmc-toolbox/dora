@@ -105,7 +105,15 @@ func (c ChassisResource) queryAndCountAllWrapper(r api2go.Request) (count int, c
 		}
 	}
 
-	if !hasFilters && !hasInclude && !hasBlade && !hasStorageBlade && !hasPSU && !hasNIC {
+	fansID, hasFAN := r.QueryParams["fansID"]
+	if hasFAN {
+		count, chassis, err = c.ChassisStorage.GetAllByFansID(offset, limit, fansID)
+		if err != nil {
+			return count, chassis, err
+		}
+	}
+
+	if !hasFilters && !hasInclude && !hasBlade && !hasStorageBlade && !hasPSU && !hasNIC && !hasFAN{
 		count, chassis, err = c.ChassisStorage.GetAll(offset, limit)
 		if err != nil {
 			return count, chassis, err

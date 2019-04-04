@@ -1,7 +1,7 @@
 # github.com/GeertJohan/go.rice v0.0.0-20170420135705-c02ca9a983da
 github.com/GeertJohan/go.rice
 github.com/GeertJohan/go.rice/embedded
-# github.com/bmc-toolbox/bmclib v0.0.0-20190318124048-7730ff8545fd
+# github.com/bmc-toolbox/bmclib v0.2.6
 github.com/bmc-toolbox/bmclib/devices
 github.com/bmc-toolbox/bmclib/discover
 github.com/bmc-toolbox/bmclib/errors
@@ -98,8 +98,8 @@ github.com/labstack/gommon/log
 github.com/leodido/go-urn
 # github.com/lib/pq v1.0.0
 github.com/lib/pq
-github.com/lib/pq/hstore
 github.com/lib/pq/oid
+github.com/lib/pq/hstore
 # github.com/magiconair/properties v1.8.0
 github.com/magiconair/properties
 # github.com/manyminds/api2go v0.0.0-20181019084807-186a8a2128df
