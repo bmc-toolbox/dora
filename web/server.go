@@ -92,16 +92,18 @@ func RunGin(port int, debug bool) {
 		}
 		go metrics.Scheduler(time.Minute, metrics.GoRuntimeStats, []string{""})
 		go metrics.Scheduler(time.Minute, metrics.MeasureRuntime, []string{"uptime"}, stats.StartTime)
-		go metrics.Scheduler(time.Second*10, stats.GatherDBStats,
-			chassisStorage,
-			bladeStorage,
-			discreteStorage,
-			nicStorage,
-			storageBladeStorage,
-			scannedPortStorage,
-			psuStorage,
-			diskStorage)
 	}
+
+	// Gather metrics for /api/v1/stats page
+	go metrics.Scheduler(time.Minute, stats.GatherDBStats,
+		chassisStorage,
+		bladeStorage,
+		discreteStorage,
+		nicStorage,
+		storageBladeStorage,
+		scannedPortStorage,
+		psuStorage,
+		diskStorage)
 
 	api.AddResource(model.Chassis{}, resource.ChassisResource{ChassisStorage: chassisStorage})
 	api.AddResource(model.Blade{}, resource.BladeResource{BladeStorage: bladeStorage})
