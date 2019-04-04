@@ -15,12 +15,78 @@
 package metrics
 
 import (
+	"fmt"
 	"reflect"
 	"runtime"
 	"time"
 
+	"github.com/bmc-toolbox/dora/filter"
+	"github.com/bmc-toolbox/dora/storage"
 	log "github.com/sirupsen/logrus"
 )
+
+type countable interface {
+	Count(*filter.Filters) (int, error)
+}
+
+type UnitStats struct {
+	Total int `json:"total"`
+}
+
+type Stats struct {
+	Uptime       float32   `json:"uptime_ms"`
+	UpdateTime   string    `json:"update_time"`
+	StartTime    time.Time `json:"-"`
+	Chassis      UnitStats `json:chassis"`
+	Blade        UnitStats `json:blade"`
+	Discrete     UnitStats `json:discrete"`
+	Nic          UnitStats `json:nic"`
+	StorageBlade UnitStats `json:storage_blade"`
+	ScannedPort  UnitStats `json:scanned_port"`
+	Psu          UnitStats `json:psu"`
+	Disk         UnitStats `json:disk"`
+}
+
+// UpdateUptime updates uptime based on StartTime
+func (s *Stats) UpdateUptime() {
+	s.Uptime = float32(time.Since(s.StartTime).Seconds() * 1e3) //1e3 == 1000
+}
+
+// GatherDBStats triggers GatherDBStats function from all resources types
+func (s *Stats) GatherDBStats(
+	chassisStorage *storage.ChassisStorage,
+	bladeStorage *storage.BladeStorage,
+	discreteStorage *storage.DiscreteStorage,
+	nicStorage *storage.NicStorage,
+	storageBladeStorage *storage.StorageBladeStorage,
+	scannedPortStorage *storage.ScannedPortStorage,
+	psuStorage *storage.PsuStorage,
+	diskStorage *storage.DiskStorage) {
+	names := []string{
+		"chassis",
+		"blade",
+		"discrete",
+		"nic",
+		"storage_blade",
+		"scanned_port",
+		"psu",
+		"disk"}
+	// TODO add all and updated > 24h to all resources by vendor
+	for i, r := range []countable{
+		chassisStorage} {
+		//chassisStorage,
+		//bladeStorage,
+		//discreteStorage,
+		//nicStorage,
+		//storageBladeStorage,
+		//scannedPortStorage,
+		//psuStorage,
+		//diskStorage} {
+		s.Chassis.Total, _ = r.Count(&filter.Filters{})
+		UpdateGauge([]string{fmt.Sprintf("%v.total", names[i])}, float32(s.Chassis.Total))
+	}
+	s.UpdateTime = time.Now().Format(time.RFC3339)
+}
 
 // Scheduler starts passed function at start and then every "interval" value
 func Scheduler(interval time.Duration, fn interface{}, args ...interface{}) {

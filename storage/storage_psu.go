@@ -16,6 +16,17 @@ type PsuStorage struct {
 	db *gorm.DB
 }
 
+// Count get psus count based on the filter
+func (p PsuStorage) Count(filters *filter.Filters) (count int, err error) {
+	query, err := filters.BuildQuery(model.Psu{})
+	if err != nil {
+		return count, err
+	}
+
+	err = p.db.Model(&model.Psu{}).Where(query).Count(&count).Error
+	return count, err
+}
+
 // GetAll psus
 func (p PsuStorage) GetAll(offset string, limit string) (count int, psus []model.Psu, err error) {
 	if offset != "" && limit != "" {

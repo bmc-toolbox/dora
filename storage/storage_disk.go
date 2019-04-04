@@ -16,6 +16,17 @@ type DiskStorage struct {
 	db *gorm.DB
 }
 
+// Count get disks count based on the filter
+func (d DiskStorage) Count(filters *filter.Filters) (count int, err error) {
+	query, err := filters.BuildQuery(model.Disk{})
+	if err != nil {
+		return count, err
+	}
+
+	err = d.db.Model(&model.Disk{}).Where(query).Count(&count).Error
+	return count, err
+}
+
 // GetAll disks
 func (d DiskStorage) GetAll(offset string, limit string) (count int, disks []model.Disk, err error) {
 	if offset != "" && limit != "" {
