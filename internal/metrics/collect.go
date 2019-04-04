@@ -20,31 +20,39 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/bmc-toolbox/bmclib/devices"
 	"github.com/bmc-toolbox/dora/filter"
 	"github.com/bmc-toolbox/dora/storage"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 )
 
 type countable interface {
 	Count(*filter.Filters) (int, error)
 }
 
+type Asset struct {
+	Total         int `json:"total"`
+	Updated24hAgo int `json:"updated_24h_ago"`
+}
+
 type UnitStats struct {
-	Total int `json:"total"`
+	Asset
+	Vendors map[string]Asset `json:"by_vendor"`
 }
 
 type Stats struct {
 	Uptime       float32   `json:"uptime_ms"`
 	UpdateTime   string    `json:"update_time"`
 	StartTime    time.Time `json:"-"`
-	Chassis      UnitStats `json:chassis"`
-	Blade        UnitStats `json:blade"`
-	Discrete     UnitStats `json:discrete"`
-	Nic          UnitStats `json:nic"`
-	StorageBlade UnitStats `json:storage_blade"`
-	ScannedPort  UnitStats `json:scanned_port"`
-	Psu          UnitStats `json:psu"`
-	Disk         UnitStats `json:disk"`
+	Chassis      UnitStats `json:"chassis"`
+	Blade        UnitStats `json:"blades"`
+	Discrete     UnitStats `json:"discretes"`
+	Nic          UnitStats `json:"nics"`
+	StorageBlade UnitStats `json:"storage_blades"`
+	ScannedPort  UnitStats `json:"scanned_ports"`
+	Psu          UnitStats `json:"psus"`
+	Disk         UnitStats `json:"disks"`
 }
 
 // UpdateUptime updates uptime based on StartTime
@@ -64,26 +72,78 @@ func (s *Stats) GatherDBStats(
 	diskStorage *storage.DiskStorage) {
 	names := []string{
 		"chassis",
-		"blade",
-		"discrete",
-		"nic",
-		"storage_blade",
-		"scanned_port",
-		"psu",
-		"disk"}
-	// TODO add all and updated > 24h to all resources by vendor
+		"blades",
+		"discretes",
+		"nics",
+		"storage_blades",
+		"scanned_ports",
+		"psus",
+		"disks"}
+
 	for i, r := range []countable{
-		chassisStorage} {
-		//chassisStorage,
-		//bladeStorage,
-		//discreteStorage,
-		//nicStorage,
-		//storageBladeStorage,
-		//scannedPortStorage,
-		//psuStorage,
-		//diskStorage} {
-		s.Chassis.Total, _ = r.Count(&filter.Filters{})
-		UpdateGauge([]string{fmt.Sprintf("%v.total", names[i])}, float32(s.Chassis.Total))
+		chassisStorage,
+		bladeStorage,
+		discreteStorage,
+		nicStorage,
+		storageBladeStorage,
+		scannedPortStorage,
+		psuStorage,
+		diskStorage} {
+		u := &UnitStats{}
+		switch i {
+		case 0:
+			u = &s.Chassis
+		case 1:
+			u = &s.Blade
+		case 2:
+			u = &s.Discrete
+		case 3:
+			u = &s.Nic
+		case 4:
+			u = &s.StorageBlade
+		case 5:
+			u = &s.ScannedPort
+		case 6:
+			u = &s.Psu
+		case 7:
+			u = &s.Disk
+		}
+		if u.Vendors == nil {
+			u.Vendors = map[string]Asset{}
+		}
+		u.Total, _ = r.Count(&filter.Filters{})
+
+		updated24hAgoFilter := &filter.Filters{}
+		updated24hAgoFilter.Add("updated_at",
+			[]string{"less_than", time.Now().AddDate(0, 0, -1).Format(time.RFC3339)},
+			false)
+		u.Updated24hAgo, _ = r.Count(updated24hAgoFilter)
+
+		if viper.GetBool("metrics.enabled") {
+			UpdateGauge([]string{fmt.Sprintf("%v.total", names[i])}, float32(u.Total))
+			UpdateGauge([]string{fmt.Sprintf("%v.updated_24h_ago", names[i])}, float32(u.Updated24hAgo))
+		}
+		for _, vendor := range devices.ListSupportedVendor() {
+			asset, ok := u.Vendors[vendor]
+			if !ok {
+				asset = Asset{}
+			}
+			vendorFilter := &filter.Filters{}
+			vendorFilter.Add("vendor",
+				[]string{vendor},
+				false)
+			asset.Total, _ = r.Count(vendorFilter)
+			vendorFilter.Add("updated_at",
+				[]string{"less_than", time.Now().AddDate(0, 0, -1).Format(time.RFC3339)},
+				false)
+			asset.Updated24hAgo, _ = r.Count(vendorFilter)
+			u.Vendors[vendor] = asset
+
+			if viper.GetBool("metrics.enabled") {
+				UpdateGauge([]string{fmt.Sprintf("%v.by_vendor.%v.total", names[i], vendor)}, float32(u.Total))
+				UpdateGauge([]string{fmt.Sprintf("%v.by_vendor.%v.updated_24h_ago", names[i], vendor)}, float32(u.Updated24hAgo))
+			}
+		}
 	}
 	s.UpdateTime = time.Now().Format(time.RFC3339)
 }
