@@ -5,7 +5,7 @@ go 1.12
 require (
 	github.com/Bowery/prompt v0.0.0-20180817134258-8a1d5376df1c // indirect
 	github.com/GeertJohan/go.rice v0.0.0-20170420135705-c02ca9a983da
-	github.com/bmc-toolbox/bmclib v0.0.0-20190318124048-7730ff8545fd
+	github.com/bmc-toolbox/bmclib v0.2.4
 	github.com/cyberdelia/go-metrics-graphite v0.0.0-20161219230853-39f87cc3b432
 	github.com/daaku/go.zipexe v0.0.0-20150329023125-a5fe2436ffcb // indirect
 	github.com/dchest/safefile v0.0.0-20151022103144-855e8d98f185 // indirect
