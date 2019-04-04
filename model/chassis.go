@@ -10,6 +10,7 @@ import (
 	"github.com/bmc-toolbox/bmclib/devices"
 	"github.com/bmc-toolbox/bmclib/errors"
 	"github.com/kr/pretty"
+	"github.com/lib/pq"
 	"github.com/manyminds/api2go/jsonapi"
 )
 
@@ -33,10 +34,11 @@ func NewChassisFromDevice(c *devices.Chassis) (chassis *Chassis) {
 	chassis.FwVersion = c.FwVersion
 	chassis.PassThru = c.PassThru
 	chassis.Blades = make([]*Blade, 0)
+	var faulySlots []int64
 	for _, b := range c.Blades {
 		blade := NewBladeFromDevice(b)
 		if blade.Serial == "" || blade.Serial == "[unknown]" || blade.Serial == "0000000000" || blade.Serial == "_" {
-			chassis.FaultySlots = append(chassis.FaultySlots, blade.BladePosition)
+			faulySlots = append(faulySlots, int64(blade.BladePosition))
 			log.WithFields(log.Fields{"operation": "chassis scan", "position": blade.BladePosition, "type": "chassis", "chassis_serial": chassis.Serial}).Error(errors.ErrInvalidSerial)
 			continue
 		}
@@ -47,13 +49,13 @@ func NewChassisFromDevice(c *devices.Chassis) (chassis *Chassis) {
 	for _, s := range c.StorageBlades {
 		storageBlade := NewStorageBladeFromDevice(s)
 		if storageBlade.Serial == "" || storageBlade.Serial == "[unknown]" || storageBlade.Serial == "0000000000" || storageBlade.Serial == "_" {
-			chassis.FaultySlots = append(chassis.FaultySlots, storageBlade.BladePosition)
+			faulySlots = append(faulySlots, int64(storageBlade.BladePosition))
 			log.WithFields(log.Fields{"operation": "chassis scan", "position": storageBlade.BladePosition, "type": "chassis", "chassis_serial": chassis.Serial}).Error(errors.ErrInvalidSerial)
 			continue
 		}
 		chassis.StorageBlades = append(chassis.StorageBlades, storageBlade)
-
 	}
+	chassis.FaultySlots = faulySlots
 	chassis.Nics = make([]*Nic, 0)
 	for _, nic := range c.Nics {
 		chassis.Nics = append(chassis.Nics, &Nic{
@@ -73,6 +75,23 @@ func NewChassisFromDevice(c *devices.Chassis) (chassis *Chassis) {
 			CapacityKw:    psu.CapacityKw,
 			PowerKw:       psu.PowerKw,
 			Status:        psu.Status,
+			PartNumber:    psu.PartNumber,
+			ChassisSerial: c.Serial,
+		})
+	}
+	chassis.Fans = make([]*Fan, 0)
+	for fanPosition, fan := range c.Fans {
+		if fan.Serial == "" || fan.Serial == "[unknown]" || fan.Serial == "0000000000" || fan.Serial == "_" {
+			log.WithFields(log.Fields{"operation": "chassis scan", "fan": fanPosition, "type": "chassis", "chassis_serial": chassis.Serial}).Error(errors.ErrInvalidSerial)
+			continue
+		}
+		chassis.Fans = append(chassis.Fans, &Fan{
+			Serial:     fan.Serial,
+			Status:     fan.Status,
+			Position:   fan.Position,
+			Model:      fan.Model,
+			CurrentRPM: fan.CurrentRPM,
+			PowerKw:    fan.PowerKw,
 			ChassisSerial: c.Serial,
 		})
 	}
@@ -89,10 +108,11 @@ type Chassis struct {
 	BmcWEBReachable bool            `json:"bmc_web_reachable"`
 	BmcAuth         bool            `json:"bmc_auth"`
 	Blades          []*Blade        `json:"-" gorm:"ForeignKey:ChassisSerial"`
-	FaultySlots     []int           `json:"faulty_slots" gorm:"type:integer[2]"`
+	FaultySlots     pq.Int64Array   `json:"faulty_slots" gorm:"type:integer[2]"`
 	StorageBlades   []*StorageBlade `json:"-" gorm:"ForeignKey:ChassisSerial"`
 	Nics            []*Nic          `json:"-" gorm:"ForeignKey:ChassisSerial"`
 	Psus            []*Psu          `json:"-" gorm:"ForeignKey:ChassisSerial"`
+	Fans            []*Fan          `json:"-" gorm:"ForeignKey:ChassisSerial"`
 	TempC           int             `json:"temp_c"`
 	PassThru        string          `json:"pass_thru"`
 	Status          string          `json:"status"`
@@ -131,6 +151,11 @@ func (c Chassis) GetReferences() []jsonapi.Reference {
 			Name:         "psus",
 			Relationship: jsonapi.ToManyRelationship,
 		},
+		{
+			Type:         "fans",
+			Name:         "fans",
+			Relationship: jsonapi.ToManyRelationship,
+		},
 	}
 }
 
@@ -166,6 +191,14 @@ func (c Chassis) GetReferencedIDs() []jsonapi.ReferenceID {
 			ID:           psu.GetID(),
 			Type:         "psus",
 			Name:         "psus",
+			Relationship: jsonapi.ToManyRelationship,
+		})
+	}
+	for _, fan := range c.Fans {
+		result = append(result, jsonapi.ReferenceID{
+			ID:           fan.GetID(),
+			Type:         "fans",
+			Name:         "fans",
 			Relationship: jsonapi.ToManyRelationship,
 		})
 	}

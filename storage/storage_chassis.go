@@ -121,6 +121,21 @@ func (c ChassisStorage) GetAllByBladesID(offset string, limit string, serials []
 	return count, chassis, err
 }
 
+// GetAllByFansID Chassis
+func (c ChassisStorage) GetAllByFansID(offset string, limit string, serials []string) (count int, chassis []model.Chassis, err error) {
+	if offset != "" && limit != "" {
+		if err = c.db.Limit(limit).Offset(offset).Joins("INNER JOIN fan ON fan.chassis_serial = chassis.serial").Where("fan.serial in (?)", serials).Find(&chassis).Error; err != nil {
+			return count, chassis, err
+		}
+		c.db.Model(&model.Chassis{}).Joins("INNER JOIN fan ON fan.chassis_serial = chassis.serial").Where("fan.serial in (?)", serials).Count(&count)
+	} else {
+		if err = c.db.Joins("INNER JOIN fan ON fan.chassis_serial = chassis.serial").Where("fan.serial in (?)", serials).Find(&chassis).Error; err != nil {
+			return count, chassis, err
+		}
+	}
+	return count, chassis, err
+}
+
 // GetAllByStorageBladesID Chassis
 func (c ChassisStorage) GetAllByStorageBladesID(offset string, limit string, serials []string) (count int, chassis []model.Chassis, err error) {
 	if offset != "" && limit != "" {
