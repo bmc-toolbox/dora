@@ -103,7 +103,8 @@ func RunGin(port int, debug bool) {
 		storageBladeStorage,
 		scannedPortStorage,
 		psuStorage,
-		diskStorage)
+		diskStorage,
+		fanStorage)
 
 	api.AddResource(model.Chassis{}, resource.ChassisResource{ChassisStorage: chassisStorage})
 	api.AddResource(model.Blade{}, resource.BladeResource{BladeStorage: bladeStorage})

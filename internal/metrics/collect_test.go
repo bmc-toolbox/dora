@@ -39,14 +39,17 @@ func TestNewAndUpdateCandle(t *testing.T) {
 		mock.ExpectQuery("^SELECT count\\(\\*\\) FROM \".+\".*").WillReturnRows(zeroRow)
 	}
 
-	s.GatherDBStats(storage.NewChassisStorage(db),
+	s.GatherDBStats(
+		storage.NewChassisStorage(db),
 		storage.NewBladeStorage(db),
 		storage.NewDiscreteStorage(db),
 		storage.NewNicStorage(db),
 		storage.NewStorageBladeStorage(db),
 		storage.NewScannedPortStorage(db),
 		storage.NewPsuStorage(db),
-		storage.NewDiskStorage(db))
+		storage.NewDiskStorage(db),
+		storage.NewFanStorage(db),
+	)
 
 	assert.EqualValues(t, 10, s.Chassis.Total,
 		"total count of chassis is right")

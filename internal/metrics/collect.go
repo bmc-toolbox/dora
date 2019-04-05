@@ -54,6 +54,7 @@ type Stats struct {
 	ScannedPort  UnitStats `json:"scanned_ports"`
 	Psu          UnitStats `json:"psus"`
 	Disk         UnitStats `json:"disks"`
+	Fan          UnitStats `json:"fans"`
 }
 
 // UpdateUptime updates uptime based on StartTime
@@ -70,7 +71,8 @@ func (s *Stats) GatherDBStats(
 	storageBladeStorage *storage.StorageBladeStorage,
 	scannedPortStorage *storage.ScannedPortStorage,
 	psuStorage *storage.PsuStorage,
-	diskStorage *storage.DiskStorage) {
+	diskStorage *storage.DiskStorage,
+	fanStorage *storage.FanStorage) {
 	names := []string{
 		"chassis",
 		"blades",
@@ -79,7 +81,8 @@ func (s *Stats) GatherDBStats(
 		"storage_blades",
 		"scanned_ports",
 		"psus",
-		"disks"}
+		"disks",
+		"fans"}
 
 	for i, r := range []countable{
 		chassisStorage,
@@ -89,7 +92,8 @@ func (s *Stats) GatherDBStats(
 		storageBladeStorage,
 		scannedPortStorage,
 		psuStorage,
-		diskStorage} {
+		diskStorage,
+		fanStorage} {
 		u := &UnitStats{}
 		switch i {
 		case 0:
@@ -108,6 +112,8 @@ func (s *Stats) GatherDBStats(
 			u = &s.Psu
 		case 7:
 			u = &s.Disk
+		case 8:
+			u = &s.Fan
 		}
 		if u.Vendors == nil {
 			u.Vendors = map[string]Asset{}
