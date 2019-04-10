@@ -16,6 +16,17 @@ type FanStorage struct {
 	db *gorm.DB
 }
 
+// Count get fans count based on the filter
+func (p FanStorage) Count(filters *filter.Filters) (count int, err error) {
+	query, err := filters.BuildQuery(model.Fan{})
+	if err != nil {
+		return count, err
+	}
+
+	err = p.db.Model(&model.Fan{}).Where(query).Count(&count).Error
+	return count, err
+}
+
 // GetAll fans
 func (p FanStorage) GetAll(offset string, limit string) (count int, fans []model.Fan, err error) {
 	if offset != "" && limit != "" {

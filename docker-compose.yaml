@@ -1,6 +1,17 @@
 version: '3'
 services:
 
+  dora:
+    build: .
+    image: dora
+
+    volumes:
+      - ./dora-simple.yaml:/etc/bmc-toolbox/dora.yaml:ro
+      # To get a list of networks with BMCs
+      - ./kea-simple.conf:/etc/kea/kea.conf:ro
+      # For /tmp/dora.db
+      - /tmp:/tmp
+
   server:
     image: dora
     command: server
@@ -10,17 +21,6 @@ services:
 
     volumes:
       - ./dora-simple.yaml:/etc/bmc-toolbox/dora.yaml:ro
-      # For /tmp/dora.db
-      - /tmp:/tmp
-
-  dora:
-    build: .
-    image: dora
-
-    volumes:
-      - ./dora-simple.yaml:/etc/bmc-toolbox/dora.yaml:ro
-      # To get a list of networks with BMCs
-      - ./kea-simple.conf:/etc/kea/kea.conf:ro
       # For /tmp/dora.db
       - /tmp:/tmp
 

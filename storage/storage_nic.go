@@ -16,6 +16,17 @@ type NicStorage struct {
 	db *gorm.DB
 }
 
+// Count get nics count based on the filter
+func (n NicStorage) Count(filters *filter.Filters) (count int, err error) {
+	query, err := filters.BuildQuery(model.Nic{})
+	if err != nil {
+		return count, err
+	}
+
+	err = n.db.Model(&model.Nic{}).Where(query).Count(&count).Error
+	return count, err
+}
+
 // GetAll nics
 func (n NicStorage) GetAll(offset string, limit string) (count int, nics []model.Nic, err error) {
 	if offset != "" && limit != "" {

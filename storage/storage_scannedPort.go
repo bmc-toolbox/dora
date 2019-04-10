@@ -16,6 +16,17 @@ type ScannedPortStorage struct {
 	db *gorm.DB
 }
 
+// Count get ScannedPorts count based on the filter
+func (s ScannedPortStorage) Count(filters *filter.Filters) (count int, err error) {
+	query, err := filters.BuildQuery(model.ScannedPort{})
+	if err != nil {
+		return count, err
+	}
+
+	err = s.db.Model(&model.ScannedPort{}).Where(query).Count(&count).Error
+	return count, err
+}
+
 // GetAll of the ScannedPorts
 func (s ScannedPortStorage) GetAll(offset string, limit string) (count int, ports []model.ScannedPort, err error) {
 	if offset != "" && limit != "" {

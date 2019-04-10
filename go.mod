@@ -3,6 +3,7 @@ module github.com/bmc-toolbox/dora
 go 1.12
 
 require (
+	github.com/DATA-DOG/go-sqlmock v1.3.3
 	github.com/GeertJohan/go.rice v0.0.0-20170420135705-c02ca9a983da
 	github.com/bmc-toolbox/bmclib v0.2.7
 	github.com/cyberdelia/go-metrics-graphite v0.0.0-20161219230853-39f87cc3b432

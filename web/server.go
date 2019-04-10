@@ -6,6 +6,8 @@ import (
 	"html/template"
 	"net"
 	"net/http"
+	"os"
+	"time"
 
 	"github.com/GeertJohan/go.rice"
 	"github.com/gin-gonic/gin"
@@ -16,6 +18,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 
+	"github.com/bmc-toolbox/dora/internal/metrics"
 	"github.com/bmc-toolbox/dora/model"
 	"github.com/bmc-toolbox/dora/resource"
 	"github.com/bmc-toolbox/dora/scanner"
@@ -72,6 +75,36 @@ func RunGin(port int, debug bool) {
 	psuStorage := storage.NewPsuStorage(db)
 	diskStorage := storage.NewDiskStorage(db)
 	fanStorage := storage.NewFanStorage(db)
+
+	stats := metrics.Stats{StartTime: time.Now()}
+
+	if viper.GetBool("metrics.enabled") {
+		err := metrics.Setup(
+			viper.GetString("metrics.type"),
+			viper.GetString("metrics.host"),
+			viper.GetInt("metrics.port"),
+			viper.GetString("metrics.prefix.server"),
+			time.Minute,
+		)
+		if err != nil {
+			fmt.Printf("Failed to set up monitoring: %s", err)
+			os.Exit(1)
+		}
+		go metrics.Scheduler(time.Minute, metrics.GoRuntimeStats, []string{""})
+		go metrics.Scheduler(time.Minute, metrics.MeasureRuntime, []string{"uptime"}, stats.StartTime)
+	}
+
+	// Gather metrics for /api/v1/stats page
+	go metrics.Scheduler(time.Minute, stats.GatherDBStats,
+		chassisStorage,
+		bladeStorage,
+		discreteStorage,
+		nicStorage,
+		storageBladeStorage,
+		scannedPortStorage,
+		psuStorage,
+		diskStorage,
+		fanStorage)
 
 	api.AddResource(model.Chassis{}, resource.ChassisResource{ChassisStorage: chassisStorage})
 	api.AddResource(model.Blade{}, resource.BladeResource{BladeStorage: bladeStorage})
@@ -183,6 +216,11 @@ func RunGin(port int, debug bool) {
 		} else {
 			c.String(451, "database has gone away")
 		}
+	})
+
+	r.GET("/api/v1/stats", func(c *gin.Context) {
+		stats.UpdateUptime()
+		c.JSON(200, stats)
 	})
 
 	err = r.Run(fmt.Sprintf(":%d", port))

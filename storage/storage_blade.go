@@ -18,6 +18,17 @@ type BladeStorage struct {
 	db *gorm.DB
 }
 
+// Count get blades count based on the filter
+func (b BladeStorage) Count(filters *filter.Filters) (count int, err error) {
+	query, err := filters.BuildQuery(model.Blade{})
+	if err != nil {
+		return count, err
+	}
+
+	err = b.db.Model(&model.Blade{}).Where(query).Count(&count).Error
+	return count, err
+}
+
 // GetAll of the Blades
 func (b BladeStorage) GetAll(offset string, limit string) (count int, blades []model.Blade, err error) {
 	if offset != "" && limit != "" {

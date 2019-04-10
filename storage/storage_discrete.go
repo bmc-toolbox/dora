@@ -18,6 +18,17 @@ type DiscreteStorage struct {
 	db *gorm.DB
 }
 
+// Count get discretes count based on the filter
+func (d DiscreteStorage) Count(filters *filter.Filters) (count int, err error) {
+	query, err := filters.BuildQuery(model.Discrete{})
+	if err != nil {
+		return count, err
+	}
+
+	err = d.db.Model(&model.Discrete{}).Where(query).Count(&count).Error
+	return count, err
+}
+
 // GetAll of the Discretes
 func (d DiscreteStorage) GetAll(offset string, limit string) (count int, discretes []model.Discrete, err error) {
 	if offset != "" && limit != "" {

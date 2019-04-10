@@ -12,9 +12,20 @@ func NewChassisStorage(db *gorm.DB) *ChassisStorage {
 	return &ChassisStorage{db}
 }
 
-// ChassisStorage stores all Chassiss
+// ChassisStorage stores all Chassis
 type ChassisStorage struct {
 	db *gorm.DB
+}
+
+// Count get chassis count based on the filter
+func (c ChassisStorage) Count(filters *filter.Filters) (count int, err error) {
+	query, err := filters.BuildQuery(model.Chassis{})
+	if err != nil {
+		return count, err
+	}
+
+	err = c.db.Model(&model.Chassis{}).Where(query).Count(&count).Error
+	return count, err
 }
 
 // GetAll returns all chassis
