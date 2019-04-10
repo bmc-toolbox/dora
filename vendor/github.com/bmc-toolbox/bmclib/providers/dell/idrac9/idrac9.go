@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"strings"
 
-	multierror "github.com/hashicorp/go-multierror"
+	"github.com/hashicorp/go-multierror"
 
 	"github.com/bmc-toolbox/bmclib/devices"
 	"github.com/bmc-toolbox/bmclib/errors"
@@ -671,7 +671,7 @@ func (i *IDrac9) Vendor() (vendor string) {
 }
 
 // ServerSnapshot do best effort to populate the server data and returns a blade or discrete
-func (i *IDrac9) ServerSnapshot() (server interface{}, err error) {
+func (i *IDrac9) ServerSnapshot() (server interface{}, err error) { // nolint: gocyclo
 	err = i.httpLogin()
 	if err != nil {
 		return server, err
@@ -683,7 +683,7 @@ func (i *IDrac9) ServerSnapshot() (server interface{}, err error) {
 		blade.BmcAddress = i.ip
 		blade.BmcType = i.BmcType()
 
-		blade.Serial, _ = i.Serial()
+		blade.Serial, err = i.Serial()
 		if err != nil {
 			return nil, err
 		}
@@ -866,14 +866,4 @@ func (i *IDrac9) Disks() (disks []*devices.Disk, err error) {
 func (i *IDrac9) UpdateCredentials(username string, password string) {
 	i.username = username
 	i.password = password
-}
-
-// GetConfigure returns itself as a configure interface to avoid using reflect
-func (i *IDrac9) GetConfigure() devices.Configure {
-	return i
-}
-
-// GetCollection returns itself as a configure interface to avoid using reflect
-func (i *IDrac9) GetCollection() devices.BmcCollection {
-	return i
 }

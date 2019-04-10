@@ -535,7 +535,7 @@ func (s *SupermicroX10) ServerSnapshot() (server interface{}, err error) {
 		blade.BmcAddress = s.ip
 		blade.BmcType = s.BmcType()
 
-		blade.Serial, _ = s.Serial()
+		blade.Serial, err = s.Serial()
 		if err != nil {
 			return nil, err
 		}
@@ -669,14 +669,4 @@ func (s *SupermicroX10) Disks() (disks []*devices.Disk, err error) {
 func (s *SupermicroX10) UpdateCredentials(username string, password string) {
 	s.username = username
 	s.password = password
-}
-
-// GetConfigure returns itself as a configure interface to avoid using reflect
-func (s *SupermicroX10) GetConfigure() devices.Configure {
-	return s
-}
-
-// GetCollection returns itself as a configure interface to avoid using reflect
-func (s *SupermicroX10) GetCollection() devices.BmcCollection {
-	return s
 }

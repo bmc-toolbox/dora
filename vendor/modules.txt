@@ -1,7 +1,7 @@
 # github.com/GeertJohan/go.rice v0.0.0-20170420135705-c02ca9a983da
 github.com/GeertJohan/go.rice
 github.com/GeertJohan/go.rice/embedded
-# github.com/bmc-toolbox/bmclib v0.2.6
+# github.com/bmc-toolbox/bmclib v0.2.7
 github.com/bmc-toolbox/bmclib/devices
 github.com/bmc-toolbox/bmclib/discover
 github.com/bmc-toolbox/bmclib/errors
@@ -55,7 +55,7 @@ github.com/google/gops/signal
 github.com/gorilla/mux
 # github.com/hashicorp/errwrap v1.0.0
 github.com/hashicorp/errwrap
-# github.com/hashicorp/go-multierror v0.0.0-20171204182908-b7773ae21874
+# github.com/hashicorp/go-multierror v1.0.0
 github.com/hashicorp/go-multierror
 # github.com/hashicorp/hcl v1.0.0
 github.com/hashicorp/hcl
@@ -130,7 +130,7 @@ github.com/nats-io/nuid
 github.com/pelletier/go-toml
 # github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a
 github.com/rcrowley/go-metrics
-# github.com/sirupsen/logrus v0.0.0-20181215152119-2067ea4241ce
+# github.com/sirupsen/logrus v1.4.1
 github.com/sirupsen/logrus
 # github.com/spf13/afero v1.2.1
 github.com/spf13/afero
@@ -143,7 +143,7 @@ github.com/spf13/cobra
 github.com/spf13/jwalterweatherman
 # github.com/spf13/pflag v1.0.3
 github.com/spf13/pflag
-# github.com/spf13/viper v0.0.0-20190127094459-d104d259b338
+# github.com/spf13/viper v1.3.2
 github.com/spf13/viper
 # github.com/ugorji/go/codec v0.0.0-20190204201341-e444a5086c43
 github.com/ugorji/go/codec
@@ -152,7 +152,6 @@ github.com/valyala/bytebufferpool
 # github.com/valyala/fasttemplate v1.0.1
 github.com/valyala/fasttemplate
 # golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2
-golang.org/x/crypto/ssh/terminal
 golang.org/x/crypto/acme/autocert
 golang.org/x/crypto/ssh
 golang.org/x/crypto/acme
@@ -162,11 +161,10 @@ golang.org/x/crypto/internal/chacha20
 golang.org/x/crypto/poly1305
 golang.org/x/crypto/ed25519/internal/edwards25519
 golang.org/x/crypto/internal/subtle
-# golang.org/x/net v0.0.0-20190301231341-16b79f2e4e95
+# golang.org/x/net v0.0.0-20190311183353-d8887717615a
 golang.org/x/net/publicsuffix
 # golang.org/x/sys v0.0.0-20190305064518-30e92a19ae4a
 golang.org/x/sys/unix
-golang.org/x/sys/windows
 golang.org/x/sys/cpu
 # golang.org/x/text v0.3.1-0.20180807135948-17ff2d5776d2
 golang.org/x/text/transform
@@ -175,7 +173,7 @@ golang.org/x/text/unicode/norm
 google.golang.org/appengine/cloudsql
 # gopkg.in/go-playground/validator.v8 v8.18.2
 gopkg.in/go-playground/validator.v8
-# gopkg.in/go-playground/validator.v9 v9.27.0
+# gopkg.in/go-playground/validator.v9 v9.28.0
 gopkg.in/go-playground/validator.v9
 # gopkg.in/yaml.v2 v2.2.2
 gopkg.in/yaml.v2
