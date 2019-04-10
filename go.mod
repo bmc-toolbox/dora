@@ -36,6 +36,7 @@ require (
 	github.com/spf13/cobra v0.0.0-20190109003409-7547e83b2d85
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/viper v1.3.2
+	github.com/stretchr/testify v1.3.0
 	github.com/valyala/fasttemplate v1.0.1 // indirect
 	golang.org/x/sys v0.0.0-20190305064518-30e92a19ae4a // indirect
 	gopkg.in/guregu/null.v2 v2.1.2 // indirect
