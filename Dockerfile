@@ -14,7 +14,6 @@ FROM centos
 
 RUN adduser -s /bin/false dora
 
-RUN mkdir -p /etc/dora
 COPY dora-simple.yaml /etc/bmc-toolbox/dora.yaml
 COPY kea-simple.conf /etc/kea/kea.conf
 

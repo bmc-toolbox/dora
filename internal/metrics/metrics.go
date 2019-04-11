@@ -31,17 +31,19 @@ var (
 )
 
 // emitter struct holds attributes for the metrics emitter.
+// we can convert int64 to float64, but not other way around
+// because of that we store the metrics data in float64
 type emitter struct {
 	registry    gometrics.Registry
 	metricsChan chan metric
-	metricsData map[string]map[string]float32
+	metricsData map[string]map[string]float64
 }
 
 // metric struct holds attributes for a metric.
 type metric struct {
 	Type  string   //counter/gauge
 	Key   []string //metric key
-	Value float32  //metric value
+	Value float64  //metric value
 }
 
 // Setup sets up external and internal metric sinks.
@@ -53,7 +55,7 @@ func Setup(clientType string, host string, port int, prefix string, flushInterva
 	emm = &emitter{
 		registry:    gometrics.NewRegistry(),
 		metricsChan: make(chan metric),
-		metricsData: make(map[string]map[string]float32),
+		metricsData: make(map[string]map[string]float64),
 	}
 
 	//setup metrics client based on config
@@ -93,7 +95,7 @@ func (e *emitter) store() {
 
 		_, keyExists := e.metricsData[identifier]
 		if !keyExists {
-			e.metricsData[identifier] = make(map[string]float32)
+			e.metricsData[identifier] = make(map[string]float64)
 		}
 
 		//register the metric with go-metrics,
@@ -109,6 +111,14 @@ func (e *emitter) store() {
 				g := gometrics.NewGauge()
 				gometrics.Register(key, g)
 				goMetricsRegistry[key] = g
+			case "timer":
+				g := gometrics.NewTimer()
+				gometrics.Register(key, g)
+				goMetricsRegistry[key] = g
+			case "histogram":
+				g := gometrics.NewHistogram(gometrics.NewExpDecaySample(1028, 0.015))
+				gometrics.Register(key, g)
+				goMetricsRegistry[key] = g
 			}
 		}
 
@@ -118,15 +128,29 @@ func (e *emitter) store() {
 			e.metricsData[identifier][key] += data.Value
 
 			//type assert metrics registry to its type - metrics.Counter
-			//type cast float32 metric value type to int64
+			//type cast float64 metric value type to int64
 			goMetricsRegistry[key].(gometrics.Counter).Inc(
 				int64(e.metricsData[identifier][key]))
 		case "gauge":
 			e.metricsData[identifier][key] = data.Value
 
 			//type assert metrics registry to its type - metrics.Gauge
-			//type cast float32 metric value type to int64
+			//type cast float64 metric value type to int64
 			goMetricsRegistry[key].(gometrics.Gauge).Update(
+				int64(e.metricsData[identifier][key]))
+		case "timer":
+			e.metricsData[identifier][key] = data.Value
+
+			//type assert metrics registry to its type - metrics.Timer
+			//type cast float64 metric value type to int64
+			goMetricsRegistry[key].(gometrics.Timer).Update(
+				time.Duration(e.metricsData[identifier][key]))
+		case "histogram":
+			e.metricsData[identifier][key] = data.Value
+
+			//type assert metrics registry to its type - metrics.Histogram
+			//type cast float64 metric value type to int64
+			goMetricsRegistry[key].(gometrics.Histogram).Update(
 				int64(e.metricsData[identifier][key]))
 		}
 	}
@@ -145,12 +169,12 @@ func (e *emitter) dumpStats() {
 
 // IncrCounter sets up metric attributes and passes them to the metricsChan.
 //key = slice of strings that will be joined with "." to be used as the metric namespace
-//val = float32 metric value
-func IncrCounter(key []string, value float32) {
+//val = float64 metric value
+func IncrCounter(key []string, value int64) {
 	d := metric{
 		Type:  "counter",
 		Key:   key,
-		Value: value,
+		Value: float64(value),
 	}
 
 	emm.metricsChan <- d
@@ -158,12 +182,38 @@ func IncrCounter(key []string, value float32) {
 
 // UpdateGauge sets up the Gauge metric and passes them to the metricsChan.
 //key = slice of strings that will be joined with "." to be used as the metric namespace
-//val = float32 metric value
-func UpdateGauge(key []string, value float32) {
+//val = float64 metric value
+func UpdateGauge(key []string, value int64) {
 	d := metric{
 		Type:  "gauge",
 		Key:   key,
-		Value: value,
+		Value: float64(value),
+	}
+
+	emm.metricsChan <- d
+}
+
+// UpdateTimer sets up the Timer metric and passes them to the metricsChan.
+//key = slice of strings that will be joined with "." to be used as the metric namespace
+//val = time.Time metric value
+func UpdateTimer(key []string, value time.Duration) {
+	d := metric{
+		Type:  "timer",
+		Key:   key,
+		Value: float64(value.Nanoseconds()),
+	}
+
+	emm.metricsChan <- d
+}
+
+// UpdateHistogram sets up the Histogram metric and passes them to the metricsChan.
+//key = slice of strings that will be joined with "." to be used as the metric namespace
+//val = int64 metric value
+func UpdateHistogram(key []string, value int64) {
+	d := metric{
+		Type:  "histogram",
+		Key:   key,
+		Value: float64(value),
 	}
 
 	emm.metricsChan <- d
@@ -172,7 +222,7 @@ func UpdateGauge(key []string, value float32) {
 // MeasureRuntime measures time elapsed since invocation
 func MeasureRuntime(key []string, start time.Time) {
 	//convert time.Duration to milliseconds
-	elapsed := float32(time.Since(start).Seconds() * 1e3) //1e3 == 1000
+	elapsed := int64(time.Since(start) / time.Millisecond)
 	UpdateGauge(key, elapsed)
 }
 

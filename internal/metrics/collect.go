@@ -127,10 +127,10 @@ func (s *Stats) GatherDBStats(
 		u.Updated24hAgo, _ = r.Count(updated24hAgoFilter)
 
 		if viper.GetBool("metrics.enabled") {
-			UpdateGauge([]string{fmt.Sprintf("%v.total", names[i])}, float32(u.Total))
-			UpdateGauge([]string{fmt.Sprintf("%v.updated_24h_ago", names[i])}, float32(u.Updated24hAgo))
+			UpdateGauge([]string{fmt.Sprintf("%v.total", names[i])}, int64(u.Total))
+			UpdateGauge([]string{fmt.Sprintf("%v.updated_24h_ago", names[i])}, int64(u.Updated24hAgo))
 		}
-		for _, vendor := range devices.ListSupportedVendor() {
+		for _, vendor := range devices.ListSupportedVendors() {
 			asset, ok := u.Vendors[vendor]
 			if !ok {
 				asset = Asset{}
@@ -147,8 +147,8 @@ func (s *Stats) GatherDBStats(
 			u.Vendors[vendor] = asset
 
 			if viper.GetBool("metrics.enabled") {
-				UpdateGauge([]string{fmt.Sprintf("%v.by_vendor.%v.total", names[i], vendor)}, float32(u.Total))
-				UpdateGauge([]string{fmt.Sprintf("%v.by_vendor.%v.updated_24h_ago", names[i], vendor)}, float32(u.Updated24hAgo))
+				UpdateGauge([]string{fmt.Sprintf("%v.by_vendor.%v.total", names[i], vendor)}, int64(u.Total))
+				UpdateGauge([]string{fmt.Sprintf("%v.by_vendor.%v.updated_24h_ago", names[i], vendor)}, int64(u.Updated24hAgo))
 			}
 		}
 	}
@@ -177,10 +177,10 @@ func Scheduler(interval time.Duration, fn interface{}, args ...interface{}) {
 	for k, in := range args {
 		inputs[k] = reflect.ValueOf(in)
 	}
-	// Run function once at interval, plus once right after start
-	f.Call(inputs)
-	for range time.Tick(interval) {
+
+	for {
 		f.Call(inputs)
+		time.Sleep(interval)
 	}
 }
 
@@ -190,7 +190,7 @@ func GoRuntimeStats(prefix []string) {
 
 	prefix = append(prefix, "runtime")
 
-	UpdateGauge(append(prefix, "num_goroutines"), float32(runtime.NumGoroutine()))
+	UpdateGauge(append(prefix, "num_goroutines"), int64(runtime.NumGoroutine()))
 
 	var s runtime.MemStats
 	runtime.ReadMemStats(&s)
@@ -205,7 +205,7 @@ func GoRuntimeStats(prefix []string) {
 	// occur simultaneously, and as a result HeapAlloc tends to
 	// change smoothly (in contrast with the sawtooth that is
 	// typical of stop-the-world garbage collectors).
-	UpdateGauge(append(prefix, "heap_alloc"), float32(s.Alloc))
+	UpdateGauge(append(prefix, "heap_alloc"), int64(s.Alloc))
 
 	// Sys is the total bytes of memory obtained from the OS.
 	// Sys is the sum of the XSys fields below. Sys measures the
@@ -214,28 +214,28 @@ func GoRuntimeStats(prefix []string) {
 	// likely that not all of the virtual address space is backed
 	// by physical memory at any given moment, though in general
 	// it all was at some point.
-	UpdateGauge(append(prefix, "sys"), float32(s.Sys))
+	UpdateGauge(append(prefix, "sys"), int64(s.Sys))
 
 	// PauseTotalNs is the cumulative nanoseconds in GC
 	// stop-the-world pauses since the program started.
 	//
 	// During a stop-the-world pause, all goroutines are paused
 	// and only the garbage collector can run.
-	UpdateGauge(append(prefix, "pause_total_ns"), float32(s.PauseTotalNs))
+	UpdateGauge(append(prefix, "pause_total_ns"), int64(s.PauseTotalNs))
 
 	// NumGC is the number of completed GC cycles.
-	UpdateGauge(append(prefix, "num_gc"), float32(s.NumGC))
+	UpdateGauge(append(prefix, "num_gc"), int64(s.NumGC))
 
 	// HeapReleased is bytes of physical memory returned to the OS.
 	//
 	// This counts heap memory from idle spans that was returned
 	// to the OS and has not yet been reacquired for the heap.
-	UpdateGauge(append(prefix, "heap_released"), float32(s.HeapReleased))
+	UpdateGauge(append(prefix, "heap_released"), int64(s.HeapReleased))
 
 	// HeapObjects is the number of allocated heap objects.
 	//
 	// Like HeapAlloc, this increases as objects are allocated and
 	// decreases as the heap is swept and unreachable objects are
 	// freed.
-	UpdateGauge(append(prefix, "heap_objects"), float32(s.HeapReleased))
+	UpdateGauge(append(prefix, "heap_objects"), int64(s.HeapReleased))
 }
