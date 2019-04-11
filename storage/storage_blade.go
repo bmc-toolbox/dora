@@ -59,7 +59,7 @@ func (b BladeStorage) GetAllWithAssociations(offset string, limit string) (count
 	return count, blades, err
 }
 
-// GetAllByDisksID retrieve descretes by disksID
+// GetAllByDisksID retrieve discretes by disksID
 func (b BladeStorage) GetAllByDisksID(offset string, limit string, serials []string) (count int, blades []model.Blade, err error) {
 	if offset != "" && limit != "" {
 		if err = b.db.Limit(limit).Offset(offset).Joins("INNER JOIN disk ON disk.blade_serial = blade.serial").Where("disk.serial in (?)", serials).Find(&blades).Error; err != nil {

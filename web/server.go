@@ -220,7 +220,7 @@ func RunGin(port int, debug bool) {
 		}
 	})
 
-	r.GET("/api/v1/stats", func(c *gin.Context) {
+	r.GET("/stats", func(c *gin.Context) {
 		stats.UpdateUptime()
 		c.JSON(200, stats)
 	})

@@ -32,7 +32,7 @@ type Subnet4 struct {
 	Subnet     string        `json:"subnet"`
 }
 
-// OptionData contains the options send to the clients during the dhcp resquest
+// OptionData contains the options send to the clients during the dhcp request
 type OptionData struct {
 	Data string `json:"data"`
 	Name string `json:"name"`
@@ -50,15 +50,15 @@ type scanOption struct {
 }
 
 var scanProfiles = []scanOption{
-	scanOption{
+	{
 		Protocol: "tcp",
 		Port:     22,
 	},
-	scanOption{
+	{
 		Protocol: "tcp",
 		Port:     443,
 	},
-	scanOption{
+	{
 		Protocol: "ipmi",
 		Port:     623,
 	},
