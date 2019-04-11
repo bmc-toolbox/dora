@@ -53,14 +53,13 @@ usage: dora publish 192.168.0.0/24 -q dora -s scan
 			return
 		}
 
-		flushInterval := time.Second
 		if viper.GetBool("metrics.enabled") {
 			err := metrics.Setup(
 				viper.GetString("metrics.type"),
 				viper.GetString("metrics.host"),
 				viper.GetInt("metrics.port"),
 				viper.GetString("metrics.prefix.publish"),
-				flushInterval,
+				time.Minute,
 			)
 			if err != nil {
 				fmt.Printf("Failed to set up monitoring: %s\n", err)
@@ -72,7 +71,6 @@ usage: dora publish 192.168.0.0/24 -q dora -s scan
 		case "scan":
 			subject = "dora::scan"
 			subnets := scanner.LoadSubnets(viper.GetString("scanner.subnet_source"), args, viper.GetStringSlice("site"))
-			args = []string{}
 			for _, subnet := range subnets {
 				s, err := json.Marshal(subnet)
 				if err != nil {
@@ -122,11 +120,9 @@ usage: dora publish 192.168.0.0/24 -q dora -s scan
 			}
 		default:
 			log.WithFields(log.Fields{"queue": queue, "subject": subject}).Errorf("unknown subject: %s", subject)
-			return
 		}
 		if viper.GetBool("metrics.enabled") {
-			log.Infof("Sleeping %v * 3 to flush data into Graphite", flushInterval)
-			time.Sleep(flushInterval * 3)
+			metrics.Close(viper.GetBool("debug"))
 		}
 	},
 }
