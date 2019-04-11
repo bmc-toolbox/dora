@@ -18,6 +18,8 @@ github.com/armon/consul-api v0.0.0-20180202201655-eb2c6b5be1b6/go.mod h1:grANhF5
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
 github.com/bmc-toolbox/bmclib v0.2.7 h1:QIUjwIBOZ+MytEx1PxWgwzwg8u+evSHphdITXHvt4To=
 github.com/bmc-toolbox/bmclib v0.2.7/go.mod h1:V1ynUIaaWF6Ycxs5/h1mhCURaYhu4rRWn2NsvP74/KA=
+github.com/bmc-toolbox/bmclib v0.2.8 h1:oP4DJ0NG2UWsRkmU+v7nCI2pWU9OLPm0bQU1sY4R53A=
+github.com/bmc-toolbox/bmclib v0.2.8/go.mod h1:V1ynUIaaWF6Ycxs5/h1mhCURaYhu4rRWn2NsvP74/KA=
 github.com/bradfitz/go-smtpd v0.0.0-20170404230938-deb6d6237625/go.mod h1:HYsPBTaaSFSlLx/70C2HPIMNZpVV8+vt/A+FMnYP11g=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/coreos/etcd v3.3.10+incompatible/go.mod h1:uF7uidLiAD3TWHmW31ZFd/JWoc32PjwdhPthX9715RE=
