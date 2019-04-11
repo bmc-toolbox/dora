@@ -34,11 +34,13 @@ func NewChassisFromDevice(c *devices.Chassis) (chassis *Chassis) {
 	chassis.FwVersion = c.FwVersion
 	chassis.PassThru = c.PassThru
 	chassis.Blades = make([]*Blade, 0)
-	var faulySlots []int64
+	chassis.IsPsuRedundant = c.IsPsuRedundant
+	chassis.PsuRedundancyMode = c.PsuRedundancyMode
+	var faultySlots []int64
 	for _, b := range c.Blades {
 		blade := NewBladeFromDevice(b)
 		if blade.Serial == "" || blade.Serial == "[unknown]" || blade.Serial == "0000000000" || blade.Serial == "_" {
-			faulySlots = append(faulySlots, int64(blade.BladePosition))
+			faultySlots = append(faultySlots, int64(blade.BladePosition))
 			log.WithFields(log.Fields{"operation": "chassis scan", "position": blade.BladePosition, "type": "chassis", "chassis_serial": chassis.Serial}).Error(errors.ErrInvalidSerial)
 			continue
 		}
@@ -49,13 +51,13 @@ func NewChassisFromDevice(c *devices.Chassis) (chassis *Chassis) {
 	for _, s := range c.StorageBlades {
 		storageBlade := NewStorageBladeFromDevice(s)
 		if storageBlade.Serial == "" || storageBlade.Serial == "[unknown]" || storageBlade.Serial == "0000000000" || storageBlade.Serial == "_" {
-			faulySlots = append(faulySlots, int64(storageBlade.BladePosition))
+			faultySlots = append(faultySlots, int64(storageBlade.BladePosition))
 			log.WithFields(log.Fields{"operation": "chassis scan", "position": storageBlade.BladePosition, "type": "chassis", "chassis_serial": chassis.Serial}).Error(errors.ErrInvalidSerial)
 			continue
 		}
 		chassis.StorageBlades = append(chassis.StorageBlades, storageBlade)
 	}
-	chassis.FaultySlots = faulySlots
+	chassis.FaultySlots = faultySlots
 	chassis.Nics = make([]*Nic, 0)
 	for _, nic := range c.Nics {
 		chassis.Nics = append(chassis.Nics, &Nic{
@@ -86,12 +88,12 @@ func NewChassisFromDevice(c *devices.Chassis) (chassis *Chassis) {
 			continue
 		}
 		chassis.Fans = append(chassis.Fans, &Fan{
-			Serial:     fan.Serial,
-			Status:     fan.Status,
-			Position:   fan.Position,
-			Model:      fan.Model,
-			CurrentRPM: fan.CurrentRPM,
-			PowerKw:    fan.PowerKw,
+			Serial:        fan.Serial,
+			Status:        fan.Status,
+			Position:      fan.Position,
+			Model:         fan.Model,
+			CurrentRPM:    fan.CurrentRPM,
+			PowerKw:       fan.PowerKw,
 			ChassisSerial: c.Serial,
 		})
 	}
@@ -101,26 +103,28 @@ func NewChassisFromDevice(c *devices.Chassis) (chassis *Chassis) {
 
 // Chassis contains all the chassis the information we will expose across different vendors
 type Chassis struct {
-	Serial          string          `json:"serial" gorm:"primary_key"`
-	Name            string          `json:"name"`
-	BmcAddress      string          `json:"bmc_address"`
-	BmcSSHReachable bool            `json:"bmc_ssh_reachable"`
-	BmcWEBReachable bool            `json:"bmc_web_reachable"`
-	BmcAuth         bool            `json:"bmc_auth"`
-	Blades          []*Blade        `json:"-" gorm:"ForeignKey:ChassisSerial"`
-	FaultySlots     pq.Int64Array   `json:"faulty_slots" gorm:"type:integer[2]"`
-	StorageBlades   []*StorageBlade `json:"-" gorm:"ForeignKey:ChassisSerial"`
-	Nics            []*Nic          `json:"-" gorm:"ForeignKey:ChassisSerial"`
-	Psus            []*Psu          `json:"-" gorm:"ForeignKey:ChassisSerial"`
-	Fans            []*Fan          `json:"-" gorm:"ForeignKey:ChassisSerial"`
-	TempC           int             `json:"temp_c"`
-	PassThru        string          `json:"pass_thru"`
-	Status          string          `json:"status"`
-	PowerKw         float64         `json:"power_kw"`
-	Model           string          `json:"model"`
-	Vendor          string          `json:"vendor"`
-	FwVersion       string          `json:"fw_version"`
-	UpdatedAt       time.Time       `json:"updated_at"`
+	Serial            string          `json:"serial" gorm:"primary_key"`
+	Name              string          `json:"name"`
+	BmcAddress        string          `json:"bmc_address"`
+	BmcSSHReachable   bool            `json:"bmc_ssh_reachable"`
+	BmcWEBReachable   bool            `json:"bmc_web_reachable"`
+	BmcAuth           bool            `json:"bmc_auth"`
+	Blades            []*Blade        `json:"-" gorm:"ForeignKey:ChassisSerial"`
+	FaultySlots       pq.Int64Array   `json:"faulty_slots" gorm:"type:integer[2]"`
+	StorageBlades     []*StorageBlade `json:"-" gorm:"ForeignKey:ChassisSerial"`
+	Nics              []*Nic          `json:"-" gorm:"ForeignKey:ChassisSerial"`
+	Psus              []*Psu          `json:"-" gorm:"ForeignKey:ChassisSerial"`
+	Fans              []*Fan          `json:"-" gorm:"ForeignKey:ChassisSerial"`
+	PsuRedundancyMode string          `json:"psu_redundancy_mode"`
+	IsPsuRedundant    bool            `json:"is_psu_redundant"`
+	TempC             int             `json:"temp_c"`
+	PassThru          string          `json:"pass_thru"`
+	Status            string          `json:"status"`
+	PowerKw           float64         `json:"power_kw"`
+	Model             string          `json:"model"`
+	Vendor            string          `json:"vendor"`
+	FwVersion         string          `json:"fw_version"`
+	UpdatedAt         time.Time       `json:"updated_at"`
 }
 
 // GetID to satisfy jsonapi.MarshalIdentifier interface
