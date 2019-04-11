@@ -92,6 +92,8 @@ func RunGin(port int, debug bool) {
 		}
 		go metrics.Scheduler(time.Minute, metrics.GoRuntimeStats, []string{""})
 		go metrics.Scheduler(time.Minute, metrics.MeasureRuntime, []string{"uptime"}, stats.StartTime)
+		p := metrics.NewMetrics([]string{})
+		r.Use(p.HandlerFunc())
 	}
 
 	// Gather metrics for /api/v1/stats page

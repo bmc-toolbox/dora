@@ -51,6 +51,7 @@ usage: dora worker
 				os.Exit(1)
 			}
 			go metrics.Scheduler(time.Minute, metrics.GoRuntimeStats, []string{""})
+			go metrics.Scheduler(time.Minute, metrics.MeasureRuntime, []string{"uptime"}, time.Now())
 		}
 		scanner.ScanNetworksWorker()
 		connectors.DataCollectionWorker()
