@@ -95,34 +95,34 @@ func (d DiscreteStorage) GetAllByNicsID(offset string, limit string, macAddresse
 	return count, discretes, err
 }
 
-// GetAllByPsusID retrieve descretes by psusID
-func (d DiscreteStorage) GetAllByPsusID(offset string, limit string, serials []string) (count int, disceretes []model.Discrete, err error) {
+// GetAllByPsusID retrieve discretes by psusID
+func (d DiscreteStorage) GetAllByPsusID(offset string, limit string, serials []string) (count int, discretes []model.Discrete, err error) {
 	if offset != "" && limit != "" {
-		if err = d.db.Limit(limit).Offset(offset).Joins("INNER JOIN psu ON psu.discerete_serial = discerete.serial").Where("psu.serial in (?)", serials).Find(&disceretes).Error; err != nil {
-			return count, disceretes, err
+		if err = d.db.Limit(limit).Offset(offset).Joins("INNER JOIN psu ON psu.discerete_serial = discerete.serial").Where("psu.serial in (?)", serials).Find(&discretes).Error; err != nil {
+			return count, discretes, err
 		}
 		d.db.Model(&model.Discrete{}).Joins("INNER JOIN psu ON psu.discerete_serial = discerete.serial").Where("psu.serial in (?)", serials).Count(&count)
 	} else {
-		if err = d.db.Joins("INNER JOIN psu ON psu.discerete_serial = discerete.serial").Where("psu.serial in (?)", serials).Find(&disceretes).Error; err != nil {
-			return count, disceretes, err
+		if err = d.db.Joins("INNER JOIN psu ON psu.discerete_serial = discerete.serial").Where("psu.serial in (?)", serials).Find(&discretes).Error; err != nil {
+			return count, discretes, err
 		}
 	}
-	return count, disceretes, err
+	return count, discretes, err
 }
 
-// GetAllByDisksID retrieve descretes by disksID
-func (d DiscreteStorage) GetAllByDisksID(offset string, limit string, serials []string) (count int, disceretes []model.Discrete, err error) {
+// GetAllByDisksID retrieve discretes by disksID
+func (d DiscreteStorage) GetAllByDisksID(offset string, limit string, serials []string) (count int, discretes []model.Discrete, err error) {
 	if offset != "" && limit != "" {
-		if err = d.db.Limit(limit).Offset(offset).Joins("INNER JOIN disk ON disk.discerete_serial = discerete.serial").Where("disk.serial in (?)", serials).Find(&disceretes).Error; err != nil {
-			return count, disceretes, err
+		if err = d.db.Limit(limit).Offset(offset).Joins("INNER JOIN disk ON disk.discerete_serial = discerete.serial").Where("disk.serial in (?)", serials).Find(&discretes).Error; err != nil {
+			return count, discretes, err
 		}
 		d.db.Model(&model.Discrete{}).Joins("INNER JOIN disk ON disk.discerete_serial = discerete.serial").Where("disk.serial in (?)", serials).Count(&count)
 	} else {
-		if err = d.db.Joins("INNER JOIN disk ON disk.discerete_serial = discerete.serial").Where("disk.serial in (?)", serials).Find(&disceretes).Error; err != nil {
-			return count, disceretes, err
+		if err = d.db.Joins("INNER JOIN disk ON disk.discerete_serial = discerete.serial").Where("disk.serial in (?)", serials).Find(&discretes).Error; err != nil {
+			return count, discretes, err
 		}
 	}
-	return count, disceretes, err
+	return count, discretes, err
 }
 
 // GetOne Discrete

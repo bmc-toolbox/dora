@@ -35,7 +35,7 @@ var publishCmd = &cobra.Command{
 	Use:   "publish",
 	Short: "Dora publish adds a job to one of the dora queues",
 	Long: `Dora publish adds a job to one of the dora queues, checking
-wheter it's valid for the given queue.
+whether it's valid for the given queue.
 
 usage: dora publish 192.168.0.0/24 -q dora -s scan
        dora publish 192.168.0.1 -q dora -s collect

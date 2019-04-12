@@ -11,7 +11,7 @@ import (
 func ExampleFilters() {
 	request := api2go.Request{
 		QueryParams: map[string][]string{
-			"filter[bmc_type]": []string{"iLO4"},
+			"filter[bmc_type]": {"iLO4"},
 		},
 	}
 
@@ -25,7 +25,7 @@ func ExampleFilters() {
 	fmt.Println(query)
 
 	request.QueryParams = map[string][]string{
-		"filter[bmc_type]!": []string{"iLO4"},
+		"filter[bmc_type]!": {"iLO4"},
 	}
 
 	filters, hasFilters = filter.NewFilterSet(&request)
@@ -60,8 +60,8 @@ func ExampleFilters() {
 func ExampleOffSetAndLimitParse() {
 	request := api2go.Request{
 		QueryParams: map[string][]string{
-			"page[offset]": []string{"100"},
-			"page[limit]":  []string{"10"},
+			"page[offset]": {"100"},
+			"page[limit]":  {"10"},
 		},
 	}
 
@@ -70,7 +70,7 @@ func ExampleOffSetAndLimitParse() {
 	fmt.Println(limit)
 
 	request.QueryParams = map[string][]string{
-		"page[offset]": []string{"100"},
+		"page[offset]": {"100"},
 	}
 
 	offset, limit = filter.OffSetAndLimitParse(&request)

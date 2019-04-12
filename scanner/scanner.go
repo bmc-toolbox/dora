@@ -2,12 +2,14 @@ package scanner
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net"
 	"os"
 	"strings"
 	"sync"
 
+	"github.com/bmc-toolbox/dora/internal/metrics"
 	"github.com/bmc-toolbox/dora/model"
 	"github.com/bmc-toolbox/dora/storage"
 	"github.com/jinzhu/gorm"
@@ -32,7 +34,7 @@ type Subnet4 struct {
 	Subnet     string        `json:"subnet"`
 }
 
-// OptionData contains the options send to the clients during the dhcp resquest
+// OptionData contains the options send to the clients during the dhcp request
 type OptionData struct {
 	Data string `json:"data"`
 	Name string `json:"name"`
@@ -50,15 +52,15 @@ type scanOption struct {
 }
 
 var scanProfiles = []scanOption{
-	scanOption{
+	{
 		Protocol: "tcp",
 		Port:     22,
 	},
-	scanOption{
+	{
 		Protocol: "tcp",
 		Port:     443,
 	},
-	scanOption{
+	{
 		Protocol: "ipmi",
 		Port:     623,
 	},
@@ -132,9 +134,11 @@ func scan(input <-chan *ToScan, db *gorm.DB) {
 
 		for _, s := range scanProfiles {
 			for _, ip := range ips {
+				graphiteKey := fmt.Sprintf("scan.%v_%v.scanned_successfully", s.Protocol, s.Port)
 				probeStatus, err := Probe(s.Protocol, ip, s.Port)
 				if err != nil {
 					log.WithFields(log.Fields{"operation": "scanning host", "subnet": subnet.CIDR, "host": ip, "port": s.Port}).Error(err)
+					// failed scan for particular service is not a problem, we don't want separate metric on that
 				}
 
 				sp := model.ScannedPort{
@@ -150,6 +154,10 @@ func scan(input <-chan *ToScan, db *gorm.DB) {
 
 				if err = db.Save(&sp).Error; err != nil {
 					log.WithFields(log.Fields{"operation": "storing scan", "subnet": subnet.CIDR, "host": ip, "port": s.Port}).Error(err)
+					graphiteKey = "scan.db_save_failed"
+				}
+				if viper.GetBool("metrics.enabled") {
+					metrics.IncrCounter([]string{graphiteKey}, 1)
 				}
 			}
 		}
