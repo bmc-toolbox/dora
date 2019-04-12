@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/bmc-toolbox/dora/internal/metrics"
 	"github.com/bmc-toolbox/dora/model"
 	"github.com/bmc-toolbox/dora/storage"
 	"github.com/jinzhu/gorm"
@@ -132,8 +133,10 @@ func scan(input <-chan *ToScan, db *gorm.DB) {
 
 		for _, s := range scanProfiles {
 			for _, ip := range ips {
+				graphiteKey := "scan.scanned_successfully"
 				probeStatus, err := Probe(s.Protocol, ip, s.Port)
 				if err != nil {
+					graphiteKey = "scan.scan_failed"
 					log.WithFields(log.Fields{"operation": "scanning host", "subnet": subnet.CIDR, "host": ip, "port": s.Port}).Error(err)
 				}
 
@@ -149,7 +152,11 @@ func scan(input <-chan *ToScan, db *gorm.DB) {
 				sp.ID = sp.GenID()
 
 				if err = db.Save(&sp).Error; err != nil {
+					graphiteKey = "scan.db_save_failed"
 					log.WithFields(log.Fields{"operation": "storing scan", "subnet": subnet.CIDR, "host": ip, "port": s.Port}).Error(err)
+				}
+				if viper.GetBool("metrics.enabled") {
+					metrics.IncrCounter([]string{graphiteKey}, 1)
 				}
 			}
 		}
