@@ -49,7 +49,7 @@ func collect(input <-chan string, source *string, db *gorm.DB) {
 				err = bmc.CheckCredentials()
 				if err != nil {
 					log.WithFields(log.Fields{"operation": "connection", "ip": host}).Error(err)
-					graphiteKey = "collect.wrong_credentials"
+					graphiteKey = "collect.bmc_wrong_credentials"
 					if viper.GetBool("metrics.enabled") {
 						metrics.IncrCounter([]string{graphiteKey}, 1)
 					}
@@ -66,10 +66,7 @@ func collect(input <-chan string, source *string, db *gorm.DB) {
 
 			if isBlade, err := bmc.IsBlade(); isBlade && *source != "cli-with-force" {
 				log.WithFields(log.Fields{"operation": "detection", "ip": host}).Debug("we don't want to scan blades directly since the chassis does it for us")
-				graphiteKey = "collect.bmc_is_blade_noscan"
-				if viper.GetBool("metrics.enabled") {
-					metrics.IncrCounter([]string{graphiteKey}, 1)
-				}
+				// not an error, we don't want a metric on that
 				continue
 			} else if err != nil {
 				log.WithFields(log.Fields{"operation": "collection", "ip": host}).Error(err)
@@ -95,7 +92,7 @@ func collect(input <-chan string, source *string, db *gorm.DB) {
 				err = bmc.CheckCredentials()
 				if err != nil {
 					log.WithFields(log.Fields{"operation": "connection", "ip": host}).Error(err)
-					graphiteKey = "collect.wrong_credentials"
+					graphiteKey = "collect.cmc_wrong_credentials"
 					if viper.GetBool("metrics.enabled") {
 						metrics.IncrCounter([]string{graphiteKey}, 1)
 					}
