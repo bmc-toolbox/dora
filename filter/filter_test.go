@@ -1,11 +1,12 @@
 package filter
 
 import (
+	"net/url"
+	"testing"
+
 	"github.com/bmc-toolbox/dora/model"
 	"github.com/manyminds/api2go"
 	"github.com/stretchr/testify/assert"
-	"net/url"
-	"testing"
 )
 
 var testSet = []struct {
