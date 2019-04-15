@@ -1,13 +1,13 @@
-package metrics
+package stats
 
 import (
-	"github.com/bmc-toolbox/dora/storage"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/bmc-toolbox/dora/storage"
 	"github.com/jinzhu/gorm"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGatherDBStats(t *testing.T) {

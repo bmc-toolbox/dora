@@ -20,10 +20,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/bmc-toolbox/dora/internal/metrics"
 	"github.com/bmc-toolbox/dora/model"
 	"github.com/bmc-toolbox/dora/scanner"
 	"github.com/bmc-toolbox/dora/storage"
+	"github.com/bmc-toolbox/gin-go-metrics"
 	"github.com/nats-io/go-nats"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -54,7 +54,7 @@ usage: dora publish 192.168.0.0/24 -q dora -s scan
 		}
 
 		if viper.GetBool("metrics.enabled") {
-			err := metrics.Setup(
+			err := gin_metrics.Setup(
 				viper.GetString("metrics.type"),
 				viper.GetString("metrics.host"),
 				viper.GetInt("metrics.port"),
@@ -87,7 +87,7 @@ usage: dora publish 192.168.0.0/24 -q dora -s scan
 					log.WithFields(log.Fields{"queue": queue, "subject": subject, "payload": s}).Info("sent")
 				}
 				if viper.GetBool("metrics.enabled") {
-					metrics.IncrCounter([]string{graphiteKey}, 1)
+					gin_metrics.IncrCounter([]string{graphiteKey}, 1)
 				}
 			}
 		case "collect":
@@ -115,14 +115,14 @@ usage: dora publish 192.168.0.0/24 -q dora -s scan
 					log.WithFields(log.Fields{"queue": queue, "subject": subject, "payload": payload}).Info("sent")
 				}
 				if viper.GetBool("metrics.enabled") {
-					metrics.IncrCounter([]string{graphiteKey}, 1)
+					gin_metrics.IncrCounter([]string{graphiteKey}, 1)
 				}
 			}
 		default:
 			log.WithFields(log.Fields{"queue": queue, "subject": subject}).Errorf("unknown subject: %s", subject)
 		}
 		if viper.GetBool("metrics.enabled") {
-			metrics.Close(viper.GetBool("debug"))
+			gin_metrics.Close(viper.GetBool("debug"))
 		}
 	},
 }

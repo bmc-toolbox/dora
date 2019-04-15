@@ -3,13 +3,13 @@ package scanner
 import (
 	"encoding/json"
 	"fmt"
+	gin_metrics "github.com/bmc-toolbox/gin-go-metrics"
 	"io/ioutil"
 	"net"
 	"os"
 	"strings"
 	"sync"
 
-	"github.com/bmc-toolbox/dora/internal/metrics"
 	"github.com/bmc-toolbox/dora/model"
 	"github.com/bmc-toolbox/dora/storage"
 	"github.com/jinzhu/gorm"
@@ -157,7 +157,7 @@ func scan(input <-chan *ToScan, db *gorm.DB) {
 					graphiteKey = "scan.db_save_failed"
 				}
 				if viper.GetBool("metrics.enabled") {
-					metrics.IncrCounter([]string{graphiteKey}, 1)
+					gin_metrics.IncrCounter([]string{graphiteKey}, 1)
 				}
 			}
 		}

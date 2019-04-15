@@ -877,7 +877,7 @@ func (d *bincDecDriver) DecodeNaked() {
 		d.readNextBd()
 	}
 
-	n := d.d.naked()
+	n := d.d.n
 	var decodeFurther bool
 
 	switch d.vd {

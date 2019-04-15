@@ -6,11 +6,10 @@ require (
 	github.com/DATA-DOG/go-sqlmock v1.3.3
 	github.com/GeertJohan/go.rice v0.0.0-20170420135705-c02ca9a983da
 	github.com/bmc-toolbox/bmclib v0.2.8
-	github.com/cyberdelia/go-metrics-graphite v0.0.0-20161219230853-39f87cc3b432
+	github.com/bmc-toolbox/gin-go-metrics v0.0.0-20190415122805-5b7caab8297a
 	github.com/daaku/go.zipexe v0.0.0-20150329023125-a5fe2436ffcb // indirect
 	github.com/gedex/inflector v0.0.0-20170307190818-16278e9db813 // indirect
-	github.com/gin-gonic/gin v0.0.0-20190305014137-057f63b1bb1c
-	github.com/golang/protobuf v1.3.1 // indirect
+	github.com/gin-gonic/gin v1.3.0
 	github.com/google/gops v0.0.0-20180903072510-f341a40f99ec
 	github.com/gorilla/mux v1.7.0 // indirect
 	github.com/hashicorp/go-multierror v1.0.0
@@ -30,7 +29,6 @@ require (
 	github.com/nats-io/nuid v0.0.0-20180317191920-3e58d42c9cfe // indirect
 	github.com/onsi/ginkgo v1.8.0 // indirect
 	github.com/onsi/gomega v1.5.0 // indirect
-	github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a
 	github.com/sirupsen/logrus v1.4.1
 	github.com/spf13/afero v1.2.1 // indirect
 	github.com/spf13/cobra v0.0.0-20190109003409-7547e83b2d85
@@ -41,3 +39,5 @@ require (
 	golang.org/x/sys v0.0.0-20190305064518-30e92a19ae4a // indirect
 	gopkg.in/guregu/null.v2 v2.1.2 // indirect
 )
+
+replace github.com/ugorji/go v1.1.4 => github.com/ugorji/go/codec v0.0.0-20190204201341-e444a5086c43

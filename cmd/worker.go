@@ -21,8 +21,8 @@ import (
 	"time"
 
 	"github.com/bmc-toolbox/dora/connectors"
-	"github.com/bmc-toolbox/dora/internal/metrics"
 	"github.com/bmc-toolbox/dora/scanner"
+	"github.com/bmc-toolbox/gin-go-metrics"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -39,7 +39,7 @@ usage: dora worker
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		if viper.GetBool("metrics.enabled") {
-			err := metrics.Setup(
+			err := gin_metrics.Setup(
 				viper.GetString("metrics.type"),
 				viper.GetString("metrics.host"),
 				viper.GetInt("metrics.port"),
@@ -50,8 +50,8 @@ usage: dora worker
 				fmt.Printf("Failed to set up monitoring: %s\n", err)
 				os.Exit(1)
 			}
-			go metrics.Scheduler(time.Minute, metrics.GoRuntimeStats, []string{""})
-			go metrics.Scheduler(time.Minute, metrics.MeasureRuntime, []string{"uptime"}, time.Now())
+			go gin_metrics.Scheduler(time.Minute, gin_metrics.GoRuntimeStats, []string{""})
+			go gin_metrics.Scheduler(time.Minute, gin_metrics.MeasureRuntime, []string{"uptime"}, time.Now())
 		}
 		scanner.ScanNetworksWorker()
 		connectors.DataCollectionWorker()

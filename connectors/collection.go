@@ -14,10 +14,10 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 
-	"github.com/bmc-toolbox/dora/internal/metrics"
 	"github.com/bmc-toolbox/dora/internal/notification"
 	"github.com/bmc-toolbox/dora/model"
 	"github.com/bmc-toolbox/dora/storage"
+	"github.com/bmc-toolbox/gin-go-metrics"
 )
 
 func collect(input <-chan string, source *string, db *gorm.DB) {
@@ -34,7 +34,7 @@ func collect(input <-chan string, source *string, db *gorm.DB) {
 			log.WithFields(log.Fields{"operation": "scan", "ip": host}).Error(err)
 			graphiteKey = "collect.bmc_scan_failed"
 			if viper.GetBool("metrics.enabled") {
-				metrics.IncrCounter([]string{graphiteKey}, 1)
+				gin_metrics.IncrCounter([]string{graphiteKey}, 1)
 			}
 			continue
 		}
@@ -51,7 +51,7 @@ func collect(input <-chan string, source *string, db *gorm.DB) {
 					log.WithFields(log.Fields{"operation": "connection", "ip": host}).Error(err)
 					graphiteKey = "collect.bmc_wrong_credentials"
 					if viper.GetBool("metrics.enabled") {
-						metrics.IncrCounter([]string{graphiteKey}, 1)
+						gin_metrics.IncrCounter([]string{graphiteKey}, 1)
 					}
 					continue
 				}
@@ -59,7 +59,7 @@ func collect(input <-chan string, source *string, db *gorm.DB) {
 				log.WithFields(log.Fields{"operation": "connection", "ip": host}).Error(err)
 				graphiteKey = "collect.bmc_connection_failed"
 				if viper.GetBool("metrics.enabled") {
-					metrics.IncrCounter([]string{graphiteKey}, 1)
+					gin_metrics.IncrCounter([]string{graphiteKey}, 1)
 				}
 				continue
 			}
@@ -72,7 +72,7 @@ func collect(input <-chan string, source *string, db *gorm.DB) {
 				log.WithFields(log.Fields{"operation": "collection", "ip": host}).Error(err)
 				graphiteKey = "collect.bmc_is_blade_detection_failed"
 				if viper.GetBool("metrics.enabled") {
-					metrics.IncrCounter([]string{graphiteKey}, 1)
+					gin_metrics.IncrCounter([]string{graphiteKey}, 1)
 				}
 				continue
 			}
@@ -94,7 +94,7 @@ func collect(input <-chan string, source *string, db *gorm.DB) {
 					log.WithFields(log.Fields{"operation": "connection", "ip": host}).Error(err)
 					graphiteKey = "collect.cmc_wrong_credentials"
 					if viper.GetBool("metrics.enabled") {
-						metrics.IncrCounter([]string{graphiteKey}, 1)
+						gin_metrics.IncrCounter([]string{graphiteKey}, 1)
 					}
 					continue
 				}
@@ -102,7 +102,7 @@ func collect(input <-chan string, source *string, db *gorm.DB) {
 				log.WithFields(log.Fields{"operation": "connection", "ip": host}).Error(err)
 				graphiteKey = "collect.cmc_connection_failed"
 				if viper.GetBool("metrics.enabled") {
-					metrics.IncrCounter([]string{graphiteKey}, 1)
+					gin_metrics.IncrCounter([]string{graphiteKey}, 1)
 				}
 				continue
 			}
@@ -118,7 +118,7 @@ func collect(input <-chan string, source *string, db *gorm.DB) {
 		}
 		// send metric which is not protected by "continue"
 		if viper.GetBool("metrics.enabled") {
-			metrics.IncrCounter([]string{graphiteKey}, 1)
+			gin_metrics.IncrCounter([]string{graphiteKey}, 1)
 		}
 	}
 }

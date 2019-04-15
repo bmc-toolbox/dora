@@ -633,7 +633,7 @@ func (d *cborDecDriver) DecodeNaked() {
 		d.readNextBd()
 	}
 
-	n := d.d.naked()
+	n := d.d.n
 	var decodeFurther bool
 
 	switch d.bd {
