@@ -10,7 +10,7 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-func TestNewAndUpdateCandle(t *testing.T) {
+func TestGatherDBStats(t *testing.T) {
 	s := Stats{StartTime: time.Time{}}
 
 	oldUptime := s.Uptime

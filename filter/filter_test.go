@@ -1,85 +1,37 @@
-package filter_test
+package filter
 
 import (
-	"fmt"
+	"net/url"
+	"testing"
 
-	"github.com/bmc-toolbox/dora/filter"
 	"github.com/bmc-toolbox/dora/model"
 	"github.com/manyminds/api2go"
+	"github.com/stretchr/testify/assert"
 )
 
-func ExampleFilters() {
-	request := api2go.Request{
-		QueryParams: map[string][]string{
-			"filter[bmc_type]": {"iLO4"},
-		},
-	}
-
-	filters, hasFilters := filter.NewFilterSet(&request)
-	fmt.Println(hasFilters)
-
-	query, err := filters.BuildQuery(model.Blade{})
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(query)
-
-	request.QueryParams = map[string][]string{
-		"filter[bmc_type]!": {"iLO4"},
-	}
-
-	filters, hasFilters = filter.NewFilterSet(&request)
-	fmt.Println(hasFilters)
-
-	query, err = filters.BuildQuery(model.Blade{})
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(query)
-
-	filters.Clean()
-	query, err = filters.BuildQuery(model.Blade{})
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(query)
-
-	request.QueryParams = map[string][]string{}
-	filters, hasFilters = filter.NewFilterSet(&request)
-	fmt.Println(hasFilters)
-
-	// Output:
-	// true
-	// bmc_type in ('iLO4')
-	// true
-	// bmc_type not in ('iLO4')
-	//
-	// false
+var testSet = []struct {
+	urlString string
+	sqlQuery  string
+}{
+	{"filter[model]=dell", "model in ('dell')"},
+	{"filter[status]!=bad", "status not in ('bad')"},
 }
 
-func ExampleOffSetAndLimitParse() {
-	request := api2go.Request{
-		QueryParams: map[string][]string{
-			"page[offset]": {"100"},
-			"page[limit]":  {"10"},
-		},
+func TestEqualSignAndExclamationMark(t *testing.T) {
+	for _, testPair := range testSet {
+		queryParams, _ := url.ParseQuery(testPair.urlString)
+		request := api2go.Request{
+			QueryParams: queryParams,
+		}
+		filters, hasFilters := NewFilterSet(&request)
+
+		assert.EqualValues(t, true, hasFilters,
+			"filter is created")
+
+		query, err := filters.BuildQuery(model.Chassis{})
+		if err != nil {
+			panic(err)
+		}
+		assert.Equal(t, testPair.sqlQuery, query)
 	}
-
-	offset, limit := filter.OffSetAndLimitParse(&request)
-	fmt.Println(offset)
-	fmt.Println(limit)
-
-	request.QueryParams = map[string][]string{
-		"page[offset]": {"100"},
-	}
-
-	offset, limit = filter.OffSetAndLimitParse(&request)
-	fmt.Println(offset)
-	fmt.Println(limit)
-
-	// Output:
-	// 100
-	// 10
-	// 100
-	// 100
 }
