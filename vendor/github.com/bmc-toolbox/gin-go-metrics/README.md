@@ -1,4 +1,6 @@
-# gin-go-metrics - [gin-gonic/gin](https://github.com/gin-gonic/gin) middleware to gather and store metrics using [rcrowley/go-metrics](https://github.com/rcrowley/go-metrics)
+# gin-go-metrics
+
+gin-go-metrics is [gin-gonic/gin](https://github.com/gin-gonic/gin) middleware to gather and store metrics using [rcrowley/go-metrics](https://github.com/rcrowley/go-metrics)
 
 ## How to use
 
@@ -12,17 +14,21 @@ import (
 	"os"
 	"time"
 
-	"github.com/bmc-toolbox/gin-go-metrics"
+	metrics "github.com/bmc-toolbox/gin-go-metrics"
+	"github.com/bmc-toolbox/gin-go-metrics/middleware"
 	"github.com/gin-gonic/gin"
 )
 
-func main(){
-	err := gin_metrics.Setup(
-		"graphite",
-		"localhost",
-		2003,
-		"server",
-		time.Minute,
+func main() {
+	// Optional part to send metrics to Graphite,
+	// as alternative you can send metrics from
+	// rcrowley/go-metrics.DefaultRegistry yourself
+	err := metrics.Setup(
+		"graphite",  // clientType
+		"localhost", // graphite host
+		2003,        // graphite port
+		"server",    // metrics prefix
+		time.Minute, // graphite flushInterval
 	)
 	if err != nil {
 		fmt.Printf("Failed to set up monitoring: %s\n", err)
@@ -31,10 +37,10 @@ func main(){
 
 	r := gin.New()
 
-	// parameter to NewMetrics tells which variables need to be
+	// argument to NewMetrics tells which variables need to be
 	// expanded in metrics, more on that by link:
 	// https://banzaicloud.com/blog/monitoring-gin-with-prometheus/
-	p := gin_metrics.NewMetrics([]string{})
+	p := middleware.NewMetrics([]string{})
 	r.Use(p.HandlerFunc())
 
 	r.GET("/", func(c *gin.Context) {
@@ -55,37 +61,43 @@ import (
 	"os"
 	"time"
 
-	"github.com/bmc-toolbox/gin-go-metrics"
+	metrics "github.com/bmc-toolbox/gin-go-metrics"
 )
 
-func main(){
-	err := gin_metrics.Setup(
-		"graphite",
-		"localhost",
-		2003,
-		"server",
-		time.Minute,
+func main() {
+	err := metrics.Setup(
+		"graphite",  // clientType
+		"localhost", // graphite host
+		2003,        // graphite port
+		"server",    // metrics prefix
+		time.Minute, // graphite flushInterval
 	)
 	if err != nil {
 		fmt.Printf("Failed to set up monitoring: %s\n", err)
 		os.Exit(1)
 	}
 	// collect data using provided functions with provided arguments once a minute
-	go gin_metrics.Scheduler(time.Minute, gin_metrics.GoRuntimeStats, []string{""})
-	go gin_metrics.Scheduler(time.Minute, gin_metrics.MeasureRuntime, []string{"uptime"}, time.Now())
+	go metrics.Scheduler(time.Minute, metrics.GoRuntimeStats, []string{""})
+	go metrics.Scheduler(time.Minute, metrics.MeasureRuntime, []string{"uptime"}, time.Now())
+
+	//<...>
+	metrics.IncrCounter([]string{"happy_routine", "happy_runs_counter"}, 1)
+	metrics.UpdateGauge([]string{"happy_routine", "happiness_level"}, 9000)
+	metrics.UpdateHistogram([]string{"happy_routine", "happiness_hit"}, 0.35)
+	metrics.UpdateTimer([]string{"happy_time"}, time.Minute)
 }
 ```
 
 ## Provided metrics
 
-Processing time and count stored in [go-metrics.Timer](https://github.com/rcrowley/go-metrics/blob/master/timer.go)
+Request processing time and count of requests stored in [go-metrics.Timer](https://github.com/rcrowley/go-metrics/blob/master/timer.go)
 
-Request size and response size stored in [go-metrics.Histogram](https://github.com/rcrowley/go-metrics/blob/master/histogram.go)
+Request and response size stored in [go-metrics.Histogram](https://github.com/rcrowley/go-metrics/blob/master/histogram.go)
 
 ## Data storage
 
-Currently only sending data to Graphite with [cyberdelia/go-metrics-graphite](https://github.com/cyberdelia/go-metrics-graphite)
- is supported, however you can send data using
+Currently only helper function for sending data to Graphite with [cyberdelia/go-metrics-graphite](https://github.com/cyberdelia/go-metrics-graphite)
+ is present, however, you can send data using
  [go-metrics.DefaultRegistry](https://github.com/rcrowley/go-metrics/blob/cf894ca225d73a7d5dbb4b3a922f4ae3608bb618/registry.go#L323) anywhere you want.
 
 ## Acknowledgment

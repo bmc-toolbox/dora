@@ -22,7 +22,7 @@ import (
 	"github.com/bmc-toolbox/bmclib/devices"
 	"github.com/bmc-toolbox/dora/filter"
 	"github.com/bmc-toolbox/dora/storage"
-	"github.com/bmc-toolbox/gin-go-metrics"
+	metrics "github.com/bmc-toolbox/gin-go-metrics"
 	"github.com/spf13/viper"
 )
 
@@ -125,8 +125,8 @@ func (s *Stats) GatherDBStats(
 		u.Updated24hAgo, _ = r.Count(updated24hAgoFilter)
 
 		if viper.GetBool("metrics.enabled") {
-			gin_metrics.UpdateGauge([]string{fmt.Sprintf("%v.total", names[i])}, int64(u.Total))
-			gin_metrics.UpdateGauge([]string{fmt.Sprintf("%v.updated_24h_ago", names[i])}, int64(u.Updated24hAgo))
+			metrics.UpdateGauge([]string{fmt.Sprintf("%v.total", names[i])}, int64(u.Total))
+			metrics.UpdateGauge([]string{fmt.Sprintf("%v.updated_24h_ago", names[i])}, int64(u.Updated24hAgo))
 		}
 		for _, vendor := range devices.ListSupportedVendors() {
 			asset, ok := u.Vendors[vendor]
@@ -145,8 +145,8 @@ func (s *Stats) GatherDBStats(
 			u.Vendors[vendor] = asset
 
 			if viper.GetBool("metrics.enabled") {
-				gin_metrics.UpdateGauge([]string{fmt.Sprintf("%v.by_vendor.%v.total", names[i], vendor)}, int64(u.Total))
-				gin_metrics.UpdateGauge([]string{fmt.Sprintf("%v.by_vendor.%v.updated_24h_ago", names[i], vendor)}, int64(u.Updated24hAgo))
+				metrics.UpdateGauge([]string{fmt.Sprintf("%v.by_vendor.%v.total", names[i], vendor)}, int64(u.Total))
+				metrics.UpdateGauge([]string{fmt.Sprintf("%v.by_vendor.%v.updated_24h_ago", names[i], vendor)}, int64(u.Updated24hAgo))
 			}
 		}
 	}

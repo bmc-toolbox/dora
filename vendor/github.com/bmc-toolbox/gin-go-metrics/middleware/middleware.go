@@ -21,7 +21,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-package gin_metrics
+package middleware
 
 import (
 	"net/http"
@@ -30,6 +30,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rcrowley/go-metrics"
 )
 
 /*
@@ -103,12 +104,19 @@ func (m *Metrics) HandlerFunc() gin.HandlerFunc {
 		if status == "404" {
 			url = "all"
 		}
-		// replace slashes with underscores as they will be replaced by dots in Graphite otherwise
-		url = strings.Replace(url, "/", "_", -1)
 
-		UpdateTimer([]string{method, status, url, "requests"}, elapsed)
-		UpdateHistogram([]string{method, status, url, "req_size"}, reqSz)
-		UpdateHistogram([]string{method, status, url, "resp_size"}, resSz)
+		// write request stats to rcrowley/go-metrics.DefaultRegistry
+		processTimeKey := strings.Join([]string{method, status, url, "req_process_time"}, ".")
+		metrics.
+			GetOrRegister(processTimeKey, metrics.NewTimer()).(metrics.Timer).Update(elapsed)
+
+		reqSzKey := strings.Join([]string{method, status, url, "req_size"}, ".")
+		metrics.
+			GetOrRegister(reqSzKey, metrics.NewHistogram(metrics.NewExpDecaySample(1028, 0.015))).(metrics.Histogram).Update(reqSz)
+
+		resSzKey := strings.Join([]string{method, status, url, "resp_size"}, ".")
+		metrics.
+			GetOrRegister(resSzKey, metrics.NewHistogram(metrics.NewExpDecaySample(1028, 0.015))).(metrics.Histogram).Update(resSz)
 	}
 }
 

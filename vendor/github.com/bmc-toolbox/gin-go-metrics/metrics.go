@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package gin_metrics
+package metrics
 
 import (
 	"fmt"
@@ -82,14 +82,14 @@ func Setup(clientType string, host string, port int, prefix string, flushInterva
 	}
 
 	//go routine that stores data
-	go emm.store()
+	go emm.store(clientType)
 
 	return err
 }
 
 //- writes/updates metric key/vals to registry
 //- register and write metrics to the go-metrics registries.
-func (e *emitter) store() {
+func (e *emitter) store(clientType string) {
 	//A map of metric names to go-metrics registry
 	goMetricsRegistry := make(map[string]interface{})
 
@@ -100,6 +100,11 @@ func (e *emitter) store() {
 		}
 
 		key := strings.Join(data.Key, ".")
+
+		if clientType == "graphite" {
+			// replace slashes with underscores as they will be replaced by dots in Graphite otherwise
+			key = strings.Replace(key, "/", "_", -1)
+		}
 
 		//register the metric with go-metrics,
 		//the metric key is used as the identifier.
@@ -218,4 +223,3 @@ func Close(printStats bool) {
 		log.Error(err)
 	}
 }
-
