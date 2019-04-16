@@ -21,7 +21,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-package metrics
+package gin_metrics
 
 import (
 	"net/http"
@@ -103,7 +103,7 @@ func (m *Metrics) HandlerFunc() gin.HandlerFunc {
 		if status == "404" {
 			url = "all"
 		}
-		// replace slashes with underscores as they will be replaced by dots otherwise
+		// replace slashes with underscores as they will be replaced by dots in Graphite otherwise
 		url = strings.Replace(url, "/", "_", -1)
 
 		UpdateTimer([]string{method, status, url, "requests"}, elapsed)

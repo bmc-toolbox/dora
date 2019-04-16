@@ -460,7 +460,7 @@ func (d *msgpackDecDriver) DecodeNaked() {
 		d.readNextBd()
 	}
 	bd := d.bd
-	n := d.d.naked()
+	n := d.d.n
 	var decodeFurther bool
 
 	switch bd {

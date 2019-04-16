@@ -18,11 +18,12 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 
-	"github.com/bmc-toolbox/dora/internal/metrics"
+	"github.com/bmc-toolbox/dora/internal/stats"
 	"github.com/bmc-toolbox/dora/model"
 	"github.com/bmc-toolbox/dora/resource"
 	"github.com/bmc-toolbox/dora/scanner"
 	"github.com/bmc-toolbox/dora/storage"
+	"github.com/bmc-toolbox/gin-go-metrics"
 )
 
 type scanRequest struct {
@@ -76,10 +77,10 @@ func RunGin(port int, debug bool) {
 	diskStorage := storage.NewDiskStorage(db)
 	fanStorage := storage.NewFanStorage(db)
 
-	stats := metrics.Stats{StartTime: time.Now()}
+	stats := stats.Stats{StartTime: time.Now()}
 
 	if viper.GetBool("metrics.enabled") {
-		err := metrics.Setup(
+		err := gin_metrics.Setup(
 			viper.GetString("metrics.type"),
 			viper.GetString("metrics.host"),
 			viper.GetInt("metrics.port"),
@@ -90,14 +91,14 @@ func RunGin(port int, debug bool) {
 			fmt.Printf("Failed to set up monitoring: %s", err)
 			os.Exit(1)
 		}
-		go metrics.Scheduler(time.Minute, metrics.GoRuntimeStats, []string{""})
-		go metrics.Scheduler(time.Minute, metrics.MeasureRuntime, []string{"uptime"}, stats.StartTime)
-		p := metrics.NewMetrics([]string{})
+		go gin_metrics.Scheduler(time.Minute, gin_metrics.GoRuntimeStats, []string{""})
+		go gin_metrics.Scheduler(time.Minute, gin_metrics.MeasureRuntime, []string{"uptime"}, stats.StartTime)
+		p := gin_metrics.NewMetrics([]string{})
 		r.Use(p.HandlerFunc())
 	}
 
 	// Gather metrics for /api/v1/stats page
-	go metrics.Scheduler(time.Minute, stats.GatherDBStats,
+	go gin_metrics.Scheduler(time.Minute, stats.GatherDBStats,
 		chassisStorage,
 		bladeStorage,
 		discreteStorage,

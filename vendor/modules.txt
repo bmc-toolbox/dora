@@ -23,6 +23,8 @@ github.com/bmc-toolbox/bmclib/internal/sshclient
 github.com/bmc-toolbox/bmclib/providers/dell
 github.com/bmc-toolbox/bmclib/internal/ipmi
 github.com/bmc-toolbox/bmclib/providers/supermicro
+# github.com/bmc-toolbox/gin-go-metrics v0.0.0-20190415122805-5b7caab8297a
+github.com/bmc-toolbox/gin-go-metrics
 # github.com/cyberdelia/go-metrics-graphite v0.0.0-20161219230853-39f87cc3b432
 github.com/cyberdelia/go-metrics-graphite
 # github.com/daaku/go.zipexe v0.0.0-20150329023125-a5fe2436ffcb
@@ -35,10 +37,10 @@ github.com/fsnotify/fsnotify
 github.com/gedex/inflector
 # github.com/gin-contrib/sse v0.0.0-20190301062529-5545eab6dad3
 github.com/gin-contrib/sse
-# github.com/gin-gonic/gin v0.0.0-20190305014137-057f63b1bb1c
+# github.com/gin-gonic/gin v1.3.0
 github.com/gin-gonic/gin
 github.com/gin-gonic/gin/binding
-github.com/gin-gonic/gin/internal/json
+github.com/gin-gonic/gin/json
 github.com/gin-gonic/gin/render
 # github.com/go-playground/locales v0.12.1
 github.com/go-playground/locales
@@ -81,7 +83,7 @@ github.com/jinzhu/gorm/dialects/postgres
 github.com/jinzhu/gorm/dialects/sqlite
 # github.com/jinzhu/inflection v0.0.0-20180308033659-04140366298a
 github.com/jinzhu/inflection
-# github.com/json-iterator/go v1.1.5
+# github.com/json-iterator/go v1.1.6
 github.com/json-iterator/go
 # github.com/julienschmidt/httprouter v0.0.0-20181021223831-26a05976f9bf
 github.com/julienschmidt/httprouter
@@ -112,7 +114,7 @@ github.com/manyminds/api2go/jsonapi
 github.com/manyminds/api2go/routing
 # github.com/mattn/go-colorable v0.1.1
 github.com/mattn/go-colorable
-# github.com/mattn/go-isatty v0.0.6
+# github.com/mattn/go-isatty v0.0.7
 github.com/mattn/go-isatty
 # github.com/mattn/go-sqlite3 v1.10.0
 github.com/mattn/go-sqlite3
@@ -153,7 +155,7 @@ github.com/spf13/pflag
 github.com/spf13/viper
 # github.com/stretchr/testify v1.3.0
 github.com/stretchr/testify/assert
-# github.com/ugorji/go/codec v0.0.0-20190204201341-e444a5086c43
+# github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8
 github.com/ugorji/go/codec
 # github.com/valyala/bytebufferpool v1.0.0
 github.com/valyala/bytebufferpool
@@ -169,7 +171,7 @@ golang.org/x/crypto/internal/chacha20
 golang.org/x/crypto/poly1305
 golang.org/x/crypto/ed25519/internal/edwards25519
 golang.org/x/crypto/internal/subtle
-# golang.org/x/net v0.0.0-20190311183353-d8887717615a
+# golang.org/x/net v0.0.0-20190415100556-4a65cf94b679
 golang.org/x/net/publicsuffix
 # golang.org/x/sys v0.0.0-20190305064518-30e92a19ae4a
 golang.org/x/sys/unix
