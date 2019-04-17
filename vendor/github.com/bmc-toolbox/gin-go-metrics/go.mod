@@ -13,6 +13,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a
 	github.com/sirupsen/logrus v1.4.1
+	github.com/stretchr/testify v1.2.2
 	github.com/ugorji/go v1.1.4 // indirect
 	golang.org/x/net v0.0.0-20190415100556-4a65cf94b679 // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect

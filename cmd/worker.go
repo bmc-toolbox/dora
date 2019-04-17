@@ -50,7 +50,7 @@ usage: dora worker
 				fmt.Printf("Failed to set up monitoring: %s\n", err)
 				os.Exit(1)
 			}
-			go metrics.Scheduler(time.Minute, metrics.GoRuntimeStats, []string{""})
+			go metrics.Scheduler(time.Minute, metrics.GoRuntimeStats, []string{})
 			go metrics.Scheduler(time.Minute, metrics.MeasureRuntime, []string{"uptime"}, time.Now())
 		}
 		scanner.ScanNetworksWorker()

@@ -92,10 +92,10 @@ func RunGin(port int, debug bool) {
 			fmt.Printf("Failed to set up monitoring: %s", err)
 			os.Exit(1)
 		}
-		go metrics.Scheduler(time.Minute, metrics.GoRuntimeStats, []string{""})
+		go metrics.Scheduler(time.Minute, metrics.GoRuntimeStats, []string{})
 		go metrics.Scheduler(time.Minute, metrics.MeasureRuntime, []string{"uptime"}, stats.StartTime)
 		p := middleware.NewMetrics([]string{})
-		r.Use(p.HandlerFunc())
+		r.Use(p.HandlerFunc([]string{"/", "/doc", "/ping", "/ping_db", "/stats"}, true))
 	}
 
 	// Gather metrics for /api/v1/stats page

@@ -108,3 +108,10 @@ func GoRuntimeStats(prefix []string) {
 	// freed.
 	UpdateGauge(append(prefix, "heap_objects"), int64(s.HeapReleased))
 }
+
+// MeasureRuntime measures time elapsed since invocation
+func MeasureRuntime(key []string, start time.Time) {
+	//convert time.Duration to milliseconds
+	elapsed := int64(time.Since(start) / time.Millisecond)
+	UpdateGauge(key, elapsed)
+}

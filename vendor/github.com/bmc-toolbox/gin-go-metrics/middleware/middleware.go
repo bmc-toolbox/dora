@@ -82,13 +82,15 @@ func contains(slice []string, s string) bool {
 	return false
 }
 
-func (m *Metrics) HandlerFunc() gin.HandlerFunc {
+//HandlerFunc is a function which should be used as middleware to count requests stats
+// such as request processing time, request and responce size and store it in rcrowley/go-metrics.DefaultRegistry.
+func (m *Metrics) HandlerFunc(ignoreURLs []string, replaceSlashWithUnderscore bool) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// ignore mechanism for particular endpoint
-		//if c.Request.URL.String() == metricsPath {
-		//	c.Next()
-		//	return
-		//}
+		// ignore mechanism for particular endpoints
+		if contains(ignoreURLs, c.Request.URL.String()) {
+			c.Next()
+			return
+		}
 
 		start := time.Now()
 		reqSz := computeApproximateRequestSize(c.Request)
@@ -100,6 +102,11 @@ func (m *Metrics) HandlerFunc() gin.HandlerFunc {
 		method := c.Request.Method
 		resSz := int64(c.Writer.Size())
 		url := m.ReqCntURLLabelMappingFn(c)
+		if replaceSlashWithUnderscore {
+			// replace slashes with underscores as they will be replaced by dots in Graphite otherwise
+			url = strings.Replace(url, "/", "_", -1)
+		}
+
 		// drop non-existent urls to prevent creating a metric for each such url
 		if status == "404" {
 			url = "all"

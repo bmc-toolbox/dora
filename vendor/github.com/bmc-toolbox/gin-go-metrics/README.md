@@ -40,8 +40,11 @@ func main() {
 	// argument to NewMetrics tells which variables need to be
 	// expanded in metrics, more on that by link:
 	// https://banzaicloud.com/blog/monitoring-gin-with-prometheus/
-	p := middleware.NewMetrics([]string{})
-	r.Use(p.HandlerFunc())
+	p := middleware.NewMetrics([]string{"expanded_parameter"})
+	r.Use(p.HandlerFunc(
+		[]string{"/ping", "/api/ping"}, // ignore given URLs from stats
+		true,                           // replace "/" with "_" in URLs to prevent splitting Graphite namespace
+	))
 
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(200, "Hello world!")
@@ -77,13 +80,13 @@ func main() {
 		os.Exit(1)
 	}
 	// collect data using provided functions with provided arguments once a minute
-	go metrics.Scheduler(time.Minute, metrics.GoRuntimeStats, []string{""})
+	go metrics.Scheduler(time.Minute, metrics.GoRuntimeStats, []string{})
 	go metrics.Scheduler(time.Minute, metrics.MeasureRuntime, []string{"uptime"}, time.Now())
 
 	//<...>
 	metrics.IncrCounter([]string{"happy_routine", "happy_runs_counter"}, 1)
 	metrics.UpdateGauge([]string{"happy_routine", "happiness_level"}, 9000)
-	metrics.UpdateHistogram([]string{"happy_routine", "happiness_hit"}, 0.35)
+	metrics.UpdateHistogram([]string{"happy_routine", "happiness_hit"}, 35)
 	metrics.UpdateTimer([]string{"happy_time"}, time.Minute)
 }
 ```
