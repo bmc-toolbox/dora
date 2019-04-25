@@ -95,7 +95,7 @@ func RunGin(port int, debug bool) {
 		go metrics.Scheduler(time.Minute, metrics.GoRuntimeStats, []string{})
 		go metrics.Scheduler(time.Minute, metrics.MeasureRuntime, []string{"uptime"}, stats.StartTime)
 		p := middleware.NewMetrics([]string{})
-		r.Use(p.HandlerFunc([]string{"/", "/doc", "/ping", "/ping_db", "/stats"}, true))
+		r.Use(p.HandlerFunc([]string{"http"}, []string{"/", "/doc", "/ping", "/ping_db", "/stats"}, true))
 	}
 
 	// Gather metrics for /api/v1/stats page

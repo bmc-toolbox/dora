@@ -125,8 +125,8 @@ func (s *Stats) GatherDBStats(
 		u.Updated24hAgo, _ = r.Count(updated24hAgoFilter)
 
 		if viper.GetBool("metrics.enabled") {
-			metrics.UpdateGauge([]string{fmt.Sprintf("%v.total", names[i])}, int64(u.Total))
-			metrics.UpdateGauge([]string{fmt.Sprintf("%v.updated_24h_ago", names[i])}, int64(u.Updated24hAgo))
+			metrics.UpdateGauge([]string{fmt.Sprintf("resources.%v.total", names[i])}, int64(u.Total))
+			metrics.UpdateGauge([]string{fmt.Sprintf("resources.%v.updated_24h_ago", names[i])}, int64(u.Updated24hAgo))
 		}
 		for _, vendor := range devices.ListSupportedVendors() {
 			asset, ok := u.Vendors[vendor]
@@ -145,8 +145,8 @@ func (s *Stats) GatherDBStats(
 			u.Vendors[vendor] = asset
 
 			if viper.GetBool("metrics.enabled") {
-				metrics.UpdateGauge([]string{fmt.Sprintf("%v.by_vendor.%v.total", names[i], vendor)}, int64(u.Total))
-				metrics.UpdateGauge([]string{fmt.Sprintf("%v.by_vendor.%v.updated_24h_ago", names[i], vendor)}, int64(u.Updated24hAgo))
+				metrics.UpdateGauge([]string{fmt.Sprintf("resources.%v.by_vendor.%v.total", names[i], vendor)}, int64(u.Total))
+				metrics.UpdateGauge([]string{fmt.Sprintf("resources.%v.by_vendor.%v.updated_24h_ago", names[i], vendor)}, int64(u.Updated24hAgo))
 			}
 		}
 	}

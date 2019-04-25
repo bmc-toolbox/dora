@@ -84,7 +84,7 @@ func contains(slice []string, s string) bool {
 
 //HandlerFunc is a function which should be used as middleware to count requests stats
 // such as request processing time, request and responce size and store it in rcrowley/go-metrics.DefaultRegistry.
-func (m *Metrics) HandlerFunc(ignoreURLs []string, replaceSlashWithUnderscore bool) gin.HandlerFunc {
+func (m *Metrics) HandlerFunc(metricsPrefix []string, ignoreURLs []string, replaceSlashWithUnderscore bool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// ignore mechanism for particular endpoints
 		if contains(ignoreURLs, c.Request.URL.String()) {
@@ -112,16 +112,18 @@ func (m *Metrics) HandlerFunc(ignoreURLs []string, replaceSlashWithUnderscore bo
 			url = "all"
 		}
 
+		metricsPath := strings.Join(append(metricsPrefix, []string{method, status, url}...), ".")
+
 		// write request stats to rcrowley/go-metrics.DefaultRegistry
-		processTimeKey := strings.Join([]string{method, status, url, "req_process_time"}, ".")
+		processTimeKey := metricsPath + ".req_process_time"
 		metrics.
 			GetOrRegister(processTimeKey, metrics.NewTimer()).(metrics.Timer).Update(elapsed)
 
-		reqSzKey := strings.Join([]string{method, status, url, "req_size"}, ".")
+		reqSzKey := metricsPath + ".req_size"
 		metrics.
 			GetOrRegister(reqSzKey, metrics.NewHistogram(metrics.NewExpDecaySample(1028, 0.015))).(metrics.Histogram).Update(reqSz)
 
-		resSzKey := strings.Join([]string{method, status, url, "resp_size"}, ".")
+		resSzKey := metricsPath + ".resp_size"
 		metrics.
 			GetOrRegister(resSzKey, metrics.NewHistogram(metrics.NewExpDecaySample(1028, 0.015))).(metrics.Histogram).Update(resSz)
 	}
