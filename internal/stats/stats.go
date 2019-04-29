@@ -145,8 +145,8 @@ func (s *Stats) GatherDBStats(
 			u.Vendors[vendor] = asset
 
 			if viper.GetBool("metrics.enabled") {
-				metrics.UpdateGauge([]string{fmt.Sprintf("resources.%v.by_vendor.%v.total", names[i], vendor)}, int64(u.Total))
-				metrics.UpdateGauge([]string{fmt.Sprintf("resources.%v.by_vendor.%v.updated_24h_ago", names[i], vendor)}, int64(u.Updated24hAgo))
+				metrics.UpdateGauge([]string{fmt.Sprintf("resources.%v.by_vendor.%v.total", names[i], vendor)}, int64(asset.Total))
+				metrics.UpdateGauge([]string{fmt.Sprintf("resources.%v.by_vendor.%v.updated_24h_ago", names[i], vendor)}, int64(asset.Updated24hAgo))
 			}
 		}
 	}
