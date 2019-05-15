@@ -209,6 +209,37 @@ func (c Chassis) GetReferencedIDs() []jsonapi.ReferenceID {
 	return result
 }
 
+// GetReferencedStructs satisfies the jsonapi.MarshalIdentifier interface
+func (c Chassis) GetReferencedStructs() []jsonapi.MarshalIdentifier {
+	var result []jsonapi.MarshalIdentifier
+	for _, blade := range c.Blades {
+		blade := blade
+		result = append(result, jsonapi.MarshalIdentifier(blade))
+	}
+
+	for _, storageBlade := range c.StorageBlades {
+		storageBlade := storageBlade
+		result = append(result, jsonapi.MarshalIdentifier(storageBlade))
+	}
+
+	for _, nic := range c.Nics {
+		nic := nic
+		result = append(result, jsonapi.MarshalIdentifier(nic))
+	}
+
+	for _, psu := range c.Psus {
+		psu := psu
+		result = append(result, jsonapi.MarshalIdentifier(psu))
+	}
+
+	for _, fan := range c.Fans {
+		fan := fan
+		result = append(result, jsonapi.MarshalIdentifier(fan))
+	}
+
+	return result
+}
+
 // Diff compare to objects and return list of string with their differences
 func (c *Chassis) Diff(chassis *Chassis) (differences []string) {
 	if len(c.StorageBlades) != len(chassis.StorageBlades) {

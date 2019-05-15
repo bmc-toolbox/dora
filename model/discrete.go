@@ -163,6 +163,24 @@ func (d Discrete) GetReferencedIDs() []jsonapi.ReferenceID {
 	return result
 }
 
+// GetReferencedStructs satisfies the jsonapi.MarshalIdentifier interface
+func (d Discrete)  GetReferencedStructs() []jsonapi.MarshalIdentifier {
+	var result []jsonapi.MarshalIdentifier
+	for key := range d.Nics {
+		result = append(result, d.Nics[key])
+	}
+
+	for key := range d.Disks {
+		result = append(result, d.Disks[key])
+	}
+
+	for key := range d.Psus {
+		result = append(result, d.Psus[key])
+	}
+
+	return result
+}
+
 // Diff compare to objects and return list of string with their differences
 func (d *Discrete) Diff(discrete *Discrete) (differences []string) {
 	if len(d.Nics) != len(discrete.Nics) {

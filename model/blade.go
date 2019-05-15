@@ -177,6 +177,20 @@ func (b Blade) GetReferencedIDs() []jsonapi.ReferenceID {
 	return result
 }
 
+// GetReferencedStructs satisfies the jsonapi.MarshalIdentifier interface
+func (b Blade) GetReferencedStructs() []jsonapi.MarshalIdentifier {
+	var result []jsonapi.MarshalIdentifier
+	for key := range b.Nics {
+		result = append(result, b.Nics[key])
+	}
+
+	for key := range b.Disks {
+		result = append(result, b.Disks[key])
+	}
+
+	return result
+}
+
 // Diff compare to objects and return list of string with their differences
 func (b *Blade) Diff(blade *Blade) (differences []string) {
 	if len(b.Nics) != len(blade.Nics) {
