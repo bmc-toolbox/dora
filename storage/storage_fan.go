@@ -1,9 +1,12 @@
 package storage
 
 import (
+	"fmt"
 	"github.com/bmc-toolbox/dora/filter"
 	"github.com/bmc-toolbox/dora/model"
 	"github.com/jinzhu/gorm"
+	"github.com/manyminds/api2go"
+	"strings"
 )
 
 // NewFanStorage initializes the storage
@@ -17,40 +20,63 @@ type FanStorage struct {
 }
 
 // Count get fans count based on the filter
-func (p FanStorage) Count(filters *filter.Filters) (count int, err error) {
+func (f FanStorage) Count(filters *filter.Filters) (count int, err error) {
 	query, err := filters.BuildQuery(model.Fan{})
 	if err != nil {
 		return count, err
 	}
 
-	err = p.db.Model(&model.Fan{}).Where(query).Count(&count).Error
+	err = f.db.Model(&model.Fan{}).Where(query).Count(&count).Error
 	return count, err
 }
 
 // GetAll fans
-func (p FanStorage) GetAll(offset string, limit string) (count int, fans []model.Fan, err error) {
+func (f FanStorage) GetAll(offset string, limit string) (count int, fans []model.Fan, err error) {
 	if offset != "" && limit != "" {
-		if err = p.db.Limit(limit).Offset(offset).Order("serial").Find(&fans).Error; err != nil {
+		if err = f.db.Limit(limit).Offset(offset).Order("serial").Find(&fans).Error; err != nil {
 			return count, fans, err
 		}
-		p.db.Model(&model.Fan{}).Order("serial").Count(&count)
+		f.db.Model(&model.Fan{}).Order("serial").Count(&count)
 	} else {
-		if err = p.db.Order("serial").Find(&fans).Error; err != nil {
+		if err = f.db.Order("serial").Find(&fans).Error; err != nil {
 			return count, fans, err
 		}
 	}
 	return count, fans, err
 }
 
-// GetAllByChassisID of the fans by ChassisID
-func (p FanStorage) GetAllByChassisID(offset string, limit string, serials []string) (count int, fans []model.Fan, err error) {
+// GetAllWithAssociations returns all chassis with their relationships
+func (f FanStorage) GetAllWithAssociations(offset string, limit string, include []string) (count int, fans []model.Fan, err error) {
+	q := f.db.Order("serial asc")
+	for _, preload := range include {
+		q = q.Preload(strings.Title(preload))
+	}
+
 	if offset != "" && limit != "" {
-		if err = p.db.Limit(limit).Offset(offset).Where("chassis_serial in (?)", serials).Find(&fans).Error; err != nil {
+		q = f.db.Limit(limit).Offset(offset)
+		f.db.Order("serial asc").Find(&model.Fan{}).Count(&count)
+	}
+
+	if err = q.Find(&fans).Error; err != nil {
+		if strings.Contains(err.Error(), "can't preload field") {
+			return count, fans, api2go.NewHTTPError(nil,
+				fmt.Sprintf("invalid include: %s", strings.Split(err.Error(), " ")[3]) , 422)
+		}
+		return count, fans, err
+	}
+
+	return count, fans, err
+}
+
+// GetAllByChassisID of the fans by ChassisID
+func (f FanStorage) GetAllByChassisID(offset string, limit string, serials []string) (count int, fans []model.Fan, err error) {
+	if offset != "" && limit != "" {
+		if err = f.db.Limit(limit).Offset(offset).Where("chassis_serial in (?)", serials).Find(&fans).Error; err != nil {
 			return count, fans, err
 		}
-		p.db.Model(&model.Fan{}).Where("chassis_serial in (?)", serials).Count(&count)
+		f.db.Model(&model.Fan{}).Where("chassis_serial in (?)", serials).Count(&count)
 	} else {
-		if err = p.db.Where("chassis_serial in (?)", serials).Find(&fans).Error; err != nil {
+		if err = f.db.Where("chassis_serial in (?)", serials).Find(&fans).Error; err != nil {
 			return count, fans, err
 		}
 	}
@@ -58,14 +84,14 @@ func (p FanStorage) GetAllByChassisID(offset string, limit string, serials []str
 }
 
 // GetAllByDiscreteID of the fans by DiscreteID
-func (p FanStorage) GetAllByDiscreteID(offset string, limit string, serials []string) (count int, fans []model.Fan, err error) {
+func (f FanStorage) GetAllByDiscreteID(offset string, limit string, serials []string) (count int, fans []model.Fan, err error) {
 	if offset != "" && limit != "" {
-		if err = p.db.Limit(limit).Offset(offset).Where("discrete_serial in (?)", serials).Find(&fans).Error; err != nil {
+		if err = f.db.Limit(limit).Offset(offset).Where("discrete_serial in (?)", serials).Find(&fans).Error; err != nil {
 			return count, fans, err
 		}
-		p.db.Model(&model.Fan{}).Where("discrete_serial in (?)", serials).Count(&count)
+		f.db.Model(&model.Fan{}).Where("discrete_serial in (?)", serials).Count(&count)
 	} else {
-		if err = p.db.Where("discrete_serial in (?)", serials).Find(&fans).Error; err != nil {
+		if err = f.db.Where("discrete_serial in (?)", serials).Find(&fans).Error; err != nil {
 			return count, fans, err
 		}
 	}
@@ -73,27 +99,27 @@ func (p FanStorage) GetAllByDiscreteID(offset string, limit string, serials []st
 }
 
 // GetOne fan
-func (p FanStorage) GetOne(serial string) (fan model.Fan, err error) {
-	if err := p.db.Where("serial = ?", serial).First(&fan).Error; err != nil {
+func (f FanStorage) GetOne(serial string) (fan model.Fan, err error) {
+	if err := f.db.Where("serial = ?", serial).First(&fan).Error; err != nil {
 		return fan, err
 	}
 	return fan, err
 }
 
 // GetAllByFilters get all blades based on the filter
-func (p FanStorage) GetAllByFilters(offset string, limit string, filters *filter.Filters) (count int, fans []model.Fan, err error) {
+func (f FanStorage) GetAllByFilters(offset string, limit string, filters *filter.Filters) (count int, fans []model.Fan, err error) {
 	query, err := filters.BuildQuery(model.Fan{})
 	if err != nil {
 		return count, fans, err
 	}
 
 	if offset != "" && limit != "" {
-		if err = p.db.Limit(limit).Offset(offset).Where(query).Find(&fans).Error; err != nil {
+		if err = f.db.Limit(limit).Offset(offset).Where(query).Find(&fans).Error; err != nil {
 			return count, fans, err
 		}
-		p.db.Model(&model.Fan{}).Where(query).Count(&count)
+		f.db.Model(&model.Fan{}).Where(query).Count(&count)
 	} else {
-		if err = p.db.Where(query).Find(&fans).Error; err != nil {
+		if err = f.db.Where(query).Find(&fans).Error; err != nil {
 			return count, fans, err
 		}
 	}

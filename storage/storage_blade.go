@@ -1,10 +1,13 @@
 package storage
 
 import (
+	"fmt"
 	"github.com/bmc-toolbox/dora/filter"
 	"github.com/bmc-toolbox/dora/model"
 	"github.com/hashicorp/go-multierror"
 	"github.com/jinzhu/gorm"
+	"github.com/manyminds/api2go"
+	"strings"
 )
 
 // NewBladeStorage initializes the storage
@@ -45,17 +48,25 @@ func (b BladeStorage) GetAll(offset string, limit string) (count int, blades []m
 }
 
 // GetAllWithAssociations returns all chassis with their relationships
-func (b BladeStorage) GetAllWithAssociations(offset string, limit string) (count int, blades []model.Blade, err error) {
-	if offset != "" && limit != "" {
-		if err = b.db.Limit(limit).Offset(offset).Order("serial asc").Preload("Nics").Preload("Disks").Find(&blades).Error; err != nil {
-			return count, blades, err
-		}
-		b.db.Order("serial asc").Find(&model.Blade{}).Count(&count)
-	} else {
-		if err = b.db.Order("serial").Preload("Nics").Preload("Disks").Find(&blades).Error; err != nil {
-			return count, blades, err
-		}
+func (b BladeStorage) GetAllWithAssociations(offset string, limit string, include []string) (count int, blades []model.Blade, err error) {
+	q := b.db.Order("serial asc")
+	for _, preload := range include {
+		q = q.Preload(strings.Title(preload))
 	}
+
+	if offset != "" && limit != "" {
+        q = b.db.Limit(limit).Offset(offset)
+		b.db.Order("serial asc").Find(&model.Blade{}).Count(&count)
+	}
+
+	if err = q.Find(&blades).Error; err != nil {
+		if strings.Contains(err.Error(), "can't preload field") {
+			return count, blades, api2go.NewHTTPError(nil,
+				fmt.Sprintf("invalid include: %s", strings.Split(err.Error(), " ")[3]) , 422)
+		}
+		return count, blades, err
+	}
+
 	return count, blades, err
 }
 

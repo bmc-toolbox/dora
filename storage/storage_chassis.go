@@ -1,10 +1,13 @@
 package storage
 
 import (
+	"fmt"
 	"github.com/bmc-toolbox/dora/filter"
 	"github.com/bmc-toolbox/dora/model"
 	"github.com/hashicorp/go-multierror"
 	"github.com/jinzhu/gorm"
+	"github.com/manyminds/api2go"
+	"strings"
 )
 
 // NewChassisStorage initializes the storage
@@ -44,19 +47,28 @@ func (c ChassisStorage) GetAll(offset string, limit string) (count int, chassis 
 }
 
 // GetAllWithAssociations returns all Chassis with their relationships
-func (c ChassisStorage) GetAllWithAssociations(offset string, limit string) (count int, chassis []model.Chassis, err error) {
-	if offset != "" && limit != "" {
-		if err = c.db.Order("serial asc").Preload("Blades").Preload("StorageBlades").Preload("Psus").Preload("Nics").Find(&chassis).Error; err != nil {
-			return count, chassis, err
-		}
-		c.db.Model(&model.Chassis{}).Order("serial asc").Count(&count)
-	} else {
-		if err = c.db.Order("serial asc").Preload("Blades").Preload("StorageBlades").Preload("Psus").Preload("Nics").Find(&chassis).Error; err != nil {
-			return count, chassis, err
-		}
+func (c ChassisStorage) GetAllWithAssociations(offset string, limit string,  include []string) (count int, chassis []model.Chassis, err error) {
+	q := c.db.Order("serial asc")
+	for _, preload := range include {
+		q = q.Preload(strings.Title(preload))
 	}
+
+	if offset != "" && limit != "" {
+		q = c.db.Limit(limit).Offset(offset)
+		c.db.Order("serial asc").Find(&model.Chassis{}).Count(&count)
+	}
+
+	if err = q.Find(&model.Chassis{}).Error; err != nil {
+		if strings.Contains(err.Error(), "can't preload field") {
+			return count, chassis, api2go.NewHTTPError(nil,
+				fmt.Sprintf("invalid include: %s", strings.Split(err.Error(), " ")[3]) , 422)
+		}
+		return count, chassis, err
+	}
+
 	return count, chassis, err
 }
+
 
 // GetAllByNicsID retrieve chassis by nicsID
 func (c ChassisStorage) GetAllByNicsID(offset string, limit string, macAddresses []string) (count int, chassis []model.Chassis, err error) {

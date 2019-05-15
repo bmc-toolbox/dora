@@ -1,10 +1,13 @@
 package storage
 
 import (
+	"fmt"
 	"github.com/bmc-toolbox/dora/filter"
 	"github.com/bmc-toolbox/dora/model"
 	"github.com/hashicorp/go-multierror"
 	"github.com/jinzhu/gorm"
+	"github.com/manyminds/api2go"
+	"strings"
 )
 
 // NewDiscreteStorage initializes the storage
@@ -45,17 +48,25 @@ func (d DiscreteStorage) GetAll(offset string, limit string) (count int, discret
 }
 
 // GetAllWithAssociations returns all chassis with their relationships
-func (d DiscreteStorage) GetAllWithAssociations(offset string, limit string) (count int, discretes []model.Discrete, err error) {
-	if offset != "" && limit != "" {
-		if err = d.db.Limit(limit).Offset(offset).Order("serial asc").Preload("Nics").Preload("Disks").Preload("Psus").Find(&discretes).Error; err != nil {
-			return count, discretes, err
-		}
-		d.db.Order("serial asc").Find(&model.Discrete{}).Count(&count)
-	} else {
-		if err = d.db.Order("serial").Preload("Nics").Preload("Disks").Preload("Psus").Find(&discretes).Error; err != nil {
-			return count, discretes, err
-		}
+func (d DiscreteStorage) GetAllWithAssociations(offset string, limit string, include []string) (count int, discretes []model.Discrete, err error) {
+	q := d.db.Order("serial asc")
+	for _, preload := range include {
+		q = q.Preload(strings.Title(preload))
 	}
+
+	if offset != "" && limit != "" {
+		q = d.db.Limit(limit).Offset(offset)
+		d.db.Order("serial asc").Find(&model.Discrete{}).Count(&count)
+	}
+
+	if err = q.Find(&discretes).Error; err != nil {
+		if strings.Contains(err.Error(), "can't preload field") {
+			return count, discretes, api2go.NewHTTPError(nil,
+				fmt.Sprintf("invalid include: %s", strings.Split(err.Error(), " ")[3]) , 422)
+		}
+		return count, discretes, err
+	}
+
 	return count, discretes, err
 }
 

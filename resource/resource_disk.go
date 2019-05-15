@@ -55,6 +55,23 @@ func (d DiskResource) queryAndCountAllWrapper(r api2go.Request) (count int, disk
 		}
 	}
 
+	include, hasInclude := r.QueryParams["include"]
+	if hasInclude {
+		if len(disks) == 0 {
+			count, disks, err = d.DiskStorage.GetAllWithAssociations(offset, limit, include)
+		} else {
+			var disksWithInclude []model.Disk
+			for _, ds := range disks {
+				diskWithInclude, err := d.DiskStorage.GetOne(ds.Serial)
+				if err != nil {
+					return count, disks, err
+				}
+				disksWithInclude = append(disksWithInclude, diskWithInclude)
+			}
+			disks = disksWithInclude
+		}
+	}
+
 	bladeID, hasBlade := r.QueryParams["bladesID"]
 	if hasBlade {
 		count, disks, err = d.DiskStorage.GetAllByBladeID(offset, limit, bladeID)

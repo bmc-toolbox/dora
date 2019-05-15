@@ -56,6 +56,23 @@ func (n NicResource) queryAndCountAllWrapper(r api2go.Request) (count int, nics 
 		}
 	}
 
+	include, hasInclude := r.QueryParams["include"]
+	if hasInclude {
+		if len(nics) == 0 {
+			count, nics, err =  n.NicStorage.GetAllWithAssociations(offset, limit, include)
+		} else {
+			var nicsWithInclude []model.Nic
+			for _, nc := range nics {
+				ncWithInclude, err :=  n.NicStorage.GetOne(nc.MacAddress)
+				if err != nil {
+					return count, nics, err
+				}
+				nicsWithInclude = append(nicsWithInclude, ncWithInclude)
+			}
+			nics = nicsWithInclude
+		}
+	}
+
 	bladeID, hasBlade := r.QueryParams["bladesID"]
 	if hasBlade {
 		count, nics, err = n.NicStorage.GetAllByBladeID(offset, limit, bladeID)

@@ -57,9 +57,9 @@ func (b BladeResource) queryAndCountAllWrapper(r api2go.Request) (count int, bla
 	}
 
 	include, hasInclude := r.QueryParams["include"]
-	if hasInclude && include[0] == "nics" {
+	if hasInclude {
 		if len(blades) == 0 {
-			count, blades, err = b.BladeStorage.GetAllWithAssociations(offset, limit)
+			count, blades, err = b.BladeStorage.GetAllWithAssociations(offset, limit, include)
 		} else {
 			var bladesWithInclude []model.Blade
 			for _, bl := range blades {

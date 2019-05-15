@@ -57,9 +57,9 @@ func (c ChassisResource) queryAndCountAllWrapper(r api2go.Request) (count int, c
 	}
 
 	include, hasInclude := r.QueryParams["include"]
-	if hasInclude && include[0] == "blades" {
+	if hasInclude {
 		if len(chassis) == 0 {
-			count, chassis, err = c.ChassisStorage.GetAllWithAssociations(offset, limit)
+			count, chassis, err = c.ChassisStorage.GetAllWithAssociations(offset, limit, include)
 		} else {
 			var chassisWithInclude []model.Chassis
 			for _, ch := range chassis {

@@ -56,6 +56,23 @@ func (s StorageBladeResource) queryAndCountAllWrapper(r api2go.Request) (count i
 		}
 	}
 
+	include, hasInclude := r.QueryParams["include"]
+	if hasInclude {
+		if len(storageblades) == 0 {
+			count, storageblades, err = s.StorageBladeStorage.GetAllWithAssociations(offset, limit, include)
+		} else {
+			var bladesWithInclude []model.StorageBlade
+			for _, bl := range storageblades {
+				blWithInclude, err := s.StorageBladeStorage.GetOne(bl.Serial)
+				if err != nil {
+					return count, storageblades, err
+				}
+				bladesWithInclude = append(bladesWithInclude, blWithInclude)
+			}
+			storageblades = bladesWithInclude
+		}
+	}
+
 	chassisID, hasChassis := r.QueryParams["chassisID"]
 	if hasChassis {
 		count, storageblades, err = s.StorageBladeStorage.GetAllByChassisID(offset, limit, chassisID)

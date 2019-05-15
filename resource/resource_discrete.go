@@ -57,9 +57,9 @@ func (d DiscreteResource) queryAndCountAllWrapper(r api2go.Request) (count int, 
 	}
 
 	include, hasInclude := r.QueryParams["include"]
-	if hasInclude && include[0] == "nics" {
+	if hasInclude {
 		if len(discretes) == 0 {
-			count, discretes, err = d.DiscreteStorage.GetAllWithAssociations(offset, limit)
+			count, discretes, err = d.DiscreteStorage.GetAllWithAssociations(offset, limit, include)
 		} else {
 			var discretesWithInclude []model.Discrete
 			for _, bl := range discretes {

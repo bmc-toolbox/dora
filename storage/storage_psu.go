@@ -1,9 +1,12 @@
 package storage
 
 import (
+	"fmt"
 	"github.com/bmc-toolbox/dora/filter"
 	"github.com/bmc-toolbox/dora/model"
 	"github.com/jinzhu/gorm"
+	"github.com/manyminds/api2go"
+	"strings"
 )
 
 // NewPsuStorage initializes the storage
@@ -39,6 +42,29 @@ func (p PsuStorage) GetAll(offset string, limit string) (count int, psus []model
 			return count, psus, err
 		}
 	}
+	return count, psus, err
+}
+
+// GetAllWithAssociations returns all chassis with their relationships
+func (p PsuStorage)  GetAllWithAssociations(offset string, limit string, include []string) (count int, psus []model.Psu, err error) {
+	q := p.db.Order("serial asc")
+	for _, preload := range include {
+		q = q.Preload(strings.Title(preload))
+	}
+
+	if offset != "" && limit != "" {
+		q = p.db.Limit(limit).Offset(offset)
+		p.db.Order("serial asc").Find(&model.Psu{}).Count(&count)
+	}
+
+	if err = q.Find(&psus).Error; err != nil {
+		if strings.Contains(err.Error(), "can't preload field") {
+			return count, psus, api2go.NewHTTPError(nil,
+				fmt.Sprintf("invalid include: %s", strings.Split(err.Error(), " ")[3]) , 422)
+		}
+		return count, psus, err
+	}
+
 	return count, psus, err
 }
 

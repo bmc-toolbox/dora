@@ -1,9 +1,12 @@
 package storage
 
 import (
+	"fmt"
 	"github.com/bmc-toolbox/dora/filter"
 	"github.com/bmc-toolbox/dora/model"
 	"github.com/jinzhu/gorm"
+	"github.com/manyminds/api2go"
+	"strings"
 )
 
 // NewNicStorage initializes the storage
@@ -39,6 +42,29 @@ func (n NicStorage) GetAll(offset string, limit string) (count int, nics []model
 			return count, nics, err
 		}
 	}
+	return count, nics, err
+}
+
+// GetAllWithAssociations returns all chassis with their relationships
+func (n NicStorage) GetAllWithAssociations(offset string, limit string, include []string) (count int, nics []model.Nic, err error) {
+	q := n.db.Order("mac_address")
+	for _, preload := range include {
+		q = q.Preload(strings.Title(preload))
+	}
+
+	if offset != "" && limit != "" {
+		q = n.db.Limit(limit).Offset(offset)
+		n.db.Order("mac_address").Find(&model.Nic{}).Count(&count)
+	}
+
+	if err = q.Find(&nics).Error; err != nil {
+		if strings.Contains(err.Error(), "can't preload field") {
+			return count, nics, api2go.NewHTTPError(nil,
+				fmt.Sprintf("invalid include: %s", strings.Split(err.Error(), " ")[3]) , 422)
+		}
+		return count, nics, err
+	}
+
 	return count, nics, err
 }
 

@@ -1,9 +1,12 @@
 package storage
 
 import (
+	"fmt"
 	"github.com/bmc-toolbox/dora/filter"
 	"github.com/bmc-toolbox/dora/model"
 	"github.com/jinzhu/gorm"
+	"github.com/manyminds/api2go"
+	"strings"
 )
 
 // NewDiskStorage initializes the storage
@@ -39,6 +42,29 @@ func (d DiskStorage) GetAll(offset string, limit string) (count int, disks []mod
 			return count, disks, err
 		}
 	}
+	return count, disks, err
+}
+
+// GetAllWithAssociations returns all chassis with their relationships
+func (d DiskStorage) GetAllWithAssociations(offset string, limit string, include []string) (count int, disks []model.Disk, err error) {
+	q := d.db.Order("serial asc")
+	for _, preload := range include {
+		q = q.Preload(strings.Title(preload))
+	}
+
+	if offset != "" && limit != "" {
+		q = d.db.Limit(limit).Offset(offset)
+		d.db.Order("serial asc").Find(&model.Disk{}).Count(&count)
+	}
+
+	if err = q.Find(&disks).Error; err != nil {
+		if strings.Contains(err.Error(), "can't preload field") {
+			return count, disks, api2go.NewHTTPError(nil,
+				fmt.Sprintf("invalid include: %s", strings.Split(err.Error(), " ")[3]) , 422)
+		}
+		return count, disks, err
+	}
+
 	return count, disks, err
 }
 
