@@ -34,8 +34,7 @@ func (s *ScannedPort) GenID() string {
 
 // BeforeCreate run all operations before creating the object
 func (s *ScannedPort) BeforeCreate(scope *gorm.Scope) (err error) {
-	scope.SetColumn("ID", s.GenID())
-	return nil
+	return scope.SetColumn("ID", s.GenID())
 }
 
 // GetName to satisfy jsonapi naming schema
