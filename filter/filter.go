@@ -3,10 +3,16 @@ package filter
 import (
 	"fmt"
 	"reflect"
+	"regexp"
 	"strings"
 
 	"github.com/manyminds/api2go"
 	log "github.com/sirupsen/logrus"
+)
+
+var (
+	simpleFiltering   = regexp.MustCompile(`filter\[(.+)\]`)
+	extendedFiltering = regexp.MustCompile(`filter\[(.+)\]\[(.+)\]`)
 )
 
 // Filter is meant to store the filters of requested via api
@@ -24,16 +30,18 @@ type Filters struct {
 func NewFilterSet(r *api2go.Request) (f *Filters, hasFilters bool) {
 	f = &Filters{}
 	for key, values := range r.QueryParams {
-		if strings.HasPrefix(key, "filter") {
-			hasFilters = true
-			exclusion := false
-			if strings.HasSuffix(key, "!") {
-				exclusion = true
-				key = key[:len(key)-1]
+		filter := extendedFiltering.FindStringSubmatch(key)
+		if len(filter) == 0 {
+			filter = simpleFiltering.FindStringSubmatch(key)
+			if len(filter) != 0 {
+				hasFilters = true
+				exclusion := false
+				if strings.HasSuffix(key, "!") {
+					exclusion = true
+				}
+				f.Add(filter[1], values, exclusion)
+				log.WithFields(log.Fields{"step": "request filter", "filter": filter, "values": values}).Debug("Dora web request with filters")
 			}
-			filter := strings.TrimSuffix(strings.TrimPrefix(key, "filter["), "]")
-			f.Add(filter, values, exclusion)
-			log.WithFields(log.Fields{"step": "request filter", "filter": filter, "values": values}).Debug("Dora web request with filters")
 		}
 	}
 
