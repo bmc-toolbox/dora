@@ -15,10 +15,29 @@ var (
 	extendedFiltering = regexp.MustCompile(`filter\[(.+)\]\[(.+)\]`)
 )
 
+func operator(o string) string {
+	switch o {
+	case "ne":
+		return "not in"
+	case "!":
+		return "not in"
+	case "gt":
+		return ">"
+	case "ge":
+		return ">="
+	case "lt":
+		return "<"
+	case "le":
+		return "<="
+	default:
+		return "in"
+	}
+}
+
 // Filter is meant to store the filters of requested via api
 type Filter struct {
-	Filter    map[string][]string
-	Exclusion bool
+	Filter   map[string][]string
+	Operator string
 }
 
 // Filters is is the collection of filters received on the api call
@@ -35,24 +54,26 @@ func NewFilterSet(r *api2go.Request) (f *Filters, hasFilters bool) {
 			filter = simpleFiltering.FindStringSubmatch(key)
 			if len(filter) != 0 {
 				hasFilters = true
-				exclusion := false
 				if strings.HasSuffix(key, "!") {
-					exclusion = true
+					f.Add(filter[1], values, operator("!"))
+				} else {
+					f.Add(filter[1], values, operator("="))
 				}
-				f.Add(filter[1], values, exclusion)
 				log.WithFields(log.Fields{"step": "request filter", "filter": filter, "values": values}).Debug("Dora web request with filters")
 			}
+		} else {
+			hasFilters = true
+			f.Add(filter[1], values, operator(filter[2]))
 		}
 	}
-
 	return f, hasFilters
 }
 
 // Add adds a new filter to the filter map
-func (f *Filters) Add(name string, values []string, exclusion bool) {
+func (f *Filters) Add(name string, values []string, operator string) {
 	ft := &Filter{
-		Filter:    map[string][]string{name: values},
-		Exclusion: exclusion,
+		Filter:   map[string][]string{name: values},
+		Operator: operator,
 	}
 
 	f.filters = append(f.filters, ft)
@@ -66,11 +87,6 @@ func (f *Filters) Get() []*Filter {
 // BuildQuery receive a model as an interface and builds a query out of it
 func (f *Filters) BuildQuery(m interface{}) (query string, err error) {
 	for _, filter := range f.Get() {
-		queryType := "in"
-		if filter.Exclusion {
-			queryType = "not in"
-		}
-
 		for key, values := range filter.Filter {
 			if len(values) == 1 && values[0] == "" {
 				continue
@@ -97,15 +113,15 @@ func (f *Filters) BuildQuery(m interface{}) (query string, err error) {
 			switch ftype.Kind() {
 			case reflect.String:
 				if query == "" {
-					query = fmt.Sprintf("%s %s ('%s')", structJSONMemberName, queryType, strings.Join(values, "', '"))
+					query = fmt.Sprintf("%s %s ('%s')", structJSONMemberName, filter.Operator, strings.Join(values, "', '"))
 				} else {
-					query = fmt.Sprintf("%s and %s %s ('%s')", query, structJSONMemberName, queryType, strings.Join(values, "', '"))
+					query = fmt.Sprintf("%s and %s %s ('%s')", query, structJSONMemberName, filter.Operator, strings.Join(values, "', '"))
 				}
 			case reflect.Bool, reflect.Int, reflect.Float64, reflect.Float32:
 				if query == "" {
-					query = fmt.Sprintf("%s %s (%s)", structJSONMemberName, queryType, strings.Join(values, ", "))
+					query = fmt.Sprintf("%s %s (%s)", structJSONMemberName, filter.Operator, strings.Join(values, ", "))
 				} else {
-					query = fmt.Sprintf("%s and %s %s (%s)", query, structJSONMemberName, queryType, strings.Join(values, ", "))
+					query = fmt.Sprintf("%s and %s %s (%s)", query, structJSONMemberName, filter.Operator, strings.Join(values, ", "))
 				}
 			}
 		}

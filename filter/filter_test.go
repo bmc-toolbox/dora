@@ -15,8 +15,8 @@ var testSet = []struct {
 }{
 	{"filter[model]=dell", "model in ('dell')"},
 	{"filter[status]!=bad", "status not in ('bad')"},
-	//	{"filter[status][eq]=dell", "model in ('dell')"},
-	//	{"filter[status][ne]=bad", "status not in ('bad')"},
+	{"filter[model][eq]=dell", "model in ('dell')"},
+	{"filter[status][ne]=bad", "status not in ('bad')"},
 }
 
 func TestEqualSignAndExclamationMark(t *testing.T) {
