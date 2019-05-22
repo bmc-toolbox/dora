@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/jinzhu/gorm"
+
 	"github.com/manyminds/api2go"
 	log "github.com/sirupsen/logrus"
 )
@@ -85,7 +87,7 @@ func (f *Filters) Get() []*Filter {
 }
 
 // BuildQuery receive a model as an interface and builds a query out of it
-func (f *Filters) BuildQuery(m interface{}) (query string, err error) {
+func (f *Filters) BuildQuery(m interface{}, db *gorm.DB) (query string, err error) {
 	for _, filter := range f.Get() {
 		for key, values := range filter.Filter {
 			if len(values) == 1 && values[0] == "" {
