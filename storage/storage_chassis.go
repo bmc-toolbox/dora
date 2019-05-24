@@ -2,12 +2,13 @@ package storage
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/bmc-toolbox/dora/filter"
 	"github.com/bmc-toolbox/dora/model"
 	"github.com/hashicorp/go-multierror"
 	"github.com/jinzhu/gorm"
 	"github.com/manyminds/api2go"
-	"strings"
 )
 
 // NewChassisStorage initializes the storage
@@ -22,12 +23,14 @@ type ChassisStorage struct {
 
 // Count get chassis count based on the filter
 func (c ChassisStorage) Count(filters *filter.Filters) (count int, err error) {
-	query, err := filters.BuildQuery(model.Chassis{})
+	q, err := filters.BuildQuery(model.Chassis{}, c.db)
 	if err != nil {
 		return count, err
 	}
 
-	err = c.db.Model(&model.Chassis{}).Where(query).Count(&count).Error
+	fmt.Println(1)
+	err = q.Model(&model.Chassis{}).Count(&count).Error
+	fmt.Println(2)
 	return count, err
 }
 
@@ -47,7 +50,7 @@ func (c ChassisStorage) GetAll(offset string, limit string) (count int, chassis 
 }
 
 // GetAllWithAssociations returns all Chassis with their relationships
-func (c ChassisStorage) GetAllWithAssociations(offset string, limit string,  include []string) (count int, chassis []model.Chassis, err error) {
+func (c ChassisStorage) GetAllWithAssociations(offset string, limit string, include []string) (count int, chassis []model.Chassis, err error) {
 	q := c.db.Order("serial asc")
 	for _, preload := range include {
 		q = q.Preload(strings.Title(preload))
@@ -61,14 +64,13 @@ func (c ChassisStorage) GetAllWithAssociations(offset string, limit string,  inc
 	if err = q.Find(&model.Chassis{}).Error; err != nil {
 		if strings.Contains(err.Error(), "can't preload field") {
 			return count, chassis, api2go.NewHTTPError(nil,
-				fmt.Sprintf("invalid include: %s", strings.Split(err.Error(), " ")[3]) , 422)
+				fmt.Sprintf("invalid include: %s", strings.Split(err.Error(), " ")[3]), 422)
 		}
 		return count, chassis, err
 	}
 
 	return count, chassis, err
 }
-
 
 // GetAllByNicsID retrieve chassis by nicsID
 func (c ChassisStorage) GetAllByNicsID(offset string, limit string, macAddresses []string) (count int, chassis []model.Chassis, err error) {
@@ -110,18 +112,18 @@ func (c ChassisStorage) GetOne(serial string) (chassis model.Chassis, err error)
 
 // GetAllByFilters get all Chassis based on the filter
 func (c ChassisStorage) GetAllByFilters(offset string, limit string, filters *filter.Filters) (count int, chassis []model.Chassis, err error) {
-	query, err := filters.BuildQuery(model.Chassis{})
+	q, err := filters.BuildQuery(model.Chassis{}, c.db)
 	if err != nil {
 		return count, chassis, err
 	}
 
 	if offset != "" && limit != "" {
-		if err = c.db.Limit(limit).Offset(offset).Where(query).Find(&chassis).Error; err != nil {
+		if err = q.Limit(limit).Offset(offset).Find(&chassis).Error; err != nil {
 			return count, chassis, err
 		}
-		c.db.Model(&model.Chassis{}).Where(query).Count(&count)
+		q.Model(&model.Chassis{}).Count(&count)
 	} else {
-		if err = c.db.Where(query).Find(&chassis).Error; err != nil {
+		if err = q.Find(&chassis).Error; err != nil {
 			return count, chassis, err
 		}
 	}

@@ -2,12 +2,13 @@ package storage
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/bmc-toolbox/dora/filter"
 	"github.com/bmc-toolbox/dora/model"
 	"github.com/hashicorp/go-multierror"
 	"github.com/jinzhu/gorm"
 	"github.com/manyminds/api2go"
-	"strings"
 )
 
 // NewDiscreteStorage initializes the storage
@@ -23,12 +24,12 @@ type DiscreteStorage struct {
 
 // Count get discretes count based on the filter
 func (d DiscreteStorage) Count(filters *filter.Filters) (count int, err error) {
-	query, err := filters.BuildQuery(model.Discrete{})
+	q, err := filters.BuildQuery(model.Discrete{}, d.db)
 	if err != nil {
 		return count, err
 	}
 
-	err = d.db.Model(&model.Discrete{}).Where(query).Count(&count).Error
+	err = q.Model(&model.Discrete{}).Count(&count).Error
 	return count, err
 }
 
@@ -62,7 +63,7 @@ func (d DiscreteStorage) GetAllWithAssociations(offset string, limit string, inc
 	if err = q.Find(&discretes).Error; err != nil {
 		if strings.Contains(err.Error(), "can't preload field") {
 			return count, discretes, api2go.NewHTTPError(nil,
-				fmt.Sprintf("invalid include: %s", strings.Split(err.Error(), " ")[3]) , 422)
+				fmt.Sprintf("invalid include: %s", strings.Split(err.Error(), " ")[3]), 422)
 		}
 		return count, discretes, err
 	}
@@ -72,18 +73,18 @@ func (d DiscreteStorage) GetAllWithAssociations(offset string, limit string, inc
 
 // GetAllByFilters get all discretes based on the filter
 func (d DiscreteStorage) GetAllByFilters(offset string, limit string, filters *filter.Filters) (count int, discretes []model.Discrete, err error) {
-	query, err := filters.BuildQuery(model.Discrete{})
+	q, err := filters.BuildQuery(model.Discrete{}, d.db)
 	if err != nil {
 		return count, discretes, err
 	}
 
 	if offset != "" && limit != "" {
-		if err = d.db.Limit(limit).Offset(offset).Where(query).Find(&discretes).Error; err != nil {
+		if err = q.Limit(limit).Offset(offset).Find(&discretes).Error; err != nil {
 			return count, discretes, err
 		}
-		d.db.Model(&model.Discrete{}).Where(query).Count(&count)
+		q.Model(&model.Discrete{}).Count(&count)
 	} else {
-		if err = d.db.Where(query).Find(&discretes).Error; err != nil {
+		if err = q.Find(&discretes).Error; err != nil {
 			return count, discretes, err
 		}
 	}

@@ -2,11 +2,12 @@ package storage
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/bmc-toolbox/dora/filter"
 	"github.com/bmc-toolbox/dora/model"
 	"github.com/jinzhu/gorm"
 	"github.com/manyminds/api2go"
-	"strings"
 )
 
 // NewNicStorage initializes the storage
@@ -21,12 +22,12 @@ type NicStorage struct {
 
 // Count get nics count based on the filter
 func (n NicStorage) Count(filters *filter.Filters) (count int, err error) {
-	query, err := filters.BuildQuery(model.Nic{})
+	q, err := filters.BuildQuery(model.Nic{}, n.db)
 	if err != nil {
 		return count, err
 	}
 
-	err = n.db.Model(&model.Nic{}).Where(query).Count(&count).Error
+	err = q.Model(&model.Nic{}).Count(&count).Error
 	return count, err
 }
 
@@ -60,7 +61,7 @@ func (n NicStorage) GetAllWithAssociations(offset string, limit string, include 
 	if err = q.Find(&nics).Error; err != nil {
 		if strings.Contains(err.Error(), "can't preload field") {
 			return count, nics, api2go.NewHTTPError(nil,
-				fmt.Sprintf("invalid include: %s", strings.Split(err.Error(), " ")[3]) , 422)
+				fmt.Sprintf("invalid include: %s", strings.Split(err.Error(), " ")[3]), 422)
 		}
 		return count, nics, err
 	}
@@ -123,18 +124,18 @@ func (n NicStorage) GetOne(macAddress string) (nic model.Nic, err error) {
 
 // GetAllByFilters get all blades based on the filter
 func (n NicStorage) GetAllByFilters(offset string, limit string, filters *filter.Filters) (count int, nics []model.Nic, err error) {
-	query, err := filters.BuildQuery(model.Nic{})
+	q, err := filters.BuildQuery(model.Nic{}, n.db)
 	if err != nil {
 		return count, nics, err
 	}
 
 	if offset != "" && limit != "" {
-		if err = n.db.Limit(limit).Offset(offset).Where(query).Find(&nics).Error; err != nil {
+		if err = q.Limit(limit).Offset(offset).Find(&nics).Error; err != nil {
 			return count, nics, err
 		}
-		n.db.Model(&model.Nic{}).Where(query).Count(&count)
+		q.Model(&model.Nic{}).Count(&count)
 	} else {
-		if err = n.db.Where(query).Find(&nics).Error; err != nil {
+		if err = q.Find(&nics).Error; err != nil {
 			return count, nics, err
 		}
 	}

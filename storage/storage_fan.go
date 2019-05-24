@@ -2,11 +2,12 @@ package storage
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/bmc-toolbox/dora/filter"
 	"github.com/bmc-toolbox/dora/model"
 	"github.com/jinzhu/gorm"
 	"github.com/manyminds/api2go"
-	"strings"
 )
 
 // NewFanStorage initializes the storage
@@ -21,12 +22,12 @@ type FanStorage struct {
 
 // Count get fans count based on the filter
 func (f FanStorage) Count(filters *filter.Filters) (count int, err error) {
-	query, err := filters.BuildQuery(model.Fan{})
+	q, err := filters.BuildQuery(model.Fan{}, f.db)
 	if err != nil {
 		return count, err
 	}
 
-	err = f.db.Model(&model.Fan{}).Where(query).Count(&count).Error
+	err = q.Model(&model.Fan{}).Count(&count).Error
 	return count, err
 }
 
@@ -60,7 +61,7 @@ func (f FanStorage) GetAllWithAssociations(offset string, limit string, include 
 	if err = q.Find(&fans).Error; err != nil {
 		if strings.Contains(err.Error(), "can't preload field") {
 			return count, fans, api2go.NewHTTPError(nil,
-				fmt.Sprintf("invalid include: %s", strings.Split(err.Error(), " ")[3]) , 422)
+				fmt.Sprintf("invalid include: %s", strings.Split(err.Error(), " ")[3]), 422)
 		}
 		return count, fans, err
 	}
@@ -108,18 +109,18 @@ func (f FanStorage) GetOne(serial string) (fan model.Fan, err error) {
 
 // GetAllByFilters get all blades based on the filter
 func (f FanStorage) GetAllByFilters(offset string, limit string, filters *filter.Filters) (count int, fans []model.Fan, err error) {
-	query, err := filters.BuildQuery(model.Fan{})
+	q, err := filters.BuildQuery(model.Fan{}, f.db)
 	if err != nil {
 		return count, fans, err
 	}
 
 	if offset != "" && limit != "" {
-		if err = f.db.Limit(limit).Offset(offset).Where(query).Find(&fans).Error; err != nil {
+		if err = q.Limit(limit).Offset(offset).Find(&fans).Error; err != nil {
 			return count, fans, err
 		}
-		f.db.Model(&model.Fan{}).Where(query).Count(&count)
+		q.Model(&model.Fan{}).Count(&count)
 	} else {
-		if err = f.db.Where(query).Find(&fans).Error; err != nil {
+		if err = q.Find(&fans).Error; err != nil {
 			return count, fans, err
 		}
 	}

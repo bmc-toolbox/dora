@@ -1,7 +1,6 @@
 package filter
 
 import (
-	"fmt"
 	"reflect"
 	"regexp"
 	"strings"
@@ -20,19 +19,19 @@ var (
 func operator(o string) string {
 	switch o {
 	case "ne":
-		return "not in"
+		return "? != ?"
 	case "!":
-		return "not in"
+		return "? != ?"
 	case "gt":
-		return ">"
+		return "? > ?"
 	case "ge":
-		return ">="
+		return "? >= ?"
 	case "lt":
-		return "<"
+		return "? < ?"
 	case "le":
-		return "<="
+		return "? <= ?"
 	default:
-		return "in"
+		return "? = ?"
 	}
 }
 
@@ -57,9 +56,9 @@ func NewFilterSet(r *api2go.Request) (f *Filters, hasFilters bool) {
 			if len(filter) != 0 {
 				hasFilters = true
 				if strings.HasSuffix(key, "!") {
-					f.Add(filter[1], values, operator("!"))
+					f.Add(filter[1], values, "!")
 				} else {
-					f.Add(filter[1], values, operator("="))
+					f.Add(filter[1], values, "=")
 				}
 				log.WithFields(log.Fields{"step": "request filter", "filter": filter, "values": values}).Debug("Dora web request with filters")
 			}
@@ -87,7 +86,8 @@ func (f *Filters) Get() []*Filter {
 }
 
 // BuildQuery receive a model as an interface and builds a query out of it
-func (f *Filters) BuildQuery(m interface{}, db *gorm.DB) (query string, err error) {
+func (f *Filters) BuildQuery(m interface{}, db *gorm.DB) (q *gorm.DB, err error) {
+	q = db
 	for _, filter := range f.Get() {
 		for key, values := range filter.Filter {
 			if len(values) == 1 && values[0] == "" {
@@ -96,39 +96,27 @@ func (f *Filters) BuildQuery(m interface{}, db *gorm.DB) (query string, err erro
 			rfct := reflect.ValueOf(m)
 			rfctType := rfct.Type()
 
-			var structMemberName string
+			//var structMemberName string
 			var structJSONMemberName string
 			for i := 0; i < rfctType.NumField(); i++ {
 				jsondName := rfctType.Field(i).Tag.Get("json")
 				if key == jsondName {
-					structMemberName = rfctType.Field(i).Name
+					//structMemberName = rfctType.Field(i).Name
 					structJSONMemberName = jsondName
 					break
 				}
 			}
 
 			if structJSONMemberName == "" || structJSONMemberName == "-" {
-				return query, err
+				return db, err
 			}
 
-			ftype := reflect.Indirect(rfct).FieldByName(structMemberName)
-			switch ftype.Kind() {
-			case reflect.String:
-				if query == "" {
-					query = fmt.Sprintf("%s %s ('%s')", structJSONMemberName, filter.Operator, strings.Join(values, "', '"))
-				} else {
-					query = fmt.Sprintf("%s and %s %s ('%s')", query, structJSONMemberName, filter.Operator, strings.Join(values, "', '"))
-				}
-			case reflect.Bool, reflect.Int, reflect.Float64, reflect.Float32:
-				if query == "" {
-					query = fmt.Sprintf("%s %s (%s)", structJSONMemberName, filter.Operator, strings.Join(values, ", "))
-				} else {
-					query = fmt.Sprintf("%s and %s %s (%s)", query, structJSONMemberName, filter.Operator, strings.Join(values, ", "))
-				}
+			for _, value := range values {
+				q = db.Where(operator(filter.Operator), structJSONMemberName, value)
 			}
 		}
 	}
-	return query, err
+	return q, err
 }
 
 // Clean cleanup the current filter list
