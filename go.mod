@@ -5,7 +5,7 @@ go 1.12
 require (
 	github.com/DATA-DOG/go-sqlmock v1.3.3
 	github.com/GeertJohan/go.rice v0.0.0-20170420135705-c02ca9a983da
-	github.com/bmc-toolbox/bmclib v0.2.8
+	github.com/bmc-toolbox/bmclib v0.2.9
 	github.com/bmc-toolbox/gin-go-metrics v0.0.0-20190425145145-130c9ad985ff
 	github.com/daaku/go.zipexe v0.0.0-20150329023125-a5fe2436ffcb // indirect
 	github.com/gedex/inflector v0.0.0-20170307190818-16278e9db813 // indirect

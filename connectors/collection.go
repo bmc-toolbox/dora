@@ -65,9 +65,11 @@ func collect(input <-chan string, source *string, db *gorm.DB) {
 			}
 
 			if isBlade, err := bmc.IsBlade(); isBlade && *source != "cli-with-force" {
-				log.WithFields(log.Fields{"operation": "detection", "ip": host}).Debug("we don't want to scan blades directly since the chassis does it for us")
-				// not an error, we don't want a metric on that
-				continue
+				if bmc.Vendor() != devices.Supermicro {
+					log.WithFields(log.Fields{"operation": "detection", "ip": host}).Debug("we don't want to scan blades directly since the chassis does it for us")
+					// not an error, we don't want a metric on that
+					continue
+				}
 			} else if err != nil {
 				log.WithFields(log.Fields{"operation": "collection", "ip": host}).Error(err)
 				graphiteKey = "collect.bmc_is_blade_detection_failed"
@@ -191,7 +193,7 @@ func DataCollectionWorker() {
 		}(cc, &source, db)
 	}
 
-	nc.QueueSubscribe("dora::collect", viper.GetString("collector.worker.queue"), func(msg *nats.Msg) {
+	_, err = nc.QueueSubscribe("dora::collect", viper.GetString("collector.worker.queue"), func(msg *nats.Msg) {
 		ip := string(msg.Data)
 		parsedIP := net.ParseIP(ip)
 		if parsedIP == nil {
@@ -204,8 +206,9 @@ func DataCollectionWorker() {
 		}
 		cc <- ip
 	})
-	nc.Flush()
-
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "error subscribing to the queue"}).Fatal(err)
+	}
 	if err := nc.LastError(); err != nil {
 		log.WithFields(log.Fields{"operation": "registering worker"}).Fatal(err)
 	}
@@ -269,7 +272,11 @@ func collectBmc(bmc devices.Bmc) (err error) {
 		}
 
 		if len(blade.Diff(&existingData)) != 0 {
-			notification.NotifyChange(fmt.Sprintf("%s/%s/%s", viper.GetString("url"), "blades", blade.Serial))
+			url := fmt.Sprintf("%s/%s/%s", viper.GetString("url"), "blades", blade.Serial)
+			err := notification.NotifyChange(url)
+			if err != nil {
+				log.WithFields(log.Fields{"url": url}).Error("unable to notify")
+			}
 		}
 
 		err = bladeStorage.RemoveOldRefs(blade)
@@ -315,7 +322,11 @@ func collectBmc(bmc devices.Bmc) (err error) {
 		}
 
 		if len(discrete.Diff(&existingData)) != 0 {
-			notification.NotifyChange(fmt.Sprintf("%s/%s/%s", viper.GetString("url"), "discretes", discrete.Serial))
+			url := fmt.Sprintf("%s/%s/%s", viper.GetString("url"), "discretes", discrete.Serial)
+			err := notification.NotifyChange(url)
+			if err != nil {
+				log.WithFields(log.Fields{"url": url}).Error("unable to notify")
+			}
 		}
 
 		err = discreteStorage.RemoveOldRefs(discrete)
@@ -458,7 +469,11 @@ func collectCmc(bmc devices.Cmc) (err error) {
 	}
 
 	if len(chassis.Diff(&existingData)) != 0 {
-		notification.NotifyChange(fmt.Sprintf("%s/%s/%s", viper.GetString("url"), "chassis", chassis.Serial))
+		url := fmt.Sprintf("%s/%s/%s", viper.GetString("url"), "chassis", chassis.Serial)
+		err := notification.NotifyChange(url)
+		if err != nil {
+			log.WithFields(log.Fields{"url": url}).Error("unable to notify")
+		}
 	}
 
 	var merror *multierror.Error

@@ -38,6 +38,8 @@ func NewBladeFromDevice(b *devices.Blade) (blade *Blade) {
 			Speed:       nic.Speed,
 		})
 	}
+	blade.BladePosition = b.BladePosition
+	blade.ChassisSerial = b.ChassisSerial
 	blade.Disks = make([]*Disk, 0)
 	for pos, disk := range b.Disks {
 		if disk.Serial == "" {

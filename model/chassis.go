@@ -125,6 +125,7 @@ type Chassis struct {
 	Vendor            string          `json:"vendor"`
 	FwVersion         string          `json:"fw_version"`
 	UpdatedAt         time.Time       `json:"updated_at"`
+	Managed           bool            `json:"managed"`
 }
 
 // GetID to satisfy jsonapi.MarshalIdentifier interface
