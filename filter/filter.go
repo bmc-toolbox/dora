@@ -1,6 +1,7 @@
 package filter
 
 import (
+	"fmt"
 	"reflect"
 	"regexp"
 	"strings"
@@ -16,22 +17,22 @@ var (
 	extendedFiltering = regexp.MustCompile(`filter\[(.+)\]\[(.+)\]`)
 )
 
-func operator(o string) string {
+func operation(field string, o string) string {
 	switch o {
 	case "ne":
-		return "? != ?"
+		return fmt.Sprintf("\"%s\" != ?", field)
 	case "!":
-		return "? != ?"
+		return fmt.Sprintf("\"%s\" != ?", field)
 	case "gt":
-		return "? > ?"
+		return fmt.Sprintf("\"%s\" > ?", field)
 	case "ge":
-		return "? >= ?"
+		return fmt.Sprintf("\"%s\" >= ?", field)
 	case "lt":
-		return "? < ?"
+		return fmt.Sprintf("\"%s\" < ?", field)
 	case "le":
-		return "? <= ?"
+		return fmt.Sprintf("\"%s\" <= ?", field)
 	default:
-		return "? = ?"
+		return fmt.Sprintf("\"%s\" = ?", field)
 	}
 }
 
@@ -64,7 +65,7 @@ func NewFilterSet(r *api2go.Request) (f *Filters, hasFilters bool) {
 			}
 		} else {
 			hasFilters = true
-			f.Add(filter[1], values, operator(filter[2]))
+			f.Add(filter[1], values, filter[2])
 		}
 	}
 	return f, hasFilters
@@ -111,8 +112,10 @@ func (f *Filters) BuildQuery(m interface{}, db *gorm.DB) (q *gorm.DB, err error)
 				return db, err
 			}
 
+			//vtype := reflect.Indirect(rfct).FieldByName(structMemberName)
+			op := operation(structJSONMemberName, filter.Operator)
 			for _, value := range values {
-				q = db.Where(operator(filter.Operator), structJSONMemberName, value)
+				q = db.Where(op, value)
 			}
 		}
 	}
