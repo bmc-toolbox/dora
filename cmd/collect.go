@@ -19,6 +19,7 @@ import (
 	"os"
 
 	"github.com/bmc-toolbox/dora/connectors"
+	metrics "github.com/bmc-toolbox/gin-go-metrics"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -55,6 +56,15 @@ usage: dora collect
 				os.Exit(1)
 			}
 		}
+
+		// dummy metrics setup, don't send anything
+		_ = metrics.Setup(
+			"none",
+			"",
+			0,
+			"",
+			0,
+		)
 
 		scanType := "cli"
 		if force {
