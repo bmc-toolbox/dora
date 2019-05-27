@@ -21,8 +21,6 @@ func operation(field string, o string) string {
 	switch o {
 	case "ne":
 		return fmt.Sprintf("\"%s\" != ?", field)
-	case "!":
-		return fmt.Sprintf("\"%s\" != ?", field)
 	case "gt":
 		return fmt.Sprintf("\"%s\" > ?", field)
 	case "ge":
@@ -31,8 +29,10 @@ func operation(field string, o string) string {
 		return fmt.Sprintf("\"%s\" < ?", field)
 	case "le":
 		return fmt.Sprintf("\"%s\" <= ?", field)
-	default:
+	case "eq":
 		return fmt.Sprintf("\"%s\" = ?", field)
+	default:
+		return ""
 	}
 }
 
@@ -57,11 +57,11 @@ func NewFilterSet(r *api2go.Request) (f *Filters, hasFilters bool) {
 			if len(filter) != 0 {
 				hasFilters = true
 				if strings.HasSuffix(key, "!") {
-					f.Add(filter[1], values, "!")
+					f.Add(filter[1], values, "ne")
 				} else {
-					f.Add(filter[1], values, "=")
+					f.Add(filter[1], values, "eq")
 				}
-				log.WithFields(log.Fields{"step": "request filter", "filter": filter, "values": values}).Debug("Dora web request with filters")
+				log.WithFields(log.Fields{"step": "request filter", "filter": filter, "values": values}).Debug("request with filters")
 			}
 		} else {
 			hasFilters = true
@@ -97,23 +97,24 @@ func (f *Filters) BuildQuery(m interface{}, db *gorm.DB) (q *gorm.DB, err error)
 			rfct := reflect.ValueOf(m)
 			rfctType := rfct.Type()
 
-			//var structMemberName string
 			var structJSONMemberName string
 			for i := 0; i < rfctType.NumField(); i++ {
 				jsondName := rfctType.Field(i).Tag.Get("json")
 				if key == jsondName {
-					//structMemberName = rfctType.Field(i).Name
 					structJSONMemberName = jsondName
 					break
 				}
 			}
 
 			if structJSONMemberName == "" || structJSONMemberName == "-" {
-				return db, err
+				return q, err
 			}
 
-			//vtype := reflect.Indirect(rfct).FieldByName(structMemberName)
 			op := operation(structJSONMemberName, filter.Operator)
+			if op == "" {
+				return nil, api2go.NewHTTPError(nil, fmt.Sprintf("Invalid filter operation: %s", filter.Operator), 400)
+			}
+
 			for _, value := range values {
 				q = db.Where(op, value)
 			}

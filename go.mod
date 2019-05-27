@@ -29,6 +29,7 @@ require (
 	github.com/nats-io/nuid v0.0.0-20180317191920-3e58d42c9cfe // indirect
 	github.com/onsi/ginkgo v1.8.0 // indirect
 	github.com/onsi/gomega v1.5.0 // indirect
+	github.com/selvatico/go-mocket v1.0.7
 	github.com/sirupsen/logrus v1.4.1
 	github.com/spf13/afero v1.2.1 // indirect
 	github.com/spf13/cobra v0.0.0-20190109003409-7547e83b2d85

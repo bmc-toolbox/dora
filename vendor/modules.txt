@@ -139,6 +139,8 @@ github.com/pelletier/go-toml
 github.com/pmezard/go-difflib/difflib
 # github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a
 github.com/rcrowley/go-metrics
+# github.com/selvatico/go-mocket v1.0.7
+github.com/selvatico/go-mocket
 # github.com/sirupsen/logrus v1.4.1
 github.com/sirupsen/logrus
 # github.com/spf13/afero v1.2.1
