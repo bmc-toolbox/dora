@@ -2,11 +2,12 @@ package storage
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/bmc-toolbox/dora/filter"
 	"github.com/bmc-toolbox/dora/model"
 	"github.com/jinzhu/gorm"
 	"github.com/manyminds/api2go"
-	"strings"
 )
 
 // NewStorageBladeStorage initializes the storage
@@ -21,12 +22,12 @@ type StorageBladeStorage struct {
 
 // Count get blades count based on the filter
 func (b StorageBladeStorage) Count(filters *filter.Filters) (count int, err error) {
-	query, err := filters.BuildQuery(model.StorageBlade{})
+	q, err := filters.BuildQuery(model.StorageBlade{}, b.db)
 	if err != nil {
 		return count, err
 	}
 
-	err = b.db.Model(&model.StorageBlade{}).Where(query).Count(&count).Error
+	err = q.Model(&model.StorageBlade{}).Count(&count).Error
 	return count, err
 }
 
@@ -60,7 +61,7 @@ func (b StorageBladeStorage) GetAllWithAssociations(offset string, limit string,
 	if err = q.Find(&storageBlades).Error; err != nil {
 		if strings.Contains(err.Error(), "can't preload field") {
 			return count, storageBlades, api2go.NewHTTPError(nil,
-				fmt.Sprintf("invalid include: %s", strings.Split(err.Error(), " ")[3]) , 422)
+				fmt.Sprintf("invalid include: %s", strings.Split(err.Error(), " ")[3]), 422)
 		}
 		return count, storageBlades, err
 	}
@@ -69,18 +70,18 @@ func (b StorageBladeStorage) GetAllWithAssociations(offset string, limit string,
 
 // GetAllByFilters get all StorageBlades based on the filter
 func (b StorageBladeStorage) GetAllByFilters(offset string, limit string, filters *filter.Filters) (count int, storageBlades []model.StorageBlade, err error) {
-	query, err := filters.BuildQuery(model.StorageBlade{})
+	q, err := filters.BuildQuery(model.StorageBlade{}, b.db)
 	if err != nil {
 		return count, storageBlades, err
 	}
 
 	if offset != "" && limit != "" {
-		if err = b.db.Limit(limit).Offset(offset).Where(query).Find(&storageBlades).Error; err != nil {
+		if err = q.Limit(limit).Offset(offset).Find(&storageBlades).Error; err != nil {
 			return count, storageBlades, err
 		}
-		b.db.Model(&model.StorageBlade{}).Where(query).Count(&count)
+		q.Model(&model.StorageBlade{}).Count(&count)
 	} else {
-		if err = b.db.Where(query).Find(&storageBlades).Error; err != nil {
+		if err = q.Find(&storageBlades).Error; err != nil {
 			return count, storageBlades, err
 		}
 	}

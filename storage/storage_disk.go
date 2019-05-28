@@ -2,11 +2,12 @@ package storage
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/bmc-toolbox/dora/filter"
 	"github.com/bmc-toolbox/dora/model"
 	"github.com/jinzhu/gorm"
 	"github.com/manyminds/api2go"
-	"strings"
 )
 
 // NewDiskStorage initializes the storage
@@ -21,12 +22,12 @@ type DiskStorage struct {
 
 // Count get disks count based on the filter
 func (d DiskStorage) Count(filters *filter.Filters) (count int, err error) {
-	query, err := filters.BuildQuery(model.Disk{})
+	q, err := filters.BuildQuery(model.Disk{}, d.db)
 	if err != nil {
 		return count, err
 	}
 
-	err = d.db.Model(&model.Disk{}).Where(query).Count(&count).Error
+	err = q.Model(&model.Disk{}).Count(&count).Error
 	return count, err
 }
 
@@ -60,7 +61,7 @@ func (d DiskStorage) GetAllWithAssociations(offset string, limit string, include
 	if err = q.Find(&disks).Error; err != nil {
 		if strings.Contains(err.Error(), "can't preload field") {
 			return count, disks, api2go.NewHTTPError(nil,
-				fmt.Sprintf("invalid include: %s", strings.Split(err.Error(), " ")[3]) , 422)
+				fmt.Sprintf("invalid include: %s", strings.Split(err.Error(), " ")[3]), 422)
 		}
 		return count, disks, err
 	}
@@ -70,18 +71,18 @@ func (d DiskStorage) GetAllWithAssociations(offset string, limit string, include
 
 // GetAllByFilters get all blades based on the filter
 func (d DiskStorage) GetAllByFilters(offset string, limit string, filters *filter.Filters) (count int, disks []model.Disk, err error) {
-	query, err := filters.BuildQuery(model.Disk{})
+	q, err := filters.BuildQuery(model.Disk{}, d.db)
 	if err != nil {
 		return count, disks, err
 	}
 
 	if offset != "" && limit != "" {
-		if err = d.db.Limit(limit).Offset(offset).Where(query).Find(&disks).Error; err != nil {
+		if err = q.Limit(limit).Offset(offset).Find(&disks).Error; err != nil {
 			return count, disks, err
 		}
-		d.db.Model(&model.Disk{}).Where(query).Count(&count)
+		q.Model(&model.Disk{}).Count(&count)
 	} else {
-		if err = d.db.Where(query).Find(&disks).Error; err != nil {
+		if err = q.Find(&disks).Error; err != nil {
 			return count, disks, err
 		}
 	}

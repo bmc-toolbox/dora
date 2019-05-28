@@ -18,12 +18,12 @@ type ScannedPortStorage struct {
 
 // Count get ScannedPorts count based on the filter
 func (s ScannedPortStorage) Count(filters *filter.Filters) (count int, err error) {
-	query, err := filters.BuildQuery(model.ScannedPort{})
+	q, err := filters.BuildQuery(model.ScannedPort{}, s.db)
 	if err != nil {
 		return count, err
 	}
 
-	err = s.db.Model(&model.ScannedPort{}).Where(query).Count(&count).Error
+	err = q.Model(&model.ScannedPort{}).Count(&count).Error
 	return count, err
 }
 
@@ -44,18 +44,18 @@ func (s ScannedPortStorage) GetAll(offset string, limit string) (count int, port
 
 // GetAllByFilters get all chassis based on the filter
 func (s ScannedPortStorage) GetAllByFilters(offset string, limit string, filters *filter.Filters) (count int, ports []model.ScannedPort, err error) {
-	query, err := filters.BuildQuery(model.ScannedPort{})
+	q, err := filters.BuildQuery(model.ScannedPort{}, s.db)
 	if err != nil {
 		return count, ports, err
 	}
 
 	if offset != "" && limit != "" {
-		if err = s.db.Limit(limit).Offset(offset).Where(query).Find(&ports).Error; err != nil {
+		if err = q.Limit(limit).Offset(offset).Find(&ports).Error; err != nil {
 			return count, ports, err
 		}
-		s.db.Model(&model.ScannedPort{}).Where(query).Count(&count)
+		q.Model(&model.ScannedPort{}).Count(&count)
 	} else {
-		if err = s.db.Where(query).Find(&ports).Error; err != nil {
+		if err = q.Find(&ports).Error; err != nil {
 			return count, ports, err
 		}
 	}

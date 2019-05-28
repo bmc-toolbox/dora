@@ -3,16 +3,43 @@ package filter
 import (
 	"fmt"
 	"reflect"
+	"regexp"
 	"strings"
+
+	"github.com/jinzhu/gorm"
 
 	"github.com/manyminds/api2go"
 	log "github.com/sirupsen/logrus"
 )
 
+var (
+	simpleFiltering   = regexp.MustCompile(`filter\[(.+)\]`)
+	extendedFiltering = regexp.MustCompile(`filter\[(.+)\]\[(.+)\]`)
+)
+
+func operation(field string, o string) string {
+	switch o {
+	case "ne":
+		return fmt.Sprintf("\"%s\" != ?", field)
+	case "gt":
+		return fmt.Sprintf("\"%s\" > ?", field)
+	case "ge":
+		return fmt.Sprintf("\"%s\" >= ?", field)
+	case "lt":
+		return fmt.Sprintf("\"%s\" < ?", field)
+	case "le":
+		return fmt.Sprintf("\"%s\" <= ?", field)
+	case "eq":
+		return fmt.Sprintf("\"%s\" = ?", field)
+	default:
+		return ""
+	}
+}
+
 // Filter is meant to store the filters of requested via api
 type Filter struct {
-	Filter    map[string][]string
-	Exclusion bool
+	Filter   map[string][]string
+	Operator string
 }
 
 // Filters is is the collection of filters received on the api call
@@ -24,27 +51,31 @@ type Filters struct {
 func NewFilterSet(r *api2go.Request) (f *Filters, hasFilters bool) {
 	f = &Filters{}
 	for key, values := range r.QueryParams {
-		if strings.HasPrefix(key, "filter") {
-			hasFilters = true
-			exclusion := false
-			if strings.HasSuffix(key, "!") {
-				exclusion = true
-				key = key[:len(key)-1]
+		filter := extendedFiltering.FindStringSubmatch(key)
+		if len(filter) == 0 {
+			filter = simpleFiltering.FindStringSubmatch(key)
+			if len(filter) != 0 {
+				hasFilters = true
+				if strings.HasSuffix(key, "!") {
+					f.Add(filter[1], values, "ne")
+				} else {
+					f.Add(filter[1], values, "eq")
+				}
+				log.WithFields(log.Fields{"step": "request filter", "filter": filter, "values": values}).Debug("request with filters")
 			}
-			filter := strings.TrimSuffix(strings.TrimPrefix(key, "filter["), "]")
-			f.Add(filter, values, exclusion)
-			log.WithFields(log.Fields{"step": "request filter", "filter": filter, "values": values}).Debug("Dora web request with filters")
+		} else {
+			hasFilters = true
+			f.Add(filter[1], values, filter[2])
 		}
 	}
-
 	return f, hasFilters
 }
 
 // Add adds a new filter to the filter map
-func (f *Filters) Add(name string, values []string, exclusion bool) {
+func (f *Filters) Add(name string, values []string, operator string) {
 	ft := &Filter{
-		Filter:    map[string][]string{name: values},
-		Exclusion: exclusion,
+		Filter:   map[string][]string{name: values},
+		Operator: operator,
 	}
 
 	f.filters = append(f.filters, ft)
@@ -56,13 +87,9 @@ func (f *Filters) Get() []*Filter {
 }
 
 // BuildQuery receive a model as an interface and builds a query out of it
-func (f *Filters) BuildQuery(m interface{}) (query string, err error) {
+func (f *Filters) BuildQuery(m interface{}, db *gorm.DB) (q *gorm.DB, err error) {
+	q = db
 	for _, filter := range f.Get() {
-		queryType := "in"
-		if filter.Exclusion {
-			queryType = "not in"
-		}
-
 		for key, values := range filter.Filter {
 			if len(values) == 1 && values[0] == "" {
 				continue
@@ -70,39 +97,30 @@ func (f *Filters) BuildQuery(m interface{}) (query string, err error) {
 			rfct := reflect.ValueOf(m)
 			rfctType := rfct.Type()
 
-			var structMemberName string
 			var structJSONMemberName string
 			for i := 0; i < rfctType.NumField(); i++ {
 				jsondName := rfctType.Field(i).Tag.Get("json")
 				if key == jsondName {
-					structMemberName = rfctType.Field(i).Name
 					structJSONMemberName = jsondName
 					break
 				}
 			}
 
 			if structJSONMemberName == "" || structJSONMemberName == "-" {
-				return query, err
+				return q, err
 			}
 
-			ftype := reflect.Indirect(rfct).FieldByName(structMemberName)
-			switch ftype.Kind() {
-			case reflect.String:
-				if query == "" {
-					query = fmt.Sprintf("%s %s ('%s')", structJSONMemberName, queryType, strings.Join(values, "', '"))
-				} else {
-					query = fmt.Sprintf("%s and %s %s ('%s')", query, structJSONMemberName, queryType, strings.Join(values, "', '"))
-				}
-			case reflect.Bool, reflect.Int, reflect.Float64, reflect.Float32:
-				if query == "" {
-					query = fmt.Sprintf("%s %s (%s)", structJSONMemberName, queryType, strings.Join(values, ", "))
-				} else {
-					query = fmt.Sprintf("%s and %s %s (%s)", query, structJSONMemberName, queryType, strings.Join(values, ", "))
-				}
+			op := operation(structJSONMemberName, filter.Operator)
+			if op == "" {
+				return nil, api2go.NewHTTPError(nil, fmt.Sprintf("Invalid filter operation: %s", filter.Operator), 400)
+			}
+
+			for _, value := range values {
+				q = db.Where(op, value)
 			}
 		}
 	}
-	return query, err
+	return q, err
 }
 
 // Clean cleanup the current filter list

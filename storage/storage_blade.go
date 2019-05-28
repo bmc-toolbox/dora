@@ -2,12 +2,13 @@ package storage
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/bmc-toolbox/dora/filter"
 	"github.com/bmc-toolbox/dora/model"
 	"github.com/hashicorp/go-multierror"
 	"github.com/jinzhu/gorm"
 	"github.com/manyminds/api2go"
-	"strings"
 )
 
 // NewBladeStorage initializes the storage
@@ -23,12 +24,12 @@ type BladeStorage struct {
 
 // Count get blades count based on the filter
 func (b BladeStorage) Count(filters *filter.Filters) (count int, err error) {
-	query, err := filters.BuildQuery(model.Blade{})
+	q, err := filters.BuildQuery(model.Blade{}, b.db)
 	if err != nil {
 		return count, err
 	}
 
-	err = b.db.Model(&model.Blade{}).Where(query).Count(&count).Error
+	err = q.Model(&model.Blade{}).Count(&count).Error
 	return count, err
 }
 
@@ -55,14 +56,14 @@ func (b BladeStorage) GetAllWithAssociations(offset string, limit string, includ
 	}
 
 	if offset != "" && limit != "" {
-        q = b.db.Limit(limit).Offset(offset)
+		q = b.db.Limit(limit).Offset(offset)
 		b.db.Order("serial asc").Find(&model.Blade{}).Count(&count)
 	}
 
 	if err = q.Find(&blades).Error; err != nil {
 		if strings.Contains(err.Error(), "can't preload field") {
 			return count, blades, api2go.NewHTTPError(nil,
-				fmt.Sprintf("invalid include: %s", strings.Split(err.Error(), " ")[3]) , 422)
+				fmt.Sprintf("invalid include: %s", strings.Split(err.Error(), " ")[3]), 422)
 		}
 		return count, blades, err
 	}
@@ -87,18 +88,18 @@ func (b BladeStorage) GetAllByDisksID(offset string, limit string, serials []str
 
 // GetAllByFilters get all blades based on the filter
 func (b BladeStorage) GetAllByFilters(offset string, limit string, filters *filter.Filters) (count int, blades []model.Blade, err error) {
-	query, err := filters.BuildQuery(model.Blade{})
+	q, err := filters.BuildQuery(model.Blade{}, b.db)
 	if err != nil {
 		return count, blades, err
 	}
 
 	if offset != "" && limit != "" {
-		if err = b.db.Limit(limit).Offset(offset).Where(query).Find(&blades).Error; err != nil {
+		if err = q.Limit(limit).Offset(offset).Find(&blades).Error; err != nil {
 			return count, blades, err
 		}
-		b.db.Model(&model.Blade{}).Where(query).Count(&count)
+		q.Model(&model.Blade{}).Count(&count)
 	} else {
-		if err = b.db.Where(query).Find(&blades).Error; err != nil {
+		if err = q.Find(&blades).Error; err != nil {
 			return count, blades, err
 		}
 	}

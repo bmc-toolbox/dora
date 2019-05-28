@@ -120,8 +120,8 @@ func (s *Stats) GatherDBStats(
 
 		updated24hAgoFilter := &filter.Filters{}
 		updated24hAgoFilter.Add("updated_at",
-			[]string{"less_than", time.Now().AddDate(0, 0, -1).Format(time.RFC3339)},
-			false)
+			[]string{time.Now().AddDate(0, 0, -1).Format(time.RFC3339)},
+			"lt")
 		u.Updated24hAgo, _ = r.Count(updated24hAgoFilter)
 
 		if viper.GetBool("metrics.enabled") {
@@ -136,11 +136,11 @@ func (s *Stats) GatherDBStats(
 			vendorFilter := &filter.Filters{}
 			vendorFilter.Add("vendor",
 				[]string{vendor},
-				false)
+				"eq")
 			asset.Total, _ = r.Count(vendorFilter)
 			vendorFilter.Add("updated_at",
-				[]string{"less_than", time.Now().AddDate(0, 0, -1).Format(time.RFC3339)},
-				false)
+				[]string{time.Now().AddDate(0, 0, -1).Format(time.RFC3339)},
+				"lt")
 			asset.Updated24hAgo, _ = r.Count(vendorFilter)
 			u.Vendors[vendor] = asset
 
