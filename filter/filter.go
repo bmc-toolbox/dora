@@ -116,7 +116,7 @@ func (f *Filters) BuildQuery(m interface{}, db *gorm.DB) (q *gorm.DB, err error)
 			}
 
 			for _, value := range values {
-				q = db.Where(op, value)
+				q = q.Where(op, value)
 			}
 		}
 	}
