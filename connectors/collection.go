@@ -248,6 +248,9 @@ func collectBmc(bmc devices.Bmc) (err error) {
 		blade := model.NewBladeFromDevice(b)
 		blade.BmcAuth = true
 		blade.BmcWEBReachable = true
+
+		db.Where(model.Chassis{Serial: blade.ChassisSerial}).FirstOrCreate(&model.Chassis{})
+
 		var scans []model.ScannedPort
 		db.Where("ip = ?", blade.BmcAddress).Find(&scans)
 		for _, scan := range scans {
@@ -354,6 +357,7 @@ func collectCmc(bmc devices.Cmc) (err error) {
 
 	chassis := model.NewChassisFromDevice(ch)
 	chassis.BmcAuth = true
+	chassis.Managed = true
 	var scans []model.ScannedPort
 	db.Where("ip = ?", chassis.BmcAddress).Find(&scans)
 	for _, scan := range scans {
