@@ -25,6 +25,7 @@ var testSet = []struct {
 	{"filter[temp_c][lt]=3", "&{SELECT * FROM \"\"  WHERE (\"temp_c\" < ?) [3]}"},
 	{"filter[temp_c][ge]=3", "&{SELECT * FROM \"\"  WHERE (\"temp_c\" >= ?) [3]}"},
 	{"filter[temp_c][gt]=3", "&{SELECT * FROM \"\"  WHERE (\"temp_c\" > ?) [3]}"},
+	{"filter[temp_c][gt]=3&filter[vendor]=Dell", "&{SELECT * FROM \"\"  WHERE (\"temp_c\" > ?) AND (\"vendor\" = ?) [3 Dell]}"},
 }
 
 func setupDB() *gorm.DB {
