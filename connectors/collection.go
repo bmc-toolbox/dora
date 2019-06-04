@@ -3,6 +3,7 @@ package connectors
 import (
 	"fmt"
 	"net"
+	"strings"
 	"sync"
 
 	"github.com/bmc-toolbox/bmclib/devices"
@@ -65,7 +66,15 @@ func collect(input <-chan string, source *string, db *gorm.DB) {
 			}
 
 			if isBlade, err := bmc.IsBlade(); isBlade && *source != "cli-with-force" {
-				if bmc.Vendor() != devices.Supermicro {
+				if bmc.Vendor() == devices.HP {
+					model, err := bmc.Model()
+					if err != nil {
+						log.WithFields(log.Fields{"operation": "collection", "ip": host}).Error(err)
+					}
+					if strings.Contains(strings.ToLower(model), "bl") {
+						log.WithFields(log.Fields{"operation": "detection", "ip": host}).Debug("we don't want to scan blades directly since the chassis does it for us")
+					}
+				} else if bmc.Vendor() != devices.Supermicro {
 					log.WithFields(log.Fields{"operation": "detection", "ip": host}).Debug("we don't want to scan blades directly since the chassis does it for us")
 					// not an error, we don't want a metric on that
 					continue
