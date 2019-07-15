@@ -20,7 +20,6 @@ import (
 	"os"
 
 	"github.com/bmc-toolbox/dora/scanner"
-	metrics "github.com/bmc-toolbox/gin-go-metrics"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -39,14 +38,9 @@ usage: dora scan
 	   dora scan loadSubnets <subnetSource>
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		// dummy metrics setup, don't send anything
-		_ = metrics.Setup(
-			"none",
-			"",
-			0,
-			"",
-			0,
-		)
+		// This will avoid a deadlock in metrics. They are not setup at this stage
+
+		viper.Set("metrics.enabled", false)
 		if len(args) != 0 && args[0] != "all" {
 			var subnets []string
 			for _, subnet := range args {

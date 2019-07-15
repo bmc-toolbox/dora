@@ -28,9 +28,7 @@ func (c ChassisStorage) Count(filters *filter.Filters) (count int, err error) {
 		return count, err
 	}
 
-	fmt.Println(1)
 	err = q.Model(&model.Chassis{}).Count(&count).Error
-	fmt.Println(2)
 	return count, err
 }
 

@@ -19,7 +19,6 @@ import (
 	"os"
 
 	"github.com/bmc-toolbox/dora/connectors"
-	metrics "github.com/bmc-toolbox/gin-go-metrics"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -57,14 +56,8 @@ usage: dora collect
 			}
 		}
 
-		// dummy metrics setup, don't send anything
-		_ = metrics.Setup(
-			"none",
-			"",
-			0,
-			"",
-			0,
-		)
+		// This will avoid a deadlock in metrics. They are not setup at this stage
+		viper.Set("metrics.enabled", false)
 
 		scanType := "cli"
 		if force {
