@@ -39,7 +39,6 @@ usage: dora scan
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		// This will avoid a deadlock in metrics. They are not setup at this stage
-
 		viper.Set("metrics.enabled", false)
 		if len(args) != 0 && args[0] != "all" {
 			var subnets []string
