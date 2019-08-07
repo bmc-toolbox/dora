@@ -285,10 +285,7 @@ func collectBmc(bmc devices.Bmc) (err error) {
 
 		if len(blade.Diff(&existingData)) != 0 {
 			url := fmt.Sprintf("%s/%s/%s", viper.GetString("url"), "blades", blade.Serial)
-			err := notification.NotifyChange(url)
-			if err != nil {
-				log.WithFields(log.Fields{"url": url}).Error("unable to notify")
-			}
+			notification.NotifyChange(url)
 		}
 
 		err = bladeStorage.RemoveOldRefs(blade)
@@ -335,10 +332,7 @@ func collectBmc(bmc devices.Bmc) (err error) {
 
 		if len(discrete.Diff(&existingData)) != 0 {
 			url := fmt.Sprintf("%s/%s/%s", viper.GetString("url"), "discretes", discrete.Serial)
-			err := notification.NotifyChange(url)
-			if err != nil {
-				log.WithFields(log.Fields{"url": url}).Error("unable to notify")
-			}
+			notification.NotifyChange(url)
 		}
 
 		err = discreteStorage.RemoveOldRefs(discrete)
@@ -483,10 +477,7 @@ func collectCmc(bmc devices.Cmc) (err error) {
 
 	if len(chassis.Diff(&existingData)) != 0 {
 		url := fmt.Sprintf("%s/%s/%s", viper.GetString("url"), "chassis", chassis.Serial)
-		err := notification.NotifyChange(url)
-		if err != nil {
-			log.WithFields(log.Fields{"url": url}).Error("unable to notify")
-		}
+		notification.NotifyChange(url)
 	}
 
 	var merror *multierror.Error

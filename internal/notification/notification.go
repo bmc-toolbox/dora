@@ -1,7 +1,9 @@
 package notification
 
 import (
+	"context"
 	"os/exec"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -12,31 +14,24 @@ var (
 )
 
 func init() {
-	notifyChange = make(chan string)
+	// Creates a channel with a buffer for 600 messages
+	notifyChange = make(chan string, 600)
 	go func(notification <-chan string) {
-		// Notification
-		viper.SetDefault("notification.enabled", false)
-		viper.SetDefault("notification.script", "/usr/local/bin/notify-on-dora-change")
-		method := viper.GetString("notification.enabled")
 		for endpoint := range notification {
-			switch method {
-			case "script":
-				cmd := exec.Command(viper.GetString("notification.script"), endpoint)
-				err := cmd.Run()
-				if err != nil {
-					log.WithFields(log.Fields{"operation": "notification", "endpoint": endpoint}).Error(err)
-					continue
-				}
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			if err := exec.CommandContext(ctx, viper.GetString("notification.script"), endpoint).Run(); err != nil {
+				log.WithFields(log.Fields{"operation": "notification", "endpoint": endpoint}).Error(err)
 			}
-
+			cancel()
 		}
 	}(notifyChange)
 }
 
 // NotifyChange will run a script to notify a system on changes to assets
-func NotifyChange(asset string) (err error) {
+func NotifyChange(asset string) {
 	if !viper.GetBool("notification.enabled") {
 		return
 	}
+	notifyChange <- asset
 	return
 }
