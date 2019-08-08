@@ -19,7 +19,7 @@ func init() {
 	go func(notification <-chan string) {
 		for endpoint := range notification {
 			log.WithFields(log.Fields{"operation": "notification", "endpoint": endpoint}).Debug("notification endpoint")
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), viper.GetDuration("notification.timeout")*time.Second)
 			if err := exec.CommandContext(ctx, viper.GetString("notification.script"), endpoint).Run(); err != nil {
 				log.WithFields(log.Fields{"operation": "notification", "endpoint": endpoint}).Error(err)
 			}

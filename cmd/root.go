@@ -96,6 +96,7 @@ func initConfig() {
 	// Notification
 	viper.SetDefault("notification.enabled", false)
 	viper.SetDefault("notification.script", "/usr/local/bin/notify-on-dora-change")
+	viper.SetDefault("notification.timeout", 30)
 
 	// Scan
 	viper.SetDefault("scanner.kea_domain_name_suffix", ".bmc.example.com")
