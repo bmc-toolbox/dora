@@ -20,7 +20,7 @@ var (
 func operation(field string, o string) string {
 	switch o {
 	case "ne":
-		return fmt.Sprintf("\"%s\" != ?", field)
+		return fmt.Sprintf("\"%s\" not in (?)", field)
 	case "gt":
 		return fmt.Sprintf("\"%s\" > ?", field)
 	case "ge":
@@ -30,7 +30,7 @@ func operation(field string, o string) string {
 	case "le":
 		return fmt.Sprintf("\"%s\" <= ?", field)
 	case "eq":
-		return fmt.Sprintf("\"%s\" = ?", field)
+		return fmt.Sprintf("\"%s\" in (?)", field)
 	default:
 		return ""
 	}
@@ -115,8 +115,12 @@ func (f *Filters) BuildQuery(m interface{}, db *gorm.DB) (q *gorm.DB, err error)
 				return nil, api2go.NewHTTPError(nil, fmt.Sprintf("Invalid filter operation: %s", filter.Operator), 400)
 			}
 
-			for _, value := range values {
-				q = q.Where(op, value)
+			if filter.Operator == "eq" || filter.Operator == "ne" {
+				q = q.Where(op, values)
+			} else {
+				for _, value := range values {
+					q = q.Where(op, value)
+				}
 			}
 		}
 	}
