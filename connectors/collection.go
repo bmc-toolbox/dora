@@ -405,7 +405,7 @@ func collectCmc(bmc devices.Cmc) (err error) {
 					}
 				}
 
-				blade.BmcType = b.BmcType()
+				blade.BmcType = b.HardwareType()
 
 				blade.Processor, blade.ProcessorCount, blade.ProcessorCoreCount, blade.ProcessorThreadCount, err = b.CPU()
 				if err != nil {
