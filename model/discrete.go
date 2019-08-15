@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -37,7 +38,10 @@ func NewDiscreteFromDevice(d *devices.Discrete) (discrete *Discrete) {
 		})
 	}
 	discrete.Disks = make([]*Disk, 0)
-	for _, disk := range d.Disks {
+	for pos, disk := range d.Disks {
+		if disk.Serial == "" {
+			disk.Serial = fmt.Sprintf("%s-failed-%d", discrete.Serial, pos)
+		}
 		discrete.Disks = append(discrete.Disks, &Disk{
 			Serial:         disk.Serial,
 			Size:           disk.Size,
@@ -61,7 +65,10 @@ func NewDiscreteFromDevice(d *devices.Discrete) (discrete *Discrete) {
 	discrete.ProcessorThreadCount = d.ProcessorThreadCount
 	discrete.Memory = d.Memory
 	discrete.Psus = make([]*Psu, 0)
-	for _, psu := range d.Psus {
+	for pos, psu := range d.Psus {
+		if psu.Serial == "" {
+			psu.Serial = fmt.Sprintf("%s-failed-%d", discrete.Serial, pos)
+		}
 		discrete.Psus = append(discrete.Psus, &Psu{
 			Serial:         psu.Serial,
 			CapacityKw:     psu.CapacityKw,
