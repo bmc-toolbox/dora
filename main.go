@@ -15,15 +15,9 @@
 package main // import "github.com/bmc-toolbox/dora"
 
 import (
-	"log"
-
 	"github.com/bmc-toolbox/dora/cmd"
-	"github.com/google/gops/agent"
 )
 
 func main() {
-	if err := agent.Listen(agent.Options{}); err != nil {
-		log.Fatal(err)
-	}
 	cmd.Execute()
 }

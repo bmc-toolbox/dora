@@ -16,7 +16,10 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"os"
+
+	"github.com/google/gops/agent"
 
 	"github.com/bmc-toolbox/dora/web"
 	"github.com/spf13/cobra"
@@ -45,6 +48,10 @@ usage: dora server
 				fmt.Printf("Parameter %s is missing in the config file\n", param)
 				os.Exit(1)
 			}
+		}
+
+		if err := agent.Listen(agent.Options{}); err != nil {
+			log.Fatal(err)
 		}
 
 		web.RunGin(viper.GetInt("api.http_server_port"), viper.GetBool("debug"))
