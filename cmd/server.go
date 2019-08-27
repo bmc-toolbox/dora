@@ -54,7 +54,7 @@ usage: dora server
 			log.Fatal(err)
 		}
 
-		web.RunGin(viper.GetInt("api.http_server_port"), viper.GetBool("debug"))
+		web.RunGin(viper.GetInt("api.http_server_port"), viper.GetBool("api.ro_database"), viper.GetBool("debug"))
 	},
 }
 

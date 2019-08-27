@@ -15,8 +15,9 @@ import (
 )
 
 var (
-	db  *gorm.DB
-	err error
+	db   *gorm.DB
+	rodb *gorm.DB
+	err  error
 )
 
 // InitDB creates and migrates the database
@@ -47,4 +48,23 @@ func InitDB() *gorm.DB {
 	)
 
 	return db
+}
+
+// InitRODB creates a new read only db handler
+func InitRODB() *gorm.DB {
+	if rodb != nil {
+		return rodb
+	}
+
+	rodb, err = gorm.Open(viper.GetString("database_type"), viper.GetString("ro_database_options"))
+	if err != nil {
+		panic(err)
+	}
+	rodb.DB().SetMaxIdleConns(viper.GetInt("database_max_connections") / 2)
+	rodb.DB().SetMaxOpenConns(viper.GetInt("database_max_connections"))
+
+	rodb.LogMode(viper.GetBool("debug"))
+	rodb.SingularTable(true)
+
+	return rodb
 }

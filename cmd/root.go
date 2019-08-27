@@ -85,6 +85,7 @@ func initConfig() {
 
 	viper.SetDefault("site", []string{"all"})
 	viper.SetDefault("noop", false)
+	viper.SetDefault("database_max_connections", 10)
 
 	// Collector
 	viper.SetDefault("collector.dump_invalid_payloads", false)
@@ -92,6 +93,7 @@ func initConfig() {
 
 	// Api
 	viper.SetDefault("api.http_server_port", 8000)
+	viper.SetDefault("api.ro_database", false)
 
 	// Notification
 	viper.SetDefault("notification.enabled", false)
@@ -102,9 +104,7 @@ func initConfig() {
 	viper.SetDefault("scanner.kea_domain_name_suffix", ".bmc.example.com")
 	viper.SetDefault("scanner.kea_config", "/etc/kea/kea-dhcp4.conf")
 	viper.SetDefault("scanner.subnet_source", "kea")
-	viper.SetDefault("scanner.nmap", "/usr/bin/nmap")
 	viper.SetDefault("scanner.concurrency", 100)
-	viper.SetDefault("database_max_connections", 10)
 
 	hostname, err := os.Hostname()
 	if err != nil {

@@ -9,7 +9,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/GeertJohan/go.rice"
+	"github.com/jinzhu/gorm"
+
+	rice "github.com/GeertJohan/go.rice"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/manyminds/api2go"
@@ -36,7 +38,7 @@ type collectionRequest struct {
 }
 
 // RunGin is responsible to spin up the gin webservice
-func RunGin(port int, debug bool) {
+func RunGin(port int, rodb bool, debug bool) {
 	if !debug {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -65,7 +67,12 @@ func RunGin(port int, debug bool) {
 		routing.Gin(r),
 	)
 
-	db := storage.InitDB()
+	db := &gorm.DB{}
+	if rodb {
+		db = storage.InitRODB()
+	} else {
+		db = storage.InitDB()
+	}
 	defer db.Close()
 
 	chassisStorage := storage.NewChassisStorage(db)
