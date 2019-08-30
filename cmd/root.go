@@ -62,7 +62,10 @@ func init() {
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is /etc/bmc-toolbox/dora.yaml)")
 
 	RootCmd.PersistentFlags().Bool("debug", false, "set logging to debug")
-	viper.BindPFlag("debug", RootCmd.PersistentFlags().Lookup("debug"))
+	err := viper.BindPFlag("debug", RootCmd.PersistentFlags().Lookup("debug"))
+	if err != nil {
+		panic(err)
+	}
 }
 
 // initConfig reads in config file and ENV variables if set.

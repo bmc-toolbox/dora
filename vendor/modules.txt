@@ -3,7 +3,7 @@ github.com/DATA-DOG/go-sqlmock
 # github.com/GeertJohan/go.rice v0.0.0-20170420135705-c02ca9a983da
 github.com/GeertJohan/go.rice
 github.com/GeertJohan/go.rice/embedded
-# github.com/bmc-toolbox/bmclib v0.3.3
+# github.com/bmc-toolbox/bmclib v0.3.4
 github.com/bmc-toolbox/bmclib/devices
 github.com/bmc-toolbox/bmclib/discover
 github.com/bmc-toolbox/bmclib/errors
@@ -17,7 +17,7 @@ github.com/bmc-toolbox/bmclib/providers/dummy/ibmc
 github.com/bmc-toolbox/bmclib/providers/hp
 github.com/bmc-toolbox/bmclib/providers/hp/c7000
 github.com/bmc-toolbox/bmclib/providers/hp/ilo
-github.com/bmc-toolbox/bmclib/providers/supermicro/supermicrox10
+github.com/bmc-toolbox/bmclib/providers/supermicro/supermicrox
 github.com/bmc-toolbox/bmclib/internal/helper
 github.com/bmc-toolbox/bmclib/internal/sshclient
 github.com/bmc-toolbox/bmclib/providers/dell
