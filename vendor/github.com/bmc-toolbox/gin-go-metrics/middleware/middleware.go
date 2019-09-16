@@ -24,9 +24,11 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -85,6 +87,7 @@ func contains(slice []string, s string) bool {
 //HandlerFunc is a function which should be used as middleware to count requests stats
 // such as request processing time, request and responce size and store it in rcrowley/go-metrics.DefaultRegistry.
 func (m *Metrics) HandlerFunc(metricsPrefix []string, ignoreURLs []string, replaceSlashWithUnderscore bool) gin.HandlerFunc {
+	theRegistry := newRegistry()
 	return func(c *gin.Context) {
 		// ignore mechanism for particular endpoints
 		if contains(ignoreURLs, c.Request.URL.String()) {
@@ -112,21 +115,67 @@ func (m *Metrics) HandlerFunc(metricsPrefix []string, ignoreURLs []string, repla
 			url = "all"
 		}
 
-		metricsPath := strings.Join(append(metricsPrefix, []string{method, status, url}...), ".")
-
-		// write request stats to rcrowley/go-metrics.DefaultRegistry
-		processTimeKey := metricsPath + ".req_process_time"
-		metrics.
-			GetOrRegister(processTimeKey, metrics.NewTimer()).(metrics.Timer).Update(elapsed)
-
-		reqSzKey := metricsPath + ".req_size"
-		metrics.
-			GetOrRegister(reqSzKey, metrics.NewHistogram(metrics.NewExpDecaySample(1028, 0.015))).(metrics.Histogram).Update(reqSz)
-
-		resSzKey := metricsPath + ".resp_size"
-		metrics.
-			GetOrRegister(resSzKey, metrics.NewHistogram(metrics.NewExpDecaySample(1028, 0.015))).(metrics.Histogram).Update(resSz)
+		var (
+			metricsPath    = strings.Join(append(metricsPrefix, []string{method, status, url}...), ".")
+			processTimeKey = metricsPath + ".req_process_time"
+			reqSzKey       = metricsPath + ".req_size"
+			resSzKey       = metricsPath + ".resp_size"
+		)
+		theRegistry.timer(processTimeKey).Update(elapsed)
+		theRegistry.histogram(reqSzKey).Update(reqSz)
+		theRegistry.histogram(resSzKey, ).Update(resSz)
 	}
+}
+
+// registry stores metrics objects in rcrowley/go-metrics.DefaultRegistry. It
+// re-implements and thus avoids using
+// rcrowley/go-metrics.DefaultRegistry.GetOrRegister(), because that would force
+// to re-create metrics objects for each request but that are not actually used.
+type registry struct {
+	mu      sync.RWMutex
+	metrics map[string]interface{}
+}
+
+func newRegistry() *registry { return &registry{metrics: make(map[string]interface{})} }
+
+func (r *registry) timer(key string) metrics.Timer {
+	return r.getOrRegister(key, "timer").(metrics.Timer)
+}
+
+func (r *registry) histogram(key string) metrics.Histogram {
+	return r.getOrRegister(key, "histogram").(metrics.Histogram)
+}
+
+func (r *registry) getOrRegister(key string, typ string) interface{} {
+	// fast path
+	r.mu.RLock()
+	incumbent, ok := r.metrics[key]
+	r.mu.RUnlock()
+	if ok {
+		return incumbent
+	}
+
+	// slow path
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	incumbent, ok = r.metrics[key]
+	if ok {
+		return incumbent
+	}
+
+	var contender interface{}
+	switch typ {
+	case "timer":
+		contender = metrics.NewTimer()
+	case "histogram":
+		contender = metrics.NewHistogram(metrics.NewExpDecaySample(1028, 0.015))
+	default:
+		panic(fmt.Errorf("metric type not implemented: %q", typ))
+	}
+	r.metrics[key] = contender
+	metrics.MustRegister(key, contender)
+	return contender
 }
 
 // From https://github.com/DanielHeckrath/gin-prometheus/blob/master/gin_prometheus.go
