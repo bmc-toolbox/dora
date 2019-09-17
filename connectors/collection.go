@@ -3,7 +3,6 @@ package connectors
 import (
 	"fmt"
 	"net"
-	"strings"
 	"sync"
 
 	"github.com/bmc-toolbox/bmclib/devices"
@@ -65,21 +64,8 @@ func collect(input <-chan string, source *string, db *gorm.DB) {
 				continue
 			}
 
-			if isBlade, err := bmc.IsBlade(); isBlade && *source != "cli-with-force" {
-				if bmc.Vendor() == devices.HP {
-					model, err := bmc.Model()
-					if err != nil {
-						log.WithFields(log.Fields{"operation": "collection", "ip": host}).Error(err)
-					}
-					if strings.Contains(strings.ToLower(model), "bl") {
-						log.WithFields(log.Fields{"operation": "detection", "ip": host}).Debug("we don't want to scan blades directly since the chassis does it for us")
-					}
-				} else if bmc.Vendor() != devices.Supermicro {
-					log.WithFields(log.Fields{"operation": "detection", "ip": host}).Debug("we don't want to scan blades directly since the chassis does it for us")
-					// not an error, we don't want a metric on that
-					continue
-				}
-			} else if err != nil {
+			isBlade, err := bmc.IsBlade()
+			if err != nil {
 				log.WithFields(log.Fields{"operation": "collection", "ip": host}).Error(err)
 				graphiteKey = "collect.bmc_is_blade_detection_failed"
 				if viper.GetBool("metrics.enabled") {
@@ -88,7 +74,23 @@ func collect(input <-chan string, source *string, db *gorm.DB) {
 				continue
 			}
 
-			err := collectBmc(bmc)
+			if isBlade && *source != "cli-with-force" {
+				chassisSerial, err := bmc.ChassisSerial()
+				if err != nil {
+					log.WithFields(log.Fields{"operation": "collection", "ip": host}).Error(err)
+					continue
+				}
+
+				chassis := model.Chassis{}
+				db.Where("serial = ?", chassisSerial).First(&chassis)
+
+				if chassis.Managed {
+					log.WithFields(log.Fields{"operation": "detection", "ip": host}).Debug("we don't want to scan blades directly since the chassis does it for us")
+					continue
+				}
+			}
+
+			err = collectBmc(bmc)
 			if err != nil {
 				log.WithFields(log.Fields{"operation": "collection", "ip": host}).Error(err)
 				graphiteKey = "collect.bmc_collection_failed"
