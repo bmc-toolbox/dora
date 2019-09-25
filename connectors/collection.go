@@ -95,6 +95,8 @@ func collect(input <-chan string, source *string, db *gorm.DB) {
 				log.WithFields(log.Fields{"operation": "collection", "ip": host}).Error(err)
 				graphiteKey = "collect.bmc_collection_failed"
 			}
+
+			log.WithFields(log.Fields{"operation": "collection", "ip": host}).Info("success")
 		} else if bmc, ok := conn.(devices.Cmc); ok {
 			err = bmc.CheckCredentials()
 			if err == errors.ErrLoginFailed {
@@ -125,6 +127,8 @@ func collect(input <-chan string, source *string, db *gorm.DB) {
 				log.WithFields(log.Fields{"operation": "collection", "ip": host}).Error(err)
 				graphiteKey = "collect.cmc_collection_failed"
 			}
+
+			log.WithFields(log.Fields{"operation": "collection", "ip": host}).Info("success")
 		} else {
 			log.WithFields(log.Fields{"operation": "collection", "ip": host}).Debug("unknown hardware skipping")
 			graphiteKey = "collect.unknown_device"
@@ -461,6 +465,10 @@ func collectCmc(bmc devices.Cmc) (err error) {
 							})
 						}
 					}
+				}
+
+				if err == nil {
+					log.WithFields(log.Fields{"operation": "collection", "ip": blade.BmcAddress}).Info("success")
 				}
 			}
 		}
