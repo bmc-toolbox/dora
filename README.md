@@ -1,4 +1,4 @@
-# dora - bmc discovery asset database
+# dora - bmc discovery asset database [![Go Report Card](https://goreportcard.com/badge/github.com/bmc-toolbox/dora)](https://goreportcard.com/report/github.com/bmc-toolbox/dora)
 
 A tool to build a dynamic database of you datacenter assets
 
