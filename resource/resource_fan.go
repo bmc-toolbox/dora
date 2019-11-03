@@ -58,11 +58,11 @@ func (f FanResource) queryAndCountAllWrapper(r api2go.Request) (count int, fans 
 	include, hasInclude := r.QueryParams["include"]
 	if hasInclude {
 		if len(fans) == 0 {
-			count, fans, err =  f.FanStorage.GetAllWithAssociations(offset, limit, include)
+			count, fans, err = f.FanStorage.GetAllWithAssociations(offset, limit, include)
 		} else {
 			var fansWithInclude []model.Fan
 			for _, fn := range fans {
-				fanWithInclude, err :=  f.FanStorage.GetOne(fn.Serial)
+				fanWithInclude, err := f.FanStorage.GetOne(fn.Serial)
 				if err != nil {
 					return count, fans, err
 				}

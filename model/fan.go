@@ -44,7 +44,7 @@ func (p Fan) GetReferences() []jsonapi.Reference {
 
 // GetReferencedIDs to satisfy the jsonapi.MarshalLinkedRelations interface
 func (p Fan) GetReferencedIDs() []jsonapi.ReferenceID {
-	 if p.ChassisSerial != "" {
+	if p.ChassisSerial != "" {
 		return []jsonapi.ReferenceID{
 			{
 				ID:           p.ChassisSerial,
@@ -60,7 +60,7 @@ func (p Fan) GetReferencedIDs() []jsonapi.ReferenceID {
 // Diff compare to objects and return list of string with their differences
 func (p *Fan) Diff(fan *Fan) (differences []string) {
 	for _, diff := range pretty.Diff(p, fan) {
-		if !strings.Contains(diff, "UpdatedAt.") && !strings.Contains(diff, "PowerKw") && !strings.Contains(diff, "CurrentRPM"){
+		if !strings.Contains(diff, "UpdatedAt.") && !strings.Contains(diff, "PowerKw") && !strings.Contains(diff, "CurrentRPM") {
 			differences = append(differences, diff)
 		}
 	}

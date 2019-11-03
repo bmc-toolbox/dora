@@ -58,11 +58,11 @@ func (p PsuResource) queryAndCountAllWrapper(r api2go.Request) (count int, psus 
 	include, hasInclude := r.QueryParams["include"]
 	if hasInclude {
 		if len(psus) == 0 {
-			count, psus, err =  p.PsuStorage.GetAllWithAssociations(offset, limit, include)
+			count, psus, err = p.PsuStorage.GetAllWithAssociations(offset, limit, include)
 		} else {
 			var psusWithInclude []model.Psu
 			for _, ps := range psus {
-				psWithInclude, err :=  p.PsuStorage.GetOne(ps.Serial)
+				psWithInclude, err := p.PsuStorage.GetOne(ps.Serial)
 				if err != nil {
 					return count, psus, err
 				}

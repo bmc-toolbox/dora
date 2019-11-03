@@ -59,11 +59,11 @@ func (n NicResource) queryAndCountAllWrapper(r api2go.Request) (count int, nics 
 	include, hasInclude := r.QueryParams["include"]
 	if hasInclude {
 		if len(nics) == 0 {
-			count, nics, err =  n.NicStorage.GetAllWithAssociations(offset, limit, include)
+			count, nics, err = n.NicStorage.GetAllWithAssociations(offset, limit, include)
 		} else {
 			var nicsWithInclude []model.Nic
 			for _, nc := range nics {
-				ncWithInclude, err :=  n.NicStorage.GetOne(nc.MacAddress)
+				ncWithInclude, err := n.NicStorage.GetOne(nc.MacAddress)
 				if err != nil {
 					return count, nics, err
 				}
