@@ -5,7 +5,7 @@ go 1.12
 require (
 	github.com/DATA-DOG/go-sqlmock v1.3.3
 	github.com/GeertJohan/go.rice v0.0.0-20170420135705-c02ca9a983da
-	github.com/bmc-toolbox/bmclib v0.3.5-0.20191003145315-9c1dd8718d43
+	github.com/bmc-toolbox/bmclib v0.3.5-0.20191125125456-b7e6f7996c80
 	github.com/bmc-toolbox/gin-go-metrics v0.0.2
 	github.com/daaku/go.zipexe v0.0.0-20150329023125-a5fe2436ffcb // indirect
 	github.com/gedex/inflector v0.0.0-20170307190818-16278e9db813 // indirect
@@ -37,6 +37,7 @@ require (
 	github.com/spf13/viper v1.3.2
 	github.com/stretchr/testify v1.3.0
 	github.com/valyala/fasttemplate v1.0.1 // indirect
+	golang.org/x/lint v0.0.0-20190409202823-959b441ac422 // indirect
 	golang.org/x/sys v0.0.0-20190305064518-30e92a19ae4a // indirect
 	gopkg.in/guregu/null.v2 v2.1.2 // indirect
 )
