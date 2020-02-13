@@ -1,11 +1,11 @@
 module github.com/bmc-toolbox/dora
 
-go 1.12
+go 1.13
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.3.3
 	github.com/GeertJohan/go.rice v0.0.0-20170420135705-c02ca9a983da
-	github.com/bmc-toolbox/bmclib v0.3.5-0.20191125125456-b7e6f7996c80
+	github.com/bmc-toolbox/bmclib v0.3.6-0.20200213112039-6c5423e70568
 	github.com/bmc-toolbox/gin-go-metrics v0.0.2
 	github.com/daaku/go.zipexe v0.0.0-20150329023125-a5fe2436ffcb // indirect
 	github.com/gedex/inflector v0.0.0-20170307190818-16278e9db813 // indirect

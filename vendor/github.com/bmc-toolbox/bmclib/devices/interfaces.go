@@ -25,6 +25,11 @@ type Bmc interface {
 	UpdateFirmware(string, string) (bool, error)
 }
 
+// Identifier represents required device identifier methods
+type Identifier interface {
+	Identify(string, string, string) (interface{}, error)
+}
+
 // BmcCollection represents the requirement of items to be collected a server
 type BmcCollection interface {
 	BiosVersion() (string, error)
@@ -128,6 +133,7 @@ type Configure interface {
 	Network(*cfgresources.Network) (bool, error)
 	SetLicense(*cfgresources.License) error
 	Bios(*cfgresources.Bios) error
+	Power(*cfgresources.Power) error
 	CurrentHTTPSCert() ([]*x509.Certificate, bool, error)
 	GenerateCSR(*cfgresources.HTTPSCertAttributes) ([]byte, error)
 	UploadHTTPSCert([]byte, string, []byte, string) (bool, error)
