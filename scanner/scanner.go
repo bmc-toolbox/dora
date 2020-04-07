@@ -3,12 +3,13 @@ package scanner
 import (
 	"encoding/json"
 	"fmt"
-	metrics "github.com/bmc-toolbox/gin-go-metrics"
 	"io/ioutil"
 	"net"
 	"os"
 	"strings"
 	"sync"
+
+	metrics "github.com/bmc-toolbox/gin-go-metrics"
 
 	"github.com/bmc-toolbox/dora/model"
 	"github.com/bmc-toolbox/dora/storage"
