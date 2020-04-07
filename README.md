@@ -49,14 +49,21 @@ List of supported assets can be found in [bmclib](https://github.com/bmc-toolbox
 
 ### Architecture
 
+![dora](dora.png)
+
+"a" is the flow of adding/updating data  
+"b" is the flow of getting data  
+
+"1" is a request to scan or collect assets  
+"5" is a request to obtain assets
+
 #### Server
 
 Dora web server provides API for querying the data which Dora collected.
 
 #### Worker
 
-Worker consumes jobs issued by `publish` command, perform them and
- write results to database.
+Worker consumes jobs issued by `publish` command, perform them and write results to database.
 
 There are two type of jobs:
 
@@ -66,6 +73,22 @@ There are two type of jobs:
 
 In case you run these jobs as commands to dora, it works as a worker who received 
 the command.
+
+#### Overview
+The process of finding assets
+1. User sends a request to find (scan) assets in subnets, either in a specific subnet or all (1 on the picture)
+1. The list of subnets is loaded from the KEA config file. This list is used as a filter for the subnets specified by the user
+1. Every subnet is sent into NATS with the subject `dora::scan` (2 on the picture)
+1. Worker subscribed to data with this subject receives a subnet (3 on the picture)
+1. Worker checks open ports for every IP address from the subnet and saves the result to the DB (4 on the picture)
+
+The process of collecting assets
+1. User sends a request to collect information about assets, either for specific or all assets (1 on the picture)
+1. The list of IP addresses which have open port 443 selected from the DB
+1. Every IP address is sent into NATS with the subject `dora::collect` (2 on the picture)
+1. Worker subscribed to this subject receives an IP address (3 on the picture)
+1. Worker connects to every IP address and collects data from BMC
+1. Worker saves the result to the DB (4 on the picture)
 
 ## Acknowledgment
 
