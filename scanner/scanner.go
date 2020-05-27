@@ -10,13 +10,13 @@ import (
 	"sync"
 
 	metrics "github.com/bmc-toolbox/gin-go-metrics"
-
-	"github.com/bmc-toolbox/dora/model"
-	"github.com/bmc-toolbox/dora/storage"
 	"github.com/jinzhu/gorm"
 	"github.com/nats-io/go-nats"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+
+	"github.com/bmc-toolbox/dora/model"
+	"github.com/bmc-toolbox/dora/storage"
 )
 
 // Kea is the main entry for parsing the kea config file
@@ -85,10 +85,14 @@ func LoadSubnetsFromKea(content []byte) (subnets []*ToScan) {
 						log.WithFields(log.Fields{"operation": "subnet parsing"}).Warn(err)
 						continue
 					}
+
+					site := strings.TrimSuffix(option.Data, keaDomainNameSuffix)
+					site = strings.Trim(site, ".")
 					toScan := &ToScan{
 						CIDR: ipv4Net.String(),
-						Site: strings.TrimSuffix(option.Data, keaDomainNameSuffix),
+						Site: site,
 					}
+
 					subnets = append(subnets, toScan)
 				}
 			}
