@@ -14,10 +14,11 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 
+	metrics "github.com/bmc-toolbox/gin-go-metrics"
+
 	"github.com/bmc-toolbox/dora/internal/notification"
 	"github.com/bmc-toolbox/dora/model"
 	"github.com/bmc-toolbox/dora/storage"
-	metrics "github.com/bmc-toolbox/gin-go-metrics"
 )
 
 func collect(input <-chan string, source *string, db *gorm.DB) {
@@ -28,8 +29,9 @@ func collect(input <-chan string, source *string, db *gorm.DB) {
 		log.WithFields(log.Fields{"operation": "scan", "ip": host}).Debug("collection started")
 
 		graphiteKey := "collect.collected_successfully"
+		hintOpts := hintOptsInit(host, db)
 
-		conn, err := discover.ScanAndConnect(host, bmcUser, bmcPass)
+		conn, err := discover.ScanAndConnect(host, bmcUser, bmcPass, hintOpts...)
 		if err != nil {
 			log.WithFields(log.Fields{"operation": "scan", "ip": host}).Error(err)
 			graphiteKey = "collect.bmc_scan_failed"
@@ -378,7 +380,13 @@ func collectCmc(bmc devices.Cmc) (err error) {
 	}
 
 	for _, blade := range chassis.Blades {
-		if conn, err := discover.ScanAndConnect(blade.BmcAddress, viper.GetString("bmc_user"), viper.GetString("bmc_pass")); err == nil {
+		hintOpts := hintOptsInit(blade.BmcAddress, db)
+		if conn, err := discover.ScanAndConnect(
+			blade.BmcAddress,
+			viper.GetString("bmc_user"),
+			viper.GetString("bmc_pass"),
+			hintOpts...,
+		); err == nil {
 			if b, ok := conn.(devices.Bmc); ok {
 				err = b.CheckCredentials()
 				if err == errors.ErrLoginFailed {
@@ -507,4 +515,58 @@ func collectCmc(bmc devices.Cmc) (err error) {
 	}
 
 	return nil
+}
+
+func hintOptsInit(host string, db *gorm.DB) []discover.Option {
+	if !viper.GetBool("collector.use_discover_hints") {
+		return nil
+	}
+
+	hint := hintFromDB(host, db)
+
+	hintCallBack := func(newHint string) error {
+		if newHint == hint {
+			return nil
+		}
+
+		hintToDB(host, newHint, db)
+
+		return nil
+	}
+
+	return []discover.Option{
+		discover.WithProbeHint(hint),
+		discover.WithHintCallBack(hintCallBack),
+	}
+}
+
+func hintFromDB(host string, db *gorm.DB) string {
+	var h model.DiscoverHint
+
+	if err := db.First(&h, "ip = ?", host).Error; err != nil {
+		if !gorm.IsRecordNotFoundError(err) {
+			log.WithFields(
+				log.Fields{
+					"operation": "collection",
+					"ip":        host,
+				},
+			).Warnf("error loading discover hint to DB: %v", err)
+		}
+
+		return ""
+	}
+
+	return h.Hint
+}
+
+func hintToDB(host, hint string, db *gorm.DB) {
+	h := model.DiscoverHint{
+		IP:   host,
+		Hint: hint,
+	}
+
+	err := db.Save(&h).Error
+	if err != nil {
+		log.WithFields(log.Fields{"operation": "collection", "ip": host}).Warnf("error writing discover hint to DB: %v", err)
+	}
 }

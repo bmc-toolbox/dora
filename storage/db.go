@@ -1,8 +1,9 @@
 package storage
 
 import (
-	"github.com/bmc-toolbox/dora/model"
 	"github.com/jinzhu/gorm"
+
+	"github.com/bmc-toolbox/dora/model"
 
 	// Imports for the PostgreSQL database backends
 	_ "github.com/jinzhu/gorm/dialects/postgres"
@@ -45,6 +46,7 @@ func InitDB() *gorm.DB {
 		&model.Psu{},
 		&model.Disk{},
 		&model.Fan{},
+		&model.DiscoverHint{},
 	)
 
 	return db

@@ -30,6 +30,7 @@ metrics:
 
 collector:
   concurrency: 60
+  use_discover_hints: true
 
   worker:
     enabled: false
