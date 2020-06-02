@@ -27,6 +27,7 @@ api:
 
 collector:
   concurrency: 10
+  use_discover_hints: true
   worker:
     server: nats://localhost:4222
 
