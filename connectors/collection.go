@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"sync"
+	"time"
 
 	"github.com/bmc-toolbox/bmclib/devices"
 	"github.com/bmc-toolbox/bmclib/discover"
@@ -30,6 +31,7 @@ func collect(input <-chan string, source *string, db *gorm.DB) {
 
 		graphiteKey := "collect.collected_successfully"
 		hintOpts := hintOptsInit(host, db)
+		updateSacMetricFn := scanAndConnectMetricInit()
 
 		conn, err := discover.ScanAndConnect(host, bmcUser, bmcPass, hintOpts...)
 		if err != nil {
@@ -40,6 +42,8 @@ func collect(input <-chan string, source *string, db *gorm.DB) {
 			}
 			continue
 		}
+
+		updateSacMetricFn()
 
 		if bmc, ok := conn.(devices.Bmc); ok {
 			err = bmc.CheckCredentials()
@@ -381,12 +385,16 @@ func collectCmc(bmc devices.Cmc) (err error) {
 
 	for _, blade := range chassis.Blades {
 		hintOpts := hintOptsInit(blade.BmcAddress, db)
+		updateSacMetricFn := scanAndConnectMetricInit()
+
 		if conn, err := discover.ScanAndConnect(
 			blade.BmcAddress,
 			viper.GetString("bmc_user"),
 			viper.GetString("bmc_pass"),
 			hintOpts...,
 		); err == nil {
+
+			updateSacMetricFn()
 			if b, ok := conn.(devices.Bmc); ok {
 				err = b.CheckCredentials()
 				if err == errors.ErrLoginFailed {
@@ -568,5 +576,25 @@ func hintToDB(host, hint string, db *gorm.DB) {
 	err := db.Save(&h).Error
 	if err != nil {
 		log.WithFields(log.Fields{"operation": "collection", "ip": host}).Warnf("error writing discover hint to DB: %v", err)
+	}
+}
+
+func scanAndConnectMetricInit() func() {
+	if !viper.GetBool("metrics.enabled") {
+		return func() {}
+	}
+
+	var (
+		keyCommon = []string{"collect", "scan_and_connect", "successful"}
+		keyCount  = append(keyCommon, "count")
+		keyTime   = append(keyCommon, "time_milliseconds")
+	)
+
+	start := time.Now()
+
+	return func() {
+		elapsed := time.Since(start)
+		metrics.IncrCounter(keyTime, elapsed.Milliseconds())
+		metrics.IncrCounter(keyCount, 1)
 	}
 }
