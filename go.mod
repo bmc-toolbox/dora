@@ -14,13 +14,13 @@ require (
 	github.com/gorilla/mux v1.7.0 // indirect
 	github.com/hashicorp/go-multierror v1.0.0
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
-	github.com/jinzhu/gorm v0.0.0-20190310121721-8b07437717e7
+	github.com/jinzhu/gorm v1.9.16
 	github.com/julienschmidt/httprouter v0.0.0-20181021223831-26a05976f9bf // indirect
 	github.com/kardianos/osext v0.0.0-20170510131534-ae77be60afb1 // indirect
 	github.com/kr/pretty v0.1.0
 	github.com/labstack/echo v3.3.10+incompatible // indirect
 	github.com/labstack/gommon v0.2.8 // indirect
-	github.com/lib/pq v1.0.0
+	github.com/lib/pq v1.1.1
 	github.com/manyminds/api2go v0.0.0-20181019084807-186a8a2128df
 	github.com/mattn/go-colorable v0.1.1 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
@@ -37,7 +37,6 @@ require (
 	github.com/spf13/viper v1.3.2
 	github.com/stretchr/testify v1.3.0
 	github.com/valyala/fasttemplate v1.0.1 // indirect
-	golang.org/x/sys v0.0.0-20190305064518-30e92a19ae4a // indirect
 	gopkg.in/guregu/null.v2 v2.1.2 // indirect
 )
 
