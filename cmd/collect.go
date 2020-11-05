@@ -38,7 +38,6 @@ usage: dora collect
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		configItems := []string{
-			"bmc_pass",
 			"bmc_user",
 			"collector.concurrency",
 			"collector.dump_invalid_payloads",
@@ -54,6 +53,17 @@ usage: dora collect
 				fmt.Printf("Parameter %s is missing in the config file\n", item)
 				os.Exit(1)
 			}
+		}
+
+		bmcPass := viper.IsSet("bmc_pass")
+		bmcPassFile := viper.IsSet("bmc_pass_file")
+		if !bmcPass && !bmcPassFile {
+			fmt.Printf("One of the bmc_pass/bmc_pass_file parameters is missing in the config file\n")
+			os.Exit(1)
+		}
+		if bmcPass && bmcPassFile {
+			fmt.Printf("Only one of the bmc_pass/bmc_pass_file parameters is allowed in the config file\n")
+			os.Exit(1)
 		}
 
 		// This will avoid a deadlock in metrics. They are not setup at this stage

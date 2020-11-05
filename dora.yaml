@@ -2,7 +2,7 @@ debug: true
 site:
   - all
 bmc_user: Priest
-bmc_pass: Wololo
+bmc_pass_file: /my/password/file
 url: http://service.example.com/v1
 database_type: postgres
 database_options: host=0.0.0.0 user=postgres port=32768 dbname=postgres password=mysecretpassword

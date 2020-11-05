@@ -2,6 +2,7 @@ package connectors
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net"
 	"sync"
 	"time"
@@ -24,7 +25,17 @@ import (
 
 func collect(input <-chan string, source *string, db *gorm.DB) {
 	bmcUser := viper.GetString("bmc_user")
-	bmcPass := viper.GetString("bmc_pass")
+	bmcPass := ""
+	if viper.IsSet("bmc_pass") {
+		bmcPass = viper.GetString("bmc_pass")
+	} else {
+		bmcPassFile := viper.GetString("bmc_pass_file")
+		bmcPassBytes, err := ioutil.ReadFile(bmcPassFile)
+		if err != nil {
+			log.WithFields(log.Fields{"operation": "scan"}).Error(err)
+		}
+		bmcPass = string(bmcPassBytes)
+	}
 
 	for host := range input {
 		log.WithFields(log.Fields{"operation": "scan", "ip": host}).Debug("collection started")
