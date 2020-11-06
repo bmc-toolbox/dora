@@ -139,7 +139,7 @@ func collect(input <-chan string, source *string, db *gorm.DB) {
 				continue
 			}
 
-			err := collectCmc(bmc)
+			err := collectCmc(bmc, bmcUser, bmcPass)
 			if err != nil {
 				log.WithFields(log.Fields{"operation": "collection", "ip": host}).Error(err)
 				graphiteKey = "collect.cmc_collection_failed"
@@ -367,7 +367,7 @@ func collectBmc(bmc devices.Bmc) (err error) {
 	return nil
 }
 
-func collectCmc(bmc devices.Cmc) (err error) {
+func collectCmc(bmc devices.Cmc, bmcUser string, bmcPass string) (err error) {
 	defer bmc.Close()
 
 	if !bmc.IsActive() {
@@ -400,8 +400,8 @@ func collectCmc(bmc devices.Cmc) (err error) {
 
 		if conn, err := discover.ScanAndConnect(
 			blade.BmcAddress,
-			viper.GetString("bmc_user"),
-			viper.GetString("bmc_pass"),
+			bmcUser,
+			bmcPass,
 			hintOpts...,
 		); err == nil {
 
