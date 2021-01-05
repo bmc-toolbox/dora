@@ -9,13 +9,13 @@ import (
 	"time"
 
 	"github.com/daaku/go.zipexe"
-	"github.com/kardianos/osext"
 )
 
 // appendedBox defines an appended box
 type appendedBox struct {
 	Name  string                   // box name
 	Files map[string]*appendedFile // appended files (*zip.File) by full path
+	Time  time.Time
 }
 
 type appendedFile struct {
@@ -31,9 +31,13 @@ var appendedBoxes = make(map[string]*appendedBox)
 
 func init() {
 	// find if exec is appended
-	thisFile, err := osext.Executable()
+	thisFile, err := os.Executable()
 	if err != nil {
 		return // not appended or cant find self executable
+	}
+	thisFile, err = filepath.EvalSymlinks(thisFile)
+	if err != nil {
+		return
 	}
 	closer, rd, err := zipexe.OpenCloser(thisFile)
 	if err != nil {
@@ -56,6 +60,7 @@ func init() {
 			box = &appendedBox{
 				Name:  boxName,
 				Files: make(map[string]*appendedFile),
+				Time:  f.ModTime(),
 			}
 			appendedBoxes[boxName] = box
 		}
@@ -68,8 +73,7 @@ func init() {
 			af.dir = true
 			af.dirInfo = &appendedDirInfo{
 				name: filepath.Base(af.zipFile.Name),
-				//++ TODO: use zip modtime when that is set correctly: af.zipFile.ModTime()
-				time: time.Now(),
+				time: af.zipFile.ModTime(),
 			}
 		} else {
 			// this is a file, we need it's contents so we can create a bytes.Reader when the file is opened

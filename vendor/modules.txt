@@ -1,9 +1,9 @@
-# github.com/DATA-DOG/go-sqlmock v1.3.3
+# github.com/DATA-DOG/go-sqlmock v1.5.0
 github.com/DATA-DOG/go-sqlmock
-# github.com/GeertJohan/go.rice v0.0.0-20170420135705-c02ca9a983da
+# github.com/GeertJohan/go.rice v1.0.2
 github.com/GeertJohan/go.rice
 github.com/GeertJohan/go.rice/embedded
-# github.com/bmc-toolbox/bmclib v0.3.8
+# github.com/bmc-toolbox/bmclib v0.4.8
 github.com/bmc-toolbox/bmclib/cfgresources
 github.com/bmc-toolbox/bmclib/devices
 github.com/bmc-toolbox/bmclib/discover
@@ -24,46 +24,54 @@ github.com/bmc-toolbox/bmclib/providers/hp/c7000
 github.com/bmc-toolbox/bmclib/providers/hp/ilo
 github.com/bmc-toolbox/bmclib/providers/supermicro
 github.com/bmc-toolbox/bmclib/providers/supermicro/supermicrox
+github.com/bmc-toolbox/bmclib/providers/supermicro/supermicrox11
 # github.com/bmc-toolbox/gin-go-metrics v0.0.2
 github.com/bmc-toolbox/gin-go-metrics
 github.com/bmc-toolbox/gin-go-metrics/middleware
+# github.com/bombsimon/logrusr v1.0.0
+github.com/bombsimon/logrusr
 # github.com/cyberdelia/go-metrics-graphite v0.0.0-20161219230853-39f87cc3b432
 github.com/cyberdelia/go-metrics-graphite
-# github.com/daaku/go.zipexe v0.0.0-20150329023125-a5fe2436ffcb
+# github.com/daaku/go.zipexe v1.0.1
 github.com/daaku/go.zipexe
 # github.com/davecgh/go-spew v1.1.1
 github.com/davecgh/go-spew/spew
-# github.com/fsnotify/fsnotify v1.4.7
+# github.com/fsnotify/fsnotify v1.4.9
 github.com/fsnotify/fsnotify
 # github.com/gedex/inflector v0.0.0-20170307190818-16278e9db813
 github.com/gedex/inflector
-# github.com/gin-contrib/sse v0.0.0-20190301062529-5545eab6dad3
+# github.com/gin-contrib/sse v0.1.0
 github.com/gin-contrib/sse
-# github.com/gin-gonic/gin v1.3.0
+# github.com/gin-gonic/gin v1.6.3
 github.com/gin-gonic/gin
 github.com/gin-gonic/gin/binding
-github.com/gin-gonic/gin/json
+github.com/gin-gonic/gin/internal/bytesconv
+github.com/gin-gonic/gin/internal/json
 github.com/gin-gonic/gin/render
-# github.com/go-playground/locales v0.12.1
+# github.com/go-logr/logr v0.3.0
+github.com/go-logr/logr
+# github.com/go-playground/locales v0.13.0
 github.com/go-playground/locales
 github.com/go-playground/locales/currency
-# github.com/go-playground/universal-translator v0.16.0
+# github.com/go-playground/universal-translator v0.17.0
 github.com/go-playground/universal-translator
+# github.com/go-playground/validator/v10 v10.2.0
+github.com/go-playground/validator/v10
 # github.com/go-sql-driver/mysql v1.5.0
 github.com/go-sql-driver/mysql
-# github.com/golang/protobuf v1.3.1
+# github.com/golang/protobuf v1.4.3
 github.com/golang/protobuf/proto
 # github.com/google/go-querystring v1.0.0
 github.com/google/go-querystring/query
-# github.com/google/gops v0.0.0-20180903072510-f341a40f99ec
+# github.com/google/gops v0.3.14
 github.com/google/gops/agent
 github.com/google/gops/internal
 github.com/google/gops/signal
-# github.com/gorilla/mux v1.7.0
+# github.com/gorilla/mux v1.8.0
 github.com/gorilla/mux
-# github.com/hashicorp/errwrap v1.0.0
+# github.com/hashicorp/errwrap v1.1.0
 github.com/hashicorp/errwrap
-# github.com/hashicorp/go-multierror v1.0.0
+# github.com/hashicorp/go-multierror v1.1.0
 github.com/hashicorp/go-multierror
 # github.com/hashicorp/hcl v1.0.0
 github.com/hashicorp/hcl
@@ -85,45 +93,41 @@ github.com/jinzhu/gorm/dialects/postgres
 github.com/jinzhu/gorm/dialects/sqlite
 # github.com/jinzhu/inflection v1.0.0
 github.com/jinzhu/inflection
-# github.com/json-iterator/go v1.1.6
+# github.com/json-iterator/go v1.1.10
 github.com/json-iterator/go
-# github.com/julienschmidt/httprouter v0.0.0-20181021223831-26a05976f9bf
+# github.com/julienschmidt/httprouter v1.2.0
 github.com/julienschmidt/httprouter
-# github.com/kardianos/osext v0.0.0-20170510131534-ae77be60afb1
-github.com/kardianos/osext
-# github.com/konsorten/go-windows-terminal-sequences v1.0.1
-github.com/konsorten/go-windows-terminal-sequences
-# github.com/kr/pretty v0.1.0
+# github.com/kr/pretty v0.2.1
 github.com/kr/pretty
 # github.com/kr/text v0.1.0
 github.com/kr/text
 # github.com/labstack/echo v3.3.10+incompatible
 github.com/labstack/echo
-# github.com/labstack/gommon v0.2.8
+# github.com/labstack/gommon v0.3.0
 github.com/labstack/gommon/color
 github.com/labstack/gommon/log
-# github.com/leodido/go-urn v1.1.0
+# github.com/leodido/go-urn v1.2.1
 github.com/leodido/go-urn
-# github.com/lib/pq v1.1.1
+# github.com/lib/pq v1.9.0
 github.com/lib/pq
 github.com/lib/pq/hstore
 github.com/lib/pq/oid
 github.com/lib/pq/scram
-# github.com/magiconair/properties v1.8.0
+# github.com/magiconair/properties v1.8.4
 github.com/magiconair/properties
-# github.com/manyminds/api2go v0.0.0-20181019084807-186a8a2128df
+# github.com/manyminds/api2go v0.0.0-20201208181306-e7d462686f8a
 github.com/manyminds/api2go
 github.com/manyminds/api2go/jsonapi
 github.com/manyminds/api2go/routing
-# github.com/mattn/go-colorable v0.1.1
+# github.com/mattn/go-colorable v0.1.8
 github.com/mattn/go-colorable
-# github.com/mattn/go-isatty v0.0.7
+# github.com/mattn/go-isatty v0.0.12
 github.com/mattn/go-isatty
-# github.com/mattn/go-sqlite3 v1.14.0
+# github.com/mattn/go-sqlite3 v1.14.6
 github.com/mattn/go-sqlite3
 # github.com/mitchellh/go-homedir v1.1.0
 github.com/mitchellh/go-homedir
-# github.com/mitchellh/mapstructure v1.1.2
+# github.com/mitchellh/mapstructure v1.3.3
 github.com/mitchellh/mapstructure
 # github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd
 github.com/modern-go/concurrent
@@ -133,42 +137,47 @@ github.com/modern-go/reflect2
 github.com/nats-io/go-nats
 github.com/nats-io/go-nats/encoders/builtin
 github.com/nats-io/go-nats/util
-# github.com/nats-io/nuid v0.0.0-20180317191920-3e58d42c9cfe
+# github.com/nats-io/nuid v1.0.1
 github.com/nats-io/nuid
-# github.com/pelletier/go-toml v1.2.0
+# github.com/pelletier/go-toml v1.8.1
 github.com/pelletier/go-toml
+# github.com/pkg/errors v0.9.1
+github.com/pkg/errors
 # github.com/pmezard/go-difflib v1.0.0
 github.com/pmezard/go-difflib/difflib
 # github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a
 github.com/rcrowley/go-metrics
 # github.com/selvatico/go-mocket v1.0.7
 github.com/selvatico/go-mocket
-# github.com/sirupsen/logrus v1.4.1
+# github.com/sirupsen/logrus v1.7.0
 github.com/sirupsen/logrus
-# github.com/spf13/afero v1.2.1
+# github.com/spf13/afero v1.4.1
 github.com/spf13/afero
 github.com/spf13/afero/mem
-# github.com/spf13/cast v1.3.0
+# github.com/spf13/cast v1.3.1
 github.com/spf13/cast
-# github.com/spf13/cobra v0.0.0-20190109003409-7547e83b2d85
+# github.com/spf13/cobra v1.1.1
 github.com/spf13/cobra
 # github.com/spf13/jwalterweatherman v1.1.0
 github.com/spf13/jwalterweatherman
-# github.com/spf13/pflag v1.0.3
+# github.com/spf13/pflag v1.0.5
 github.com/spf13/pflag
-# github.com/spf13/viper v1.3.2
+# github.com/spf13/viper v1.7.1
 github.com/spf13/viper
-# github.com/stretchr/testify v1.3.0
+# github.com/stretchr/testify v1.6.1
 github.com/stretchr/testify/assert
-# github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8
+# github.com/subosito/gotenv v1.2.0
+github.com/subosito/gotenv
+# github.com/ugorji/go/codec v1.2.2
 github.com/ugorji/go/codec
 # github.com/valyala/bytebufferpool v1.0.0
 github.com/valyala/bytebufferpool
-# github.com/valyala/fasttemplate v1.0.1
+# github.com/valyala/fasttemplate v1.2.1
 github.com/valyala/fasttemplate
-# golang.org/x/crypto v0.0.0-20191205180655-e7c4368fe9dd
+# golang.org/x/crypto v0.0.0-20201016220609-9e8e0b390897
 golang.org/x/crypto/acme
 golang.org/x/crypto/acme/autocert
+golang.org/x/crypto/blowfish
 golang.org/x/crypto/chacha20
 golang.org/x/crypto/curve25519
 golang.org/x/crypto/ed25519
@@ -176,20 +185,53 @@ golang.org/x/crypto/ed25519/internal/edwards25519
 golang.org/x/crypto/internal/subtle
 golang.org/x/crypto/poly1305
 golang.org/x/crypto/ssh
-# golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e
+golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
+# golang.org/x/net v0.0.0-20201202161906-c7110b5ffcbb
 golang.org/x/net/idna
 golang.org/x/net/publicsuffix
-# golang.org/x/sys v0.0.0-20200323222414-85ca7c5b95cd
+# golang.org/x/sys v0.0.0-20201207223542-d4d67f95c62d
 golang.org/x/sys/cpu
+golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
-# golang.org/x/text v0.3.2
+golang.org/x/sys/windows
+# golang.org/x/text v0.3.4
 golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
 golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
-# gopkg.in/go-playground/validator.v8 v8.18.2
-gopkg.in/go-playground/validator.v8
-# gopkg.in/go-playground/validator.v9 v9.28.0
+# google.golang.org/protobuf v1.23.0
+google.golang.org/protobuf/encoding/prototext
+google.golang.org/protobuf/encoding/protowire
+google.golang.org/protobuf/internal/descfmt
+google.golang.org/protobuf/internal/descopts
+google.golang.org/protobuf/internal/detrand
+google.golang.org/protobuf/internal/encoding/defval
+google.golang.org/protobuf/internal/encoding/messageset
+google.golang.org/protobuf/internal/encoding/tag
+google.golang.org/protobuf/internal/encoding/text
+google.golang.org/protobuf/internal/errors
+google.golang.org/protobuf/internal/fieldnum
+google.golang.org/protobuf/internal/fieldsort
+google.golang.org/protobuf/internal/filedesc
+google.golang.org/protobuf/internal/filetype
+google.golang.org/protobuf/internal/flags
+google.golang.org/protobuf/internal/genname
+google.golang.org/protobuf/internal/impl
+google.golang.org/protobuf/internal/mapsort
+google.golang.org/protobuf/internal/pragma
+google.golang.org/protobuf/internal/set
+google.golang.org/protobuf/internal/strs
+google.golang.org/protobuf/internal/version
+google.golang.org/protobuf/proto
+google.golang.org/protobuf/reflect/protoreflect
+google.golang.org/protobuf/reflect/protoregistry
+google.golang.org/protobuf/runtime/protoiface
+google.golang.org/protobuf/runtime/protoimpl
+# gopkg.in/go-playground/validator.v9 v9.31.0
 gopkg.in/go-playground/validator.v9
-# gopkg.in/yaml.v2 v2.2.2
+# gopkg.in/ini.v1 v1.62.0
+gopkg.in/ini.v1
+# gopkg.in/yaml.v2 v2.3.0
 gopkg.in/yaml.v2
+# gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
+gopkg.in/yaml.v3

@@ -7,8 +7,8 @@ import (
 	"net"
 	"time"
 
+	"github.com/bmc-toolbox/bmclib/internal"
 	"github.com/bmc-toolbox/bmclib/internal/helper"
-	log "github.com/sirupsen/logrus"
 )
 
 // CurrentHTTPSCert returns the current x509 certficates configured on the BMC
@@ -41,7 +41,7 @@ func (i *IDrac9) Screenshot() (response []byte, extension string, err error) {
 
 	extension = "png"
 	endpoint1 := "sysmgmt/2015/server/preview"
-	response, err = i.get(endpoint1, &map[string]string{})
+	_, err = i.get(endpoint1, &map[string]string{})
 	if err != nil {
 		return []byte{}, extension, err
 	}
@@ -61,26 +61,26 @@ func (i *IDrac9) queryUsers() (users map[int]User, err error) {
 
 	data, err := i.get(endpoint, &map[string]string{})
 	if err != nil {
-		log.WithFields(log.Fields{
-			"IP":       i.ip,
-			"Model":    i.HardwareType(),
-			"endpoint": endpoint,
-			"step":     helper.WhosCalling(),
-			"Error":    err,
-		}).Warn("GET request failed.")
+		i.log.V(1).Error(err, "GET request failed.",
+			"IP", i.ip,
+			"Model", i.HardwareType(),
+			"endpoint", endpoint,
+			"step", helper.WhosCalling(),
+			"Error", internal.ErrStringOrEmpty(err),
+		)
 		return users, err
 	}
 
 	userData := make(idracUsers)
 	err = json.Unmarshal(data, &userData)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"step":     "queryUserInfo",
-			"resource": "User",
-			"IP":       i.ip,
-			"Model":    i.HardwareType(),
-			"Error":    err,
-		}).Warn("Unable to unmarshal payload.")
+		i.log.V(1).Error(err, "Unable to unmarshal payload.",
+			"IP", i.ip,
+			"Model", i.HardwareType(),
+			"resource", "User",
+			"step", "queryUserInfo",
+			"Error", internal.ErrStringOrEmpty(err),
+		)
 		return users, err
 	}
 
@@ -93,26 +93,26 @@ func (i *IDrac9) queryLdapRoleGroups() (ldapRoleGroups LdapRoleGroups, err error
 
 	data, err := i.get(endpoint, &map[string]string{})
 	if err != nil {
-		log.WithFields(log.Fields{
-			"IP":       i.ip,
-			"Model":    i.HardwareType(),
-			"endpoint": endpoint,
-			"step":     helper.WhosCalling(),
-			"Error":    err,
-		}).Warn("GET request failed.")
+		i.log.V(1).Error(err, "GET request failed.",
+			"IP", i.ip,
+			"Model", i.HardwareType(),
+			"endpoint", endpoint,
+			"step", helper.WhosCalling(),
+			"Error", internal.ErrStringOrEmpty(err),
+		)
 		return ldapRoleGroups, err
 	}
 
 	idracLdapRoleGroups := make(idracLdapRoleGroups)
 	err = json.Unmarshal(data, &idracLdapRoleGroups)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"step":     "queryUserInfo",
-			"resource": "User",
-			"IP":       i.ip,
-			"Model":    i.HardwareType(),
-			"Error":    err,
-		}).Warn("Unable to unmarshal payload.")
+		i.log.V(1).Error(err, "Unable to unmarshal payload.",
+			"IP", i.ip,
+			"Model", i.HardwareType(),
+			"resource", "User",
+			"step", "queryUserInfo",
+			"Error", internal.ErrStringOrEmpty(err),
+		)
 		return ldapRoleGroups, err
 	}
 

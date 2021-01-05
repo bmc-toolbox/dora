@@ -2,6 +2,7 @@ package ilo
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
@@ -16,14 +17,11 @@ import (
 	"github.com/bmc-toolbox/bmclib/internal/httpclient"
 	"github.com/bmc-toolbox/bmclib/internal/sshclient"
 	"github.com/bmc-toolbox/bmclib/providers/hp"
-
-	// this make possible to setup logging and properties at any stage
-	_ "github.com/bmc-toolbox/bmclib/logging"
-	log "github.com/sirupsen/logrus"
+	"github.com/go-logr/logr"
 )
 
 const (
-	// HardwareType defines the bmc model that is supported by this package
+	// BmcType defines the bmc model that is supported by this package
 	BmcType = "ilo"
 
 	// Ilo2 is the constant for iLO2
@@ -46,10 +44,12 @@ type Ilo struct {
 	sshClient  *sshclient.SSHClient
 	loginURL   *url.URL
 	rimpBlade  *hp.RimpBlade
+	ctx        context.Context
+	log        logr.Logger
 }
 
 // New returns a new Ilo ready to be used
-func New(host string, username string, password string) (*Ilo, error) {
+func New(ctx context.Context, host string, username string, password string, log logr.Logger) (*Ilo, error) {
 	loginURL, err := url.Parse(fmt.Sprintf("https://%s/json/login_session", host))
 	if err != nil {
 		return nil, err
@@ -90,6 +90,8 @@ func New(host string, username string, password string) (*Ilo, error) {
 		loginURL:  loginURL,
 		rimpBlade: rimpBlade,
 		sshClient: sshClient,
+		ctx:       ctx,
+		log:       log,
 	}
 	return ilo, nil
 }
@@ -105,7 +107,7 @@ func (i *Ilo) CheckCredentials() (err error) {
 
 // get calls a given json endpoint of the iLO and returns the data
 func (i *Ilo) get(endpoint string) (payload []byte, err error) {
-	log.WithFields(log.Fields{"step": "bmc connection", "vendor": hp.VendorID, "ip": i.ip, "endpoint": endpoint}).Debug("retrieving data from bmc")
+	i.log.V(1).Info("retrieving data from bmc", "step", "bmc connection", "vendor", hp.VendorID, "ip", i.ip, "endpoint", endpoint)
 
 	bmcURL := fmt.Sprintf("https://%s", i.ip)
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/%s", bmcURL, endpoint), nil)
@@ -123,30 +125,17 @@ func (i *Ilo) get(endpoint string) (payload []byte, err error) {
 			req.AddCookie(cookie)
 		}
 	}
-	if log.GetLevel() == log.TraceLevel {
-		dump, err := httputil.DumpRequestOut(req, true)
-		if err == nil {
-			log.Println(fmt.Sprintf("[Request] %s/%s", bmcURL, endpoint))
-			log.Println(">>>>>>>>>>>>>>>")
-			log.Printf("%s\n\n", dump)
-			log.Println(">>>>>>>>>>>>>>>")
-		}
-	}
+
+	reqDump, _ := httputil.DumpRequestOut(req, true)
+	i.log.V(2).Info("requestTrace", "requestDump", string(reqDump), "url", fmt.Sprintf("%s/%s", bmcURL, endpoint))
 
 	resp, err := i.httpClient.Do(req)
 	if err != nil {
 		return payload, err
 	}
 	defer resp.Body.Close()
-	if log.GetLevel() == log.TraceLevel {
-		dump, err := httputil.DumpResponse(resp, true)
-		if err == nil {
-			log.Println("[Response]")
-			log.Println("<<<<<<<<<<<<<<")
-			log.Printf("%s\n\n", dump)
-			log.Println("<<<<<<<<<<<<<<")
-		}
-	}
+	respDump, _ := httputil.DumpResponse(resp, true)
+	i.log.V(2).Info("responseTrace", "responseDump", string(respDump))
 
 	payload, err = ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -180,30 +169,16 @@ func (i *Ilo) post(endpoint string, data []byte) (statusCode int, body []byte, e
 		}
 	}
 
-	if log.GetLevel() == log.TraceLevel {
-		dump, err := httputil.DumpRequestOut(req, true)
-		if err == nil {
-			log.Println(fmt.Sprintf("[Request] %s/%s", i.ip, endpoint))
-			log.Println(">>>>>>>>>>>>>>>")
-			log.Printf("%s\n\n", dump)
-			log.Println(">>>>>>>>>>>>>>>")
-		}
-	}
+	reqDump, _ := httputil.DumpRequestOut(req, true)
+	i.log.V(2).Info("requestTrace", "requestDump", string(reqDump), "url", fmt.Sprintf("%s/%s", i.ip, endpoint))
 
 	resp, err := i.httpClient.Do(req)
 	if err != nil {
 		return 0, []byte{}, err
 	}
 	defer resp.Body.Close()
-	if log.GetLevel() == log.TraceLevel {
-		dump, err := httputil.DumpResponse(resp, true)
-		if err == nil {
-			log.Println("[Response]")
-			log.Println("<<<<<<<<<<<<<<")
-			log.Printf("%s\n\n", dump)
-			log.Println("<<<<<<<<<<<<<<")
-		}
-	}
+	respDump, _ := httputil.DumpResponse(resp, true)
+	i.log.V(2).Info("responseTrace", "responseDump", string(respDump))
 
 	body, err = ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -219,38 +194,30 @@ func (i *Ilo) Serial() (serial string, err error) {
 }
 
 // ChassisSerial returns the serial number of the chassis where the blade is attached
-func (i *Ilo) ChassisSerial() (serial string, err error) {
-	err = i.httpLogin()
+func (i *Ilo) ChassisSerial() (string, error) {
+	err := i.httpLogin()
 	if err != nil {
-		return serial, err
+		return "", err
 	}
 
-	url := "json/rck_info"
-	payload, err := i.get(url)
+	payload, err := i.get("json/rck_info")
 	if err != nil {
-		return serial, err
+		return "", err
 	}
 
 	rckInfo := &hp.RckInfo{}
 	err = json.Unmarshal(payload, rckInfo)
 	if err != nil {
-		return serial, err
+		return "", err
 	}
 
 	if rckInfo.EncSn == "Unknown" {
-		url := "json/chassis_info"
-		payload, err = i.get(url)
+		chassisInfo, err := i.parseChassisInfo()
 		if err != nil {
-			return serial, err
+			return "", err
 		}
 
-		chassisInfo := &hp.ChassisInfo{}
-		err = json.Unmarshal(payload, chassisInfo)
-		if err != nil {
-			return serial, err
-		}
-
-		return strings.ToLower(chassisInfo.ChassisSn), err
+		return strings.ToLower(chassisInfo.ChassisSn), nil
 	}
 
 	return strings.ToLower(rckInfo.EncSn), err
@@ -531,6 +498,48 @@ func (i *Ilo) License() (name string, licType string, err error) {
 	return hpIloLicense.Name, hpIloLicense.Type, err
 }
 
+func (i *Ilo) parseChassisInfo() (*hp.ChassisInfo, error) {
+	err := i.httpLogin()
+	if err != nil {
+		return nil, err
+	}
+
+	chassisInfo := &hp.ChassisInfo{}
+	// We try the new way of doing things first (RedFish).
+	payload, err := i.get(hp.ChassisInfoNewURL)
+	if err == nil {
+		err = json.Unmarshal(payload, chassisInfo)
+		if err != nil {
+			return nil, err
+		}
+
+		// Matching the new interface to the old one, since the code still drops
+		//   off to the old interface in case the new interface is not available.
+		chassisInfo.ChassisSn = chassisInfo.SerialNumber
+		chassisInfo.NodeNumber = chassisInfo.Oem.Hpe.BayNumber
+
+		return chassisInfo, nil
+	}
+
+	if err != errors.ErrPageNotFound {
+		// This is a real error, just give up...
+		return nil, err
+	}
+
+	// This just means that we have to try the old way of doing things, since RedFish is not available.
+	payload, err = i.get(hp.ChassisInfoOldURL)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(payload, chassisInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	return chassisInfo, nil
+}
+
 // Psus returns a list of psus installed on the device
 func (i *Ilo) Psus() (psus []*devices.Psu, err error) {
 	err = i.httpLogin()
@@ -631,63 +640,36 @@ func (i *Ilo) Disks() (disks []*devices.Disk, err error) {
 	return disks, err
 }
 
-// IsBlade returns if the current hardware is a blade or not
+// Returns whether the current hardware is a blade.
 func (i *Ilo) IsBlade() (isBlade bool, err error) {
 	if i.rimpBlade.BladeSystem != nil {
-		isBlade = true
-	} else {
-		err = i.httpLogin()
-		if err != nil {
-			return isBlade, err
-		}
-
-		url := "json/chassis_info"
-		payload, err := i.get(url)
-		if err != nil {
-			return isBlade, err
-		}
-
-		chassisInfo := &hp.ChassisInfo{}
-		err = json.Unmarshal(payload, chassisInfo)
-		if err != nil {
-			return isBlade, err
-		}
-		if chassisInfo.ChassisSn != "" {
-			isBlade = true
-		}
+		return true, nil
 	}
 
-	return isBlade, err
+	chassisInfo, err := i.parseChassisInfo()
+	if err != nil {
+		return false, err
+	}
+
+	return chassisInfo.ChassisType == "Blade" || chassisInfo.ChassisSn != "", nil
 }
 
 // Slot returns the current slot within the chassis
 func (i *Ilo) Slot() (slot int, err error) {
 	if i.rimpBlade.BladeSystem != nil {
-		return i.rimpBlade.BladeSystem.Bay, err
+		return i.rimpBlade.BladeSystem.Bay, nil
 	}
 
-	err = i.httpLogin()
-	if err != nil {
-		return -1, err
-	}
-
-	url := "json/chassis_info"
-	payload, err := i.get(url)
-	if err != nil {
-		return -1, err
-	}
-
-	chassisInfo := &hp.ChassisInfo{}
-	err = json.Unmarshal(payload, chassisInfo)
+	chassisInfo, err := i.parseChassisInfo()
 	if err != nil {
 		return -1, err
 	}
 
 	if chassisInfo.NodeNumber != 0 {
-		return chassisInfo.NodeNumber, err
+		return chassisInfo.NodeNumber, nil
 	}
 
-	return -1, err
+	return -1, nil
 }
 
 // Vendor returns bmc's vendor

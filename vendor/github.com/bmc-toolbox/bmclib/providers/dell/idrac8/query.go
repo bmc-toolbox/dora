@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bmc-toolbox/bmclib/internal"
 	"github.com/bmc-toolbox/bmclib/internal/helper"
-	log "github.com/sirupsen/logrus"
 )
 
 // CurrentHTTPSCert returns the current x509 certficates configured on the BMC
@@ -77,26 +77,26 @@ func (i *IDrac8) queryUsers() (userInfo UserInfo, err error) {
 
 	response, err := i.get(endpoint, &map[string]string{})
 	if err != nil {
-		log.WithFields(log.Fields{
-			"IP":       i.ip,
-			"Model":    i.HardwareType(),
-			"endpoint": endpoint,
-			"step":     helper.WhosCalling(),
-			"Error":    err,
-		}).Warn("GET request failed.")
+		i.log.V(1).Error(err, "GET request failed.",
+			"IP", i.ip,
+			"Model", i.HardwareType(),
+			"endpoint", endpoint,
+			"step", helper.WhosCalling(),
+			"Error", internal.ErrStringOrEmpty(err),
+		)
 		return userInfo, err
 	}
 
 	xmlData := XMLRoot{}
 	err = xml.Unmarshal(response, &xmlData)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"step":     "queryUserInfo",
-			"resource": "User",
-			"IP":       i.ip,
-			"Model":    i.HardwareType(),
-			"Error":    err,
-		}).Warn("Unable to unmarshal payload.")
+		i.log.V(1).Error(err, "Unable to unmarshal payload.",
+			"step", "queryUserInfo",
+			"resource", "User",
+			"IP", i.ip,
+			"Model", i.HardwareType(),
+			"Error", internal.ErrStringOrEmpty(err),
+		)
 		return userInfo, err
 	}
 
