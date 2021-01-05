@@ -1,6 +1,8 @@
 package ibmc
 
 import (
+	"context"
+
 	"github.com/bmc-toolbox/bmclib/cfgresources"
 	"github.com/bmc-toolbox/bmclib/devices"
 )
@@ -72,7 +74,7 @@ func (i *Ibmc) License() (string, string, error) {
 }
 
 // Close implements the Bmc interface
-func (i *Ibmc) Close() error {
+func (i *Ibmc) Close(ctx context.Context) error {
 	return nil
 }
 
@@ -168,7 +170,6 @@ func (i *Ibmc) ServerSnapshot() (interface{}, error) {
 
 // UpdateCredentials implements the Bmc interface
 func (i *Ibmc) UpdateCredentials(string, string) {
-	return
 }
 
 // Slot implements the Bmc interface

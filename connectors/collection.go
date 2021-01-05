@@ -249,7 +249,7 @@ func DataCollectionWorker() {
 }
 
 func collectBmc(bmc devices.Bmc) (err error) {
-	defer bmc.Close()
+	defer bmc.Close(nil)
 
 	serial, err := bmc.Serial()
 	if err != nil {
