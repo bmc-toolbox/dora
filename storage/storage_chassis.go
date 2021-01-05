@@ -102,7 +102,7 @@ func (c ChassisStorage) GetAllByPsusID(offset string, limit string, serials []st
 
 // GetOne Chassis
 func (c ChassisStorage) GetOne(serial string) (chassis model.Chassis, err error) {
-	if err = c.db.Where("serial = ?", serial).Preload("Blades").Preload("Blades.Nics").Preload("StorageBlades").Preload("Nics").Preload("Psus").First(&chassis).Error; err != nil {
+	if err = c.db.Where("serial in (?)", serial).Preload("Blades").Preload("Blades.Nics").Preload("StorageBlades").Preload("Nics").Preload("Psus").First(&chassis).Error; err != nil {
 		return chassis, err
 	}
 	return chassis, err

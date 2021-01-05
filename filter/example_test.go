@@ -65,9 +65,9 @@ func ExampleFilters() {
 	// Output:
 	// `MOCK_FAKE_DRIVER` is not officially supported, running under compatibility mode.
 	// true
-	// &{SELECT * FROM ""  WHERE ("bmc_type" = ?) [iLO4]}
+	// &{SELECT * FROM ""  WHERE ("bmc_type" in (?)) [iLO4]}
 	// true
-	// &{SELECT * FROM ""  WHERE ("bmc_type" != ?) [iLO4]}
+	// &{SELECT * FROM ""  WHERE ("bmc_type" not in (?)) [iLO4]}
 	// &{SELECT * FROM ""   []}
 	// false
 }

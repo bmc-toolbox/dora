@@ -17,15 +17,15 @@ var testSet = []struct {
 	urlString string
 	sqlQuery  string
 }{
-	{"filter[model]=dell", "&{SELECT * FROM \"\"  WHERE (\"model\" = ?) [dell]}"},
-	{"filter[status]!=bad", "&{SELECT * FROM \"\"  WHERE (\"status\" != ?) [bad]}"},
-	{"filter[model][eq]=dell", "&{SELECT * FROM \"\"  WHERE (\"model\" = ?) [dell]}"},
-	{"filter[status][ne]=bad", "&{SELECT * FROM \"\"  WHERE (\"status\" != ?) [bad]}"},
+	{"filter[model]=dell", "&{SELECT * FROM \"\"  WHERE (\"model\" in (?)) [dell]}"},
+	{"filter[status]!=bad", "&{SELECT * FROM \"\"  WHERE (\"status\" not in (?)) [bad]}"},
+	{"filter[model][eq]=dell", "&{SELECT * FROM \"\"  WHERE (\"model\" in (?)) [dell]}"},
+	{"filter[status][ne]=bad", "&{SELECT * FROM \"\"  WHERE (\"status\" not in (?)) [bad]}"},
 	{"filter[temp_c][le]=3", "&{SELECT * FROM \"\"  WHERE (\"temp_c\" <= ?) [3]}"},
 	{"filter[temp_c][lt]=3", "&{SELECT * FROM \"\"  WHERE (\"temp_c\" < ?) [3]}"},
 	{"filter[temp_c][ge]=3", "&{SELECT * FROM \"\"  WHERE (\"temp_c\" >= ?) [3]}"},
 	{"filter[temp_c][gt]=3", "&{SELECT * FROM \"\"  WHERE (\"temp_c\" > ?) [3]}"},
-	{"filter[temp_c][gt]=3&filter[vendor]=Dell", "&{SELECT * FROM \"\"  WHERE (\"temp_c\" > ?) AND (\"vendor\" = ?) [3 Dell]}"},
+	{"filter[temp_c][gt]=3&filter[vendor]=Dell", "&{SELECT * FROM \"\"  WHERE (\"temp_c\" > ?) AND (\"vendor\" in (?)) [3 Dell]}"},
 }
 
 func setupDB() *gorm.DB {
