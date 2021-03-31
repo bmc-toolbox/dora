@@ -466,6 +466,9 @@ func (i *IDrac9) Slot() (slot int, err error) {
 						return -1, err
 					}
 					v := strings.Split(property.Value, " ")
+					if len(v) < 2 {
+						return -1, fmt.Errorf("Looks like the BaseBoardChassisSlot is ill-formatted!")
+					}
 					slot, err = strconv.Atoi(v[1])
 					if err != nil {
 						return -1, err
@@ -924,4 +927,19 @@ func (i *IDrac9) Disks() (disks []*devices.Disk, err error) {
 func (i *IDrac9) UpdateCredentials(username string, password string) {
 	i.username = username
 	i.password = password
+}
+
+// BiosVersion returns the BIOS version from the BMC, implements the Firmware interface
+func (i *IDrac9) GetBIOSVersion(ctx context.Context) (string, error) {
+	return "", errors.ErrNotImplemented
+}
+
+// BMCVersion returns the BMC version, implements the Firmware interface
+func (i *IDrac9) GetBMCVersion(ctx context.Context) (string, error) {
+	return "", errors.ErrNotImplemented
+}
+
+// Updates the BMC firmware, implements the Firmware interface
+func (i *IDrac9) FirmwareUpdateBMC(ctx context.Context, filePath string) error {
+	return errors.ErrNotImplemented
 }
