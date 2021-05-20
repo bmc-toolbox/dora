@@ -3,7 +3,7 @@ github.com/DATA-DOG/go-sqlmock
 # github.com/GeertJohan/go.rice v1.0.2
 github.com/GeertJohan/go.rice
 github.com/GeertJohan/go.rice/embedded
-# github.com/bmc-toolbox/bmclib v0.4.11
+# github.com/bmc-toolbox/bmclib v0.4.12
 github.com/bmc-toolbox/bmclib/cfgresources
 github.com/bmc-toolbox/bmclib/devices
 github.com/bmc-toolbox/bmclib/discover
@@ -14,6 +14,7 @@ github.com/bmc-toolbox/bmclib/internal/httpclient
 github.com/bmc-toolbox/bmclib/internal/ipmi
 github.com/bmc-toolbox/bmclib/internal/sshclient
 github.com/bmc-toolbox/bmclib/logging
+github.com/bmc-toolbox/bmclib/providers
 github.com/bmc-toolbox/bmclib/providers/dell
 github.com/bmc-toolbox/bmclib/providers/dell/idrac8
 github.com/bmc-toolbox/bmclib/providers/dell/idrac9
@@ -50,6 +51,8 @@ github.com/gin-gonic/gin/internal/json
 github.com/gin-gonic/gin/render
 # github.com/go-logr/logr v0.4.0
 github.com/go-logr/logr
+# github.com/go-logr/zapr v0.4.0
+github.com/go-logr/zapr
 # github.com/go-playground/locales v0.13.0
 github.com/go-playground/locales
 github.com/go-playground/locales/currency
@@ -86,6 +89,8 @@ github.com/hashicorp/hcl/json/scanner
 github.com/hashicorp/hcl/json/token
 # github.com/inconshreveable/mousetrap v1.0.0
 github.com/inconshreveable/mousetrap
+# github.com/jacobweinstock/registrar v0.4.2
+github.com/jacobweinstock/registrar
 # github.com/jinzhu/gorm v1.9.16
 github.com/jinzhu/gorm
 github.com/jinzhu/gorm/dialects/mysql
@@ -174,6 +179,17 @@ github.com/ugorji/go/codec
 github.com/valyala/bytebufferpool
 # github.com/valyala/fasttemplate v1.2.1
 github.com/valyala/fasttemplate
+# go.uber.org/atomic v1.7.0
+go.uber.org/atomic
+# go.uber.org/multierr v1.6.0
+go.uber.org/multierr
+# go.uber.org/zap v1.16.0
+go.uber.org/zap
+go.uber.org/zap/buffer
+go.uber.org/zap/internal/bufferpool
+go.uber.org/zap/internal/color
+go.uber.org/zap/internal/exit
+go.uber.org/zap/zapcore
 # golang.org/x/crypto v0.0.0-20210317152858-513c2a44f670
 golang.org/x/crypto/acme
 golang.org/x/crypto/acme/autocert
