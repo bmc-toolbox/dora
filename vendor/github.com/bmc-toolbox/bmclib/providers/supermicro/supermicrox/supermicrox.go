@@ -268,7 +268,7 @@ func (s *SupermicroX) ChassisSerial() (serial string, err error) {
 		return "", fmt.Errorf(e)
 	}
 
-	return chassisInfo.SerialNumber, nil
+	return strings.ToLower(chassisInfo.SerialNumber), nil
 }
 
 // HardwareType returns just Model id string - supermicrox
