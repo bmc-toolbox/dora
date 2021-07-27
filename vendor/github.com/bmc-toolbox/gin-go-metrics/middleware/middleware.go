@@ -123,7 +123,7 @@ func (m *Metrics) HandlerFunc(metricsPrefix []string, ignoreURLs []string, repla
 		)
 		theRegistry.timer(processTimeKey).Update(elapsed)
 		theRegistry.histogram(reqSzKey).Update(reqSz)
-		theRegistry.histogram(resSzKey).Update(resSz)
+		theRegistry.histogram(resSzKey, ).Update(resSz)
 	}
 }
 
