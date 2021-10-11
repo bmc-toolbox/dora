@@ -1,6 +1,6 @@
 # dora - bmc discovery asset database [![Go Report Card](https://goreportcard.com/badge/github.com/bmc-toolbox/dora)](https://goreportcard.com/report/github.com/bmc-toolbox/dora)
 
-A tool to build a dynamic database of you datacenter assets
+A tool to build a dynamic database of your datacenter assets
 
 ## How to run
 
@@ -45,16 +45,16 @@ Database - any compatible with [GORM](http://gorm.io/)
 Dora is a service which gather data about database assets from BMCs
  via HTTP\SSH and give ability to retrieve that data via REST API.
 
-List of supported assets can be found in [bmclib](https://github.com/bmc-toolbox/bmclib#data-collection-support) Readme.
+List of supported assets can be found in [the bmclib readme](https://github.com/bmc-toolbox/bmclib#data-collection-support)
 
 ### Architecture
 
 ![dora](dora.png)
 
-"a" is the flow of adding/updating data  
-"b" is the flow of getting data  
+"a" is the flow of adding/updating data
+"b" is the flow of getting data
 
-"1" is a request to scan or collect assets  
+"1" is a request to scan or collect assets
 "5" is a request to obtain assets
 
 #### Server
@@ -71,7 +71,7 @@ There are two type of jobs:
  (fast operation, except for Dell servers)
 * `scan`: scan networks found in kea config or a list of given networks (slow operation)
 
-In case you run these jobs as commands to dora, it works as a worker who received 
+In case you run these jobs as commands to dora, it works as a worker who received
 the command.
 
 #### Overview
@@ -94,5 +94,5 @@ The process of collecting assets
 
 dora was originally developed for [Booking.com](http://www.booking.com).
 With approval from [Booking.com](http://www.booking.com), the code and
-specification were generalized and published as Open Source on github, for
+specification were generalized and published as Open Source on GitHub, for
 which the authors would like to express their gratitude.
