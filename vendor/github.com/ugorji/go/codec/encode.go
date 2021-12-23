@@ -310,7 +310,7 @@ func (e *Encoder) kSeqFn(rtelem reflect.Type) (fn *codecFn) {
 }
 
 func (e *Encoder) kSliceWMbs(rv reflect.Value, ti *typeInfo) {
-	var l = rvLenSlice(rv)
+	l := rvLenSlice(rv)
 	if l == 0 {
 		e.mapStart(0)
 	} else {
@@ -330,7 +330,7 @@ func (e *Encoder) kSliceWMbs(rv reflect.Value, ti *typeInfo) {
 }
 
 func (e *Encoder) kSliceW(rv reflect.Value, ti *typeInfo) {
-	var l = rvLenSlice(rv)
+	l := rvLenSlice(rv)
 	e.arrayStart(l)
 	if l > 0 {
 		fn := e.kSeqFn(ti.elem)
@@ -343,7 +343,7 @@ func (e *Encoder) kSliceW(rv reflect.Value, ti *typeInfo) {
 }
 
 func (e *Encoder) kArrayWMbs(rv reflect.Value, ti *typeInfo) {
-	var l = rv.Len()
+	l := rv.Len()
 	if l == 0 {
 		e.mapStart(0)
 	} else {
@@ -363,7 +363,7 @@ func (e *Encoder) kArrayWMbs(rv reflect.Value, ti *typeInfo) {
 }
 
 func (e *Encoder) kArrayW(rv reflect.Value, ti *typeInfo) {
-	var l = rv.Len()
+	l := rv.Len()
 	e.arrayStart(l)
 	if l > 0 {
 		fn := e.kSeqFn(ti.elem)
@@ -520,7 +520,7 @@ func (e *Encoder) kStruct(f *codecFnInfo, rv reflect.Value) {
 	}
 	newlen += len(f.ti.sfiSrc)
 
-	var fkvs = e.slist.get(newlen)[:newlen]
+	fkvs := e.slist.get(newlen)[:newlen]
 
 	recur := e.h.RecursiveEmptyCheck
 
@@ -575,7 +575,7 @@ func (e *Encoder) kStruct(f *codecFnInfo, rv reflect.Value) {
 			if si.path.omitEmpty && isEmptyValue(kv.r, e.h.TypeInfos, recur) {
 				switch kv.r.Kind() {
 				case reflect.Struct, reflect.Interface, reflect.Ptr, reflect.Array, reflect.Map, reflect.Slice:
-					kv.r = reflect.Value{} //encode as nil
+					kv.r = reflect.Value{} // encode as nil
 				}
 			}
 			fkvs[i] = kv
@@ -626,7 +626,7 @@ func (e *Encoder) kMap(f *codecFnInfo, rv reflect.Value) {
 		valFn = e.h.fn(rtval)
 	}
 
-	var rvv = mapAddrLoopvarRV(f.ti.elem, vtypeKind)
+	rvv := mapAddrLoopvarRV(f.ti.elem, vtypeKind)
 
 	if e.h.Canonical {
 		e.kMapCanonical(f.ti, rv, rvv, valFn)
@@ -635,7 +635,7 @@ func (e *Encoder) kMap(f *codecFnInfo, rv reflect.Value) {
 	}
 
 	rtkey := f.ti.key
-	var keyTypeIsString = stringTypId == rt2id(rtkey) // rtkeyid
+	keyTypeIsString := stringTypId == rt2id(rtkey) // rtkeyid
 	if !keyTypeIsString {
 		for rtkey.Kind() == reflect.Ptr {
 			rtkey = rtkey.Elem()
@@ -645,7 +645,7 @@ func (e *Encoder) kMap(f *codecFnInfo, rv reflect.Value) {
 		}
 	}
 
-	var rvk = mapAddrLoopvarRV(f.ti.key, ktypeKind)
+	rvk := mapAddrLoopvarRV(f.ti.key, ktypeKind)
 
 	var it mapIter
 	mapRange(&it, rv, rvk, rvv, true)

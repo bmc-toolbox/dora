@@ -71,7 +71,7 @@ func mapping(value reflect.Value, field reflect.StructField, setter setter, tag 
 		return false, nil
 	}
 
-	var vKind = value.Kind()
+	vKind := value.Kind()
 
 	if vKind == reflect.Ptr {
 		var isNew bool
@@ -298,7 +298,6 @@ func setTimeField(val string, structField reflect.StructField, value reflect.Val
 		t := time.Unix(tv/int64(d), tv%int64(d))
 		value.Set(reflect.ValueOf(t))
 		return nil
-
 	}
 
 	if val == "" {

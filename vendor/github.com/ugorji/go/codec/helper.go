@@ -530,6 +530,7 @@ func (x *typeInfoLoad) reset() {
 type jsonMarshaler interface {
 	MarshalJSON() ([]byte, error)
 }
+
 type jsonUnmarshaler interface {
 	UnmarshalJSON([]byte) error
 }
@@ -849,7 +850,7 @@ func (x *BasicHandle) initHandle(hh Handle) {
 	x.mu.Lock()
 	defer x.mu.Unlock() // use defer, as halt may panic below
 	if x.inited == 0 {
-		var f = initedHandleFlag
+		f := initedHandleFlag
 		if hh.isBinary() {
 			f |= binaryHandleFlag
 		}
@@ -886,7 +887,7 @@ func findRtidFn(s []codecRtidFn, rtid uintptr) (i uint, fn *codecFn) {
 
 	// h, i, j := 0, 0, len(s)
 	var h uint // var h, i uint
-	var j = uint(len(s))
+	j := uint(len(s))
 LOOP:
 	if i < j {
 		h = (i + j) >> 1 // avoid overflow when computing h // h = i + (j-i)/2
@@ -990,7 +991,7 @@ func (x *BasicHandle) fnLoad(rt reflect.Type, rtid uintptr, checkExt bool) (fn *
 	} else if supportMarshalInterfaces && !x.isBe() && x.isJs() &&
 		(ti.flagJsonMarshaler || ti.flagJsonMarshalerPtr) &&
 		(ti.flagJsonUnmarshaler || ti.flagJsonUnmarshalerPtr) {
-		//If JSON, we should check JSONMarshal before textMarshal
+		// If JSON, we should check JSONMarshal before textMarshal
 		fn.fe = (*Encoder).jsonMarshal
 		fn.fd = (*Decoder).jsonUnmarshal
 		fi.addrD = ti.flagJsonUnmarshalerPtr
@@ -1298,6 +1299,7 @@ func (bytesExtFailer) WriteExt(v interface{}) []byte {
 	halt.onerror(errExtFnWriteExtUnsupported)
 	return nil
 }
+
 func (bytesExtFailer) ReadExt(v interface{}, bs []byte) {
 	halt.onerror(errExtFnReadExtUnsupported)
 }
@@ -1308,6 +1310,7 @@ func (interfaceExtFailer) ConvertExt(v interface{}) interface{} {
 	halt.onerror(errExtFnConvertExtUnsupported)
 	return nil
 }
+
 func (interfaceExtFailer) UpdateExt(dest interface{}, v interface{}) {
 	halt.onerror(errExtFnUpdateExtUnsupported)
 }
@@ -1881,7 +1884,7 @@ func findTypeInfo(s []rtid2ti, rtid uintptr) (i uint, ti *typeInfo) {
 	// Note: we use goto (instead of for loop) so this can be inlined.
 
 	var h uint
-	var j = uint(len(s))
+	j := uint(len(s))
 LOOP:
 	if i < j {
 		h = (i + j) >> 1 // avoid overflow when computing h // h = i + (j-i)/2
@@ -2335,12 +2338,14 @@ func (checkOverflow) Float32(v float64) (overflow bool) {
 	}
 	return math.MaxFloat32 < v && v <= math.MaxFloat64
 }
+
 func (checkOverflow) Uint(v uint64, bitsize uint8) (overflow bool) {
 	if v != 0 && v != (v<<(64-bitsize))>>(64-bitsize) {
 		overflow = true
 	}
 	return
 }
+
 func (checkOverflow) Int(v int64, bitsize uint8) (overflow bool) {
 	if v != 0 && v != (v<<(64-bitsize))>>(64-bitsize) {
 		overflow = true
@@ -2353,7 +2358,7 @@ func (checkOverflow) Uint2Int(v uint64, neg bool) (overflow bool) {
 }
 
 func (checkOverflow) SignedInt(v uint64) (overflow bool) {
-	//e.g. -127 to 128 for int8
+	// e.g. -127 to 128 for int8
 	pos := (v >> 63) == 0
 	ui2 := v & 0x7fffffffffffffff
 	if pos {
@@ -2374,18 +2379,21 @@ func (x checkOverflow) Float32V(v float64) float64 {
 	}
 	return v
 }
+
 func (x checkOverflow) UintV(v uint64, bitsize uint8) uint64 {
 	if x.Uint(v, bitsize) {
 		halt.errorf("uint64 overflow: %v", v)
 	}
 	return v
 }
+
 func (x checkOverflow) IntV(v int64, bitsize uint8) int64 {
 	if x.Int(v, bitsize) {
 		halt.errorf("int64 overflow: %v", v)
 	}
 	return v
 }
+
 func (x checkOverflow) SignedIntV(v uint64) int64 {
 	if x.SignedInt(v) {
 		halt.errorf("uint64 to int64 overflow: %v", v)
@@ -2470,6 +2478,7 @@ func (x *bitset32) set(pos byte) *bitset32 {
 	x[pos&31] = true // x[pos%32] = true
 	return x
 }
+
 func (x *bitset32) isset(pos byte) bool {
 	return x[pos&31] // x[pos%32]
 }
@@ -2490,6 +2499,7 @@ func (x *bitset256) set(pos byte) *bitset256 {
 	x[pos] = true
 	return x
 }
+
 func (x *bitset256) isset(pos byte) bool {
 	return x[pos]
 }
@@ -2574,14 +2584,17 @@ func (mustHdl) String(s string, err error) string {
 	halt.onerror(err)
 	return s
 }
+
 func (mustHdl) Int(s int64, err error) int64 {
 	halt.onerror(err)
 	return s
 }
+
 func (mustHdl) Uint(s uint64, err error) uint64 {
 	halt.onerror(err)
 	return s
 }
+
 func (mustHdl) Float(s float64, err error) float64 {
 	halt.onerror(err)
 	return s
@@ -2713,7 +2726,7 @@ func (x *bytesFreelist) checkPutGet(v []byte, length int) []byte {
 
 	// assume cap(v) < length, so put must happen before get
 	y := *x
-	var put = cap(v) == 0 // if empty, consider it already put
+	put := cap(v) == 0 // if empty, consider it already put
 	if !put {
 		y = append(y, v)
 	}

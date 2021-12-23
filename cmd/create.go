@@ -99,12 +99,12 @@ var createCmd = &cobra.Command{
 		configDir := fmt.Sprintf("%s/.bmc-toolbox", home)
 		configFile := fmt.Sprintf("%s/dora.yaml", configDir)
 		if _, err := os.Stat(configFile); os.IsNotExist(err) {
-			err = os.MkdirAll(configDir, 0755)
+			err = os.MkdirAll(configDir, 0o755)
 			if err != nil {
 				fmt.Printf("Failed to create the config directory %s: %s\n", configDir, err)
 				os.Exit(1)
 			}
-			err = ioutil.WriteFile(configFile, sampleConfig, 0755)
+			err = ioutil.WriteFile(configFile, sampleConfig, 0o755)
 			if err != nil {
 				fmt.Printf("Failed to create the temp config %s: %s\n", configFile, err)
 				os.Exit(1)

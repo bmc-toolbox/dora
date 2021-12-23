@@ -197,7 +197,7 @@ func (c *Client) step2(in []byte) error {
 
 func (c *Client) step3(in []byte) error {
 	var isv, ise bool
-	var fields = bytes.Split(in, []byte(","))
+	fields := bytes.Split(in, []byte(","))
 	if len(fields) == 1 {
 		isv = bytes.HasPrefix(fields[0], []byte("v="))
 		ise = bytes.HasPrefix(fields[0], []byte("e="))

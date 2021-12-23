@@ -8,10 +8,8 @@ type Response struct {
 	Code int
 }
 
-var (
-	// ErrPageSizeAndNumber is returned when page[number] and page[size] are sent on the http request
-	ErrPageSizeAndNumber = errors.New("filters page[number] and page[size] are not supported, please stick to page[offset] and page[limit]")
-)
+// ErrPageSizeAndNumber is returned when page[number] and page[size] are sent on the http request
+var ErrPageSizeAndNumber = errors.New("filters page[number] and page[size] are not supported, please stick to page[offset] and page[limit]")
 
 // Metadata returns additional meta data
 func (r Response) Metadata() map[string]interface{} {

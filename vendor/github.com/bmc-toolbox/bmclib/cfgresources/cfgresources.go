@@ -1,6 +1,10 @@
 package cfgresources
 
-import "time"
+import (
+	"encoding/json"
+	"os/exec"
+	"time"
+)
 
 // SetupChassis struct holds attributes for one time chassis setup.
 type SetupChassis struct {
@@ -15,7 +19,7 @@ type SetupChassis struct {
 // ResourcesConfig struct holds all the configuration to be applied.
 type ResourcesConfig struct {
 	Ldap         *Ldap         `yaml:"ldap"`
-	LdapGroup    []*LdapGroup  `yaml:"ldapGroup"`
+	LdapGroups   *LdapGroups   `yaml:"ldapGroups"`
 	License      *License      `yaml:"license"`
 	Network      *Network      `yaml:"network"`
 	Syslog       *Syslog       `yaml:"syslog"`
@@ -24,7 +28,7 @@ type ResourcesConfig struct {
 	Ntp          *Ntp          `yaml:"ntp"`
 	Bios         *Bios         `yaml:"bios"`
 	Power        *Power        `yaml:"power"`
-	Supermicro   *Supermicro   `yaml:"supermicro"` //supermicro specific config, example of issue #34
+	Supermicro   *Supermicro   `yaml:"supermicro"`
 	SetupChassis *SetupChassis `yaml:"setupChassis"`
 }
 
@@ -44,20 +48,19 @@ type BladeBmcAccount struct {
 	Password string `yaml:"password"`
 }
 
-//Enable/Disable Virtual Mac addresses for blades in a chassis.
-//FlexAddresses in M1000e jargon.
-//Virtual connect in HP C7000 jargon.
+// Enable/Disable Virtual Mac addresses for blades in a chassis.
+// FlexAddresses in M1000e jargon.
+// Virtual connect in HP C7000 jargon.
 type flexAddress struct {
 	Enable bool `yaml:"enable"`
 }
 
-//Enable/Disable ipmi over lan
 type ipmiOverLan struct {
 	Enable bool `yaml:"enable"`
 }
 
-//'Dynamic Power' in HP C7000 Jargon.
-//'DPSE' (dynamic PSU engagement) in M1000e Dell jargon.
+// 'Dynamic Power' in HP C7000 Jargon.
+// 'DPSE' (dynamic PSU engagement) in M1000e Dell jargon.
 type dynamicPower struct {
 	Enable bool `yaml:"enable"`
 }
@@ -69,10 +72,12 @@ type bladesPower struct {
 
 // User struct holds a BMC user account configuration.
 type User struct {
-	Name     string `yaml:"name"`
-	Password string `yaml:"password"`
-	Role     string `yaml:"role"`
-	Enable   bool   `yaml:"enable,omitempty"`
+	Name         string `yaml:"name"`
+	Password     string `yaml:"password"`
+	Role         string `yaml:"role"`
+	Enable       bool   `yaml:"enable,omitempty"`
+	SolEnable    bool   `yaml:"solEnable,omitempty"`
+	SNMPv3Enable bool   `yaml:"snmpV3Enable,omitempty"`
 }
 
 // Syslog struct holds BMC syslog configuration.
@@ -88,8 +93,8 @@ type Ldap struct {
 	Port           int    `yaml:"port"`
 	Enable         bool   `yaml:"enable"`
 	Role           string `yaml:"role"`
-	BaseDn         string `yaml:"baseDn"` //BaseDN is the starting point of the LDAP tree search.
-	BindDn         string `yaml:"bindDn"` //BindDN is used to gain access to the LDAP tree.
+	BaseDn         string `yaml:"baseDn"` // BaseDN is the starting point of the LDAP tree search.
+	BindDn         string `yaml:"bindDn"` // BindDN is used to gain access to the LDAP tree.
 	Group          string `yaml:"group"`
 	GroupBaseDn    string `yaml:"groupBaseDn"`
 	UserAttribute  string `yaml:"userAttribute"`
@@ -97,12 +102,54 @@ type Ldap struct {
 	SearchFilter   string `yaml:"searchFilter"`
 }
 
-// License struct holds BMC licencing configuration.
+// License struct holds BMC licensing configuration.
 type License struct {
 	Key string `yaml:"key"`
 }
 
-// LdapGroup struct holds BMC LDAP role group configuration.
+type LdapBin struct {
+	Executor string `yaml:"executor"`
+	Path     string `yaml:"path"`
+}
+
+// LdapGroups holds all group-related configuration parameters.
+// ExtraGroups is used in combination with Bin to add more groups at runtime.
+type LdapGroups struct {
+	Bin              *LdapBin     `yaml:"bin"`
+	Groups           []*LdapGroup `yaml:"groups"`
+	ExtraAdminGroups []*LdapGroup `json:"admins"`
+	ExtraUserGroups  []*LdapGroup `json:"users"`
+}
+
+// If you want to add extra groups at runtime using a script, you have
+//   the option of specifying
+//   * Bin.Executor: Usually /bin/sh or /bin/bash and the like.
+//   * Bin.Path: Path your actual script.
+// You get the serial of the asset and its vendor as two arguments.
+// If you want more, create a GitHub issue and we will take a look.
+func (l *LdapGroups) GetExtraGroups(serial, vendor string) (string, error) {
+	if l.Bin.Path == "" {
+		return "nothing", nil
+	}
+
+	cmd := exec.Command(l.Bin.Executor, l.Bin.Path, serial, vendor)
+	stdout, err := cmd.CombinedOutput()
+	if err != nil {
+		return string(stdout), err
+	}
+
+	err = json.Unmarshal(stdout, &l)
+	if err != nil {
+		return string(stdout), err
+	}
+
+	l.Groups = append(l.Groups, l.ExtraAdminGroups...)
+	l.Groups = append(l.Groups, l.ExtraUserGroups...)
+
+	return "success", nil
+}
+
+// LdapGroup struct holds a single BMC LDAP role group configuration.
 type LdapGroup struct {
 	Role        string `yaml:"role"`
 	Group       string `yaml:"group"`
@@ -137,7 +184,7 @@ type Network struct {
 	DNSFromDHCP    bool   `yaml:"dnsFromDhcp"`
 	SSHEnable      bool   `yaml:"sshEnable"`
 	SSHPort        int    `yaml:"sshPort"`
-	SolEnable      bool   `yaml:"solEnable"` //Serial over lan
+	SolEnable      bool   `yaml:"solEnable"` // SerialOverLan
 	IpmiEnable     bool   `yaml:"ipmiEnable"`
 	DhcpEnable     bool   `yaml:"dhcpEnable"`
 	IpmiPort       int    `yaml:"ipmiPort"`

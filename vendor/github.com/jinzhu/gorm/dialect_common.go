@@ -12,8 +12,7 @@ import (
 var keyNameRegex = regexp.MustCompile("[^a-zA-Z0-9]+")
 
 // DefaultForeignKeyNamer contains the default foreign key name generator method
-type DefaultForeignKeyNamer struct {
-}
+type DefaultForeignKeyNamer struct{}
 
 type commonDialect struct {
 	db SQLCommon
@@ -48,7 +47,7 @@ func (s *commonDialect) fieldCanAutoIncrement(field *StructField) bool {
 }
 
 func (s *commonDialect) DataTypeOf(field *StructField) string {
-	var dataValue, sqlType, size, additionalType = ParseFieldStructForDialect(field, s)
+	dataValue, sqlType, size, additionalType := ParseFieldStructForDialect(field, s)
 
 	if sqlType == "" {
 		switch dataValue.Kind() {

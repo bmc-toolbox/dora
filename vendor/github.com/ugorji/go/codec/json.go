@@ -343,10 +343,10 @@ func (e *jsonEncDriver) encodeUint(neg bool, quotes bool, u uint64) {
 		"80818283848586878889" +
 		"90919293949596979899"
 
-	// typically, 19 or 20 bytes sufficient for decimal encoding a uint64
-	// var a [24]byte
-	var a = e.b[0:24]
-	var i = uint8(len(a))
+		// typically, 19 or 20 bytes sufficient for decimal encoding a uint64
+		// var a [24]byte
+	a := e.b[0:24]
+	i := uint8(len(a))
 
 	if quotes {
 		i--
@@ -354,7 +354,7 @@ func (e *jsonEncDriver) encodeUint(neg bool, quotes bool, u uint64) {
 	}
 	// u guaranteed to fit into a uint (as we are not 32bit OS)
 	var is uint
-	var us = uint(u)
+	us := uint(u)
 	for us >= 100 {
 		is = us % 100 * 2
 		us /= 100
@@ -728,7 +728,7 @@ func (d *jsonDecDriver) advance() {
 
 func (d *jsonDecDriver) nextValueBytes(v0 []byte) (v []byte) {
 	v = v0
-	var h = decNextValueBytesHelper{d: &d.d}
+	h := decNextValueBytesHelper{d: &d.d}
 	v, cursor := d.nextValueBytesR(v)
 	h.bytesRdV(&v, cursor)
 	return
@@ -736,7 +736,7 @@ func (d *jsonDecDriver) nextValueBytes(v0 []byte) (v []byte) {
 
 func (d *jsonDecDriver) nextValueBytesR(v0 []byte) (v []byte, cursor uint) {
 	v = v0
-	var h = decNextValueBytesHelper{d: &d.d}
+	h := decNextValueBytesHelper{d: &d.d}
 	dr := &d.d.decRd
 
 	consumeString := func() {
@@ -1378,7 +1378,7 @@ func (h *JsonHandle) typical() bool {
 }
 
 func (h *JsonHandle) newEncDriver() encDriver {
-	var e = &jsonEncDriver{h: h}
+	e := &jsonEncDriver{h: h}
 	// var x []byte
 	// e.buf = &x
 	e.e.e = e
@@ -1389,7 +1389,7 @@ func (h *JsonHandle) newEncDriver() encDriver {
 }
 
 func (h *JsonHandle) newDecDriver() decDriver {
-	var d = &jsonDecDriver{h: h}
+	d := &jsonDecDriver{h: h}
 	var x []byte
 	d.buf = &x
 	d.d.d = d
@@ -1465,8 +1465,10 @@ func jsonFloatStrconvFmtPrec32(f float32) (fmt byte, prec int8) {
 	return
 }
 
-var _ decDriverContainerTracker = (*jsonDecDriver)(nil)
-var _ encDriverContainerTracker = (*jsonEncDriver)(nil)
-var _ decDriver = (*jsonDecDriver)(nil)
+var (
+	_ decDriverContainerTracker = (*jsonDecDriver)(nil)
+	_ encDriverContainerTracker = (*jsonEncDriver)(nil)
+	_ decDriver                 = (*jsonDecDriver)(nil)
+)
 
 var _ encDriver = (*jsonEncDriver)(nil)

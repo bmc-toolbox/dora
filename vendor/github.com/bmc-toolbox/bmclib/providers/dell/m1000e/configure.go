@@ -11,7 +11,6 @@ import (
 
 	"github.com/bmc-toolbox/bmclib/cfgresources"
 	"github.com/bmc-toolbox/bmclib/devices"
-	"github.com/bmc-toolbox/bmclib/internal"
 	"github.com/google/go-querystring/query"
 )
 
@@ -85,11 +84,8 @@ func (m *M1000e) User(cfgUsers []*cfgresources.User) (err error) {
 	}
 
 	for id, cfgUser := range cfgUsers {
-
 		userID := id + 1
-		//setup params to post
 		userParams := m.newUserCfg(cfgUser, userID)
-
 		userParams.SessionToken = m.SessionToken
 		path := fmt.Sprintf("user?id=%d", userID)
 		form, _ := query.Values(userParams)
@@ -98,8 +94,7 @@ func (m *M1000e) User(cfgUsers []*cfgresources.User) (err error) {
 			return err
 		}
 
-		m.log.V(1).Info("User account config parameters applied.", "IP", m.ip, "Model", m.HardwareType())
-
+		m.log.V(1).Info("User account config parameters applied.", "IP", m.ip, "HardwareType", m.HardwareType())
 	}
 
 	return err
@@ -110,7 +105,6 @@ func (m *M1000e) User(cfgUsers []*cfgresources.User) (err error) {
 // TODO: this currently applies network config as well,
 //       figure a way to split the two.
 func (m *M1000e) Syslog(cfg *cfgresources.Syslog) (err error) {
-
 	interfaceParams := m.newInterfaceCfg(cfg)
 
 	interfaceParams.SessionToken = m.SessionToken
@@ -120,14 +114,13 @@ func (m *M1000e) Syslog(cfg *cfgresources.Syslog) (err error) {
 		return err
 	}
 
-	m.log.V(1).Info("Interface config parameters applied.", "IP", m.ip, "Model", m.HardwareType())
+	m.log.V(1).Info("Interface config parameters applied.", "IP", m.ip, "HardwareType", m.HardwareType())
 	return err
 }
 
 // Ntp applies NTP configuration params
 // Ntp implements the Configure interface.
 func (m *M1000e) Ntp(cfg *cfgresources.Ntp) (err error) {
-
 	err = m.httpLogin()
 	if err != nil {
 		return err
@@ -143,14 +136,13 @@ func (m *M1000e) Ntp(cfg *cfgresources.Ntp) (err error) {
 		return err
 	}
 
-	m.log.V(1).Info("DateTime config parameters applied.", "IP", m.ip, "Model", m.HardwareType())
+	m.log.V(1).Info("DateTime config parameters applied.", "IP", m.ip, "HardwareType", m.HardwareType())
 	return err
 }
 
 // Ldap applies LDAP configuration params.
 // Ldap implements the Configure interface.
 func (m *M1000e) Ldap(cfg *cfgresources.Ldap) (err error) {
-
 	directoryServicesParams := m.newDirectoryServicesCfg(cfg)
 
 	directoryServicesParams.SessionToken = m.SessionToken
@@ -161,7 +153,7 @@ func (m *M1000e) Ldap(cfg *cfgresources.Ldap) (err error) {
 		return err
 	}
 
-	m.log.V(1).Info("Ldap config parameters applied.", "IP", m.ip, "Model", m.HardwareType())
+	m.log.V(1).Info("Ldap config parameters applied.", "IP", m.ip, "HardwareType", m.HardwareType())
 	return err
 }
 
@@ -181,24 +173,22 @@ func (m *M1000e) applyLdapRoleCfg(cfg LdapArgParams, roleID int) (err error) {
 		return err
 	}
 
-	m.log.V(1).Info("Ldap Role group config parameters applied.", "IP", m.ip, "Model", m.HardwareType())
+	m.log.V(1).Info("Ldap Role group config parameters applied.", "IP", m.ip, "HardwareType", m.HardwareType())
 	return err
 }
 
-// LdapGroup applies LDAP Group/Role related configuration
-// LdapGroup implements the Configure interface.
-func (m *M1000e) LdapGroup(cfg []*cfgresources.LdapGroup, cfgLdap *cfgresources.Ldap) (err error) {
-
+// LdapGroups applies LDAP Group/Role related configuration
+// LdapGroups implements the Configure interface.
+func (m *M1000e) LdapGroups(cfgGroups []*cfgresources.LdapGroup, cfgLdap *cfgresources.Ldap) (err error) {
 	roleID := 1
-	for _, group := range cfg {
+	for _, group := range cfgGroups {
 		ldapRoleParams, err := m.newLdapRoleCfg(group, roleID)
 		if err != nil {
 			m.log.V(1).Error(err, "Unable to apply Ldap role group config.",
 				"step", "applyLdapGroupParams",
 				"Ldap role", group.Role,
 				"IP", m.ip,
-				"Model", m.HardwareType(),
-				"Error", internal.ErrStringOrEmpty(err),
+				"HardwareType", m.HardwareType(),
 			)
 			return err
 		}
@@ -209,7 +199,7 @@ func (m *M1000e) LdapGroup(cfg []*cfgresources.LdapGroup, cfgLdap *cfgresources.
 				"step", "applyLdapGroupParams",
 				"Ldap role", group.Role,
 				"IP", m.ip,
-				"Model", m.HardwareType(),
+				"HardwareType", m.HardwareType(),
 				"Error", err,
 			)
 			return err
@@ -217,7 +207,7 @@ func (m *M1000e) LdapGroup(cfg []*cfgresources.LdapGroup, cfgLdap *cfgresources.
 
 		m.log.V(1).Info("Ldap group parameters applied.",
 			"IP", m.ip,
-			"Model", m.HardwareType(),
+			"HardwareType", m.HardwareType(),
 			"Role", group.Role,
 			"Group", group.Group,
 		)
@@ -273,7 +263,7 @@ func (m *M1000e) CurrentHTTPSCert() (c []*x509.Certificate, b bool, e error) {
 //
 //	m.log.V(1).Info("",
 //		"IP":    m.ip,
-//		"Model": m.HardwareType(),
+//		"HardwareType": m.HardwareType(),
 //	}).Debug("SSL certs uploaded.")
 //	return err
 //}
@@ -397,9 +387,6 @@ func (m *M1000e) post(endpoint string, form *url.Values) (err error) {
 	reqDump, _ := httputil.DumpRequestOut(req, true)
 	m.log.V(2).Info("requestTrace", "requestDump", string(reqDump), "url", fmt.Sprintf("https://%s/cgi-bin/webcgi/%s", m.ip, endpoint))
 
-	//XXX to debug
-	//fmt.Printf("--> %+v\n", form.Encode())
-	//return err
 	resp, err := m.httpClient.Do(req)
 	if err != nil {
 		return err
@@ -430,7 +417,6 @@ func (m *M1000e) ApplySecurityCfg(cfg LoginSecurityParams) (err error) {
 		return err
 	}
 
-	m.log.V(1).Info("Security config parameters applied.", "IP", m.ip, "Model", m.HardwareType())
+	m.log.V(1).Info("Security config parameters applied.", "IP", m.ip, "HardwareType", m.HardwareType())
 	return err
-
 }

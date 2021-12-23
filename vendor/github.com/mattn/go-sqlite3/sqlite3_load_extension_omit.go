@@ -11,6 +11,7 @@ package sqlite3
 #cgo CFLAGS: -DSQLITE_OMIT_LOAD_EXTENSION
 */
 import "C"
+
 import (
 	"errors"
 )

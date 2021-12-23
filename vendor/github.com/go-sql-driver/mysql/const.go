@@ -111,6 +111,7 @@ const (
 	fieldTypeVarChar
 	fieldTypeBit
 )
+
 const (
 	fieldTypeJSON fieldType = iota + 0xf5
 	fieldTypeNewDecimal

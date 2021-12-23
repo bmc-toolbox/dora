@@ -27,7 +27,7 @@ func (ed *embeddedDirInfo) Size() int64 {
 // Mode returns the file mode bits
 // (implementing os.FileInfo)
 func (ed *embeddedDirInfo) Mode() os.FileMode {
-	return os.FileMode(0555 | os.ModeDir) // dr-xr-xr-x
+	return os.FileMode(0o555 | os.ModeDir) // dr-xr-xr-x
 }
 
 // ModTime returns the modification time
@@ -68,7 +68,7 @@ func (ef *embeddedFileInfo) Size() int64 {
 // Mode returns the file mode bits
 // (implementing os.FileInfo)
 func (ef *embeddedFileInfo) Mode() os.FileMode {
-	return os.FileMode(0555) // r-xr-xr-x
+	return os.FileMode(0o555) // r-xr-xr-x
 }
 
 // ModTime returns the modification time

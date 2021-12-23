@@ -167,7 +167,7 @@ func (c *C7000) PxeOnceBlade(position int) (bool, error) {
 	return false, fmt.Errorf(output)
 }
 
-// SetDynamicPower configure the dynamic power behaviour
+// Configures dynamic power behavior.
 func (c *C7000) SetDynamicPower(enable bool) (bool, error) {
 	var state string
 	if enable {
@@ -190,18 +190,22 @@ func (c *C7000) SetDynamicPower(enable bool) (bool, error) {
 }
 
 // UpdateFirmware updates the chassis firmware
-func (c *C7000) UpdateFirmware(source, file string) (bool, error) {
+func (c *C7000) UpdateFirmware(source, file string) (bool, string, error) {
 	cmd := fmt.Sprintf("update image %s/%s", source, file)
 	output, err := c.sshClient.Run(cmd)
 	if err != nil {
-		return false, fmt.Errorf("output: %q: %w", output, err)
+		return false, "", fmt.Errorf("output: %q: %w", output, err)
 	}
 
 	if strings.Contains(output, "Flashing Active Onboard Administrator") {
-		return true, nil
+		return true, output, nil
 	}
 
-	return false, fmt.Errorf(output)
+	return false, output, fmt.Errorf(output)
+}
+
+func (c *C7000) CheckFirmwareVersion() (version string, err error) {
+	return "", fmt.Errorf("not yet implemented")
 }
 
 // ModBladeBmcUser modfies BMC Admin user account password through the chassis,
@@ -227,9 +231,9 @@ end_marker`
 		return fmt.Errorf("output: %q: %w", output, err)
 	}
 
-	//since there are multiple blades and this command
-	//could fail on any of the blades because they are un responsive
-	//we only validate the command actually ran and not if it succeeded on each blade.
+	// Since there are multiple blades and this command could fail on any of the blades because
+	//   of unresponsiveness, we only check that the command actually ran and not if it has
+	//   succeeded on each blade.
 	if !strings.Contains(output, "END RIBCL RESULTS") {
 		return fmt.Errorf(output)
 	}
@@ -267,9 +271,9 @@ end_marker`
 		return fmt.Errorf("output: %q: %w", output, err)
 	}
 
-	//since there are multiple blades and this command
-	//could fail on any of the blades because they are un responsive
-	//we only validate the command actually ran and not if it succeeded on each blade.
+	// Since there are multiple blades and this command could fail on any of the blades because
+	//   of unresponsiveness, we only check that the command actually ran and not if it has
+	//   succeeded on each blade.
 	if !strings.Contains(output, "END RIBCL RESULTS") {
 		return fmt.Errorf(output)
 	}
@@ -296,9 +300,9 @@ end_marker`
 		return fmt.Errorf("output: %q: %w", output, err)
 	}
 
-	//since there are multiple blades and this command
-	//could fail on any of the blades because they are un responsive
-	//we only validate the command actually ran and not if it succeeded on each blade.
+	// Since there are multiple blades and this command could fail on any of the blades because
+	//   of unresponsiveness, we only check that the command actually ran and not if it has
+	//   succeeded on each blade.
 	if !strings.Contains(output, "END RIBCL RESULTS") {
 		return fmt.Errorf(output)
 	}
@@ -312,7 +316,7 @@ func (c *C7000) SetFlexAddressState(_ int, _ bool) (bool, error) {
 	return false, errors.ErrNotImplemented
 }
 
-// SetIpmiOverLan Enable/Disable IPMI over lan parameter per blade in chassis
+// Enable/Disable the IpmiOverLan parameter per blade in the chassis.
 func (c *C7000) SetIpmiOverLan(_ int, _ bool) (bool, error) {
 	return false, errors.ErrNotImplemented
 }

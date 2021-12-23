@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/bmc-toolbox/bmclib/devices"
 
@@ -38,6 +39,9 @@ type Probe struct {
 }
 
 func (p *Probe) hpIlo(ctx context.Context, log logr.Logger) (bmcConnection interface{}, err error) {
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(time.Second*60))
+	defer cancel()
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("https://%s/xmldata?item=all", p.host), nil)
 	if err != nil {
 		return bmcConnection, err
@@ -60,7 +64,6 @@ func (p *Probe) hpIlo(ctx context.Context, log logr.Logger) (bmcConnection inter
 	}
 
 	if bytes.Contains(payload[:6], []byte("RIMP")) {
-
 		iloXMLC := &hp.Rimp{}
 		err = xml.Unmarshal(payload, iloXMLC)
 		if err != nil {
@@ -87,6 +90,9 @@ func (p *Probe) hpIlo(ctx context.Context, log logr.Logger) (bmcConnection inter
 }
 
 func (p *Probe) hpC7000(ctx context.Context, log logr.Logger) (bmcConnection interface{}, err error) {
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(time.Second*60))
+	defer cancel()
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("https://%s/xmldata?item=all", p.host), nil)
 	if err != nil {
 		return bmcConnection, err
@@ -109,7 +115,6 @@ func (p *Probe) hpC7000(ctx context.Context, log logr.Logger) (bmcConnection int
 	}
 
 	if bytes.Contains(payload[:6], []byte("RIMP")) {
-
 		iloXMLC := &hp.Rimp{}
 		err = xml.Unmarshal(payload, iloXMLC)
 		if err != nil {
@@ -120,15 +125,15 @@ func (p *Probe) hpC7000(ctx context.Context, log logr.Logger) (bmcConnection int
 			log.V(1).Info("step", "ScanAndConnect", "host", p.host, "vendor", string(devices.HP), "msg", "it's a chassis")
 			return c7000.New(ctx, p.host, p.username, p.password, log)
 		}
-
 	}
 	return bmcConnection, errors.ErrDeviceNotMatched
 }
 
-// hpCl100 attempts to identify a cloudline device
+// Attempts to identify an HPE Cloudline CL100 device.
 func (p *Probe) hpCl100(ctx context.Context, log logr.Logger) (bmcConnection interface{}, err error) {
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(time.Second*60))
+	defer cancel()
 
-	// HPE Cloudline CL100
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("https://%s/res/ok.png", p.host), nil)
 	if err != nil {
 		return bmcConnection, err
@@ -141,7 +146,7 @@ func (p *Probe) hpCl100(ctx context.Context, log logr.Logger) (bmcConnection int
 	defer resp.Body.Close()
 	defer io.Copy(ioutil.Discard, resp.Body) // nolint
 
-	var firstBytes = make([]byte, 8)
+	firstBytes := make([]byte, 8)
 	_, err = io.ReadFull(resp.Body, firstBytes)
 	if err != nil {
 		return bmcConnection, err
@@ -153,10 +158,12 @@ func (p *Probe) hpCl100(ctx context.Context, log logr.Logger) (bmcConnection int
 	}
 
 	return bmcConnection, errors.ErrDeviceNotMatched
-
 }
 
 func (p *Probe) idrac8(ctx context.Context, log logr.Logger) (bmcConnection interface{}, err error) {
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(time.Second*60))
+	defer cancel()
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("https://%s/session?aimGetProp=hostname,gui_str_title_bar,OEMHostName,fwVersion,sysDesc", p.host), nil)
 	if err != nil {
 		return bmcConnection, err
@@ -183,6 +190,9 @@ func (p *Probe) idrac8(ctx context.Context, log logr.Logger) (bmcConnection inte
 }
 
 func (p *Probe) idrac9(ctx context.Context, log logr.Logger) (bmcConnection interface{}, err error) {
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(time.Second*60))
+	defer cancel()
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("https://%s/sysmgmt/2015/bmc/info", p.host), nil)
 	if err != nil {
 		return bmcConnection, err
@@ -209,6 +219,9 @@ func (p *Probe) idrac9(ctx context.Context, log logr.Logger) (bmcConnection inte
 }
 
 func (p *Probe) m1000e(ctx context.Context, log logr.Logger) (bmcConnection interface{}, err error) {
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(time.Second*60))
+	defer cancel()
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("https://%s/cgi-bin/webcgi/login", p.host), nil)
 	if err != nil {
 		return bmcConnection, err
@@ -235,6 +248,9 @@ func (p *Probe) m1000e(ctx context.Context, log logr.Logger) (bmcConnection inte
 }
 
 func (p *Probe) supermicrox(ctx context.Context, log logr.Logger) (bmcConnection interface{}, err error) {
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(time.Second*60))
+	defer cancel()
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("https://%s/cgi/login.cgi", p.host), nil)
 	if err != nil {
 		return bmcConnection, err
@@ -255,6 +271,7 @@ func (p *Probe) supermicrox(ctx context.Context, log logr.Logger) (bmcConnection
 	// looking for ATEN in the response payload isn't the most ideal way, although it is unique to Supermicros
 	if resp.StatusCode == 200 && bytes.Contains(payload, []byte("ATEN International")) {
 		log.V(1).Info("it's a supermicro", "step", "connection", "host", p.host, "vendor", devices.Supermicro, "hardwareType", supermicrox.X10)
+
 		conn, err := supermicrox.New(ctx, p.host, p.username, p.password, log)
 		if err != nil {
 			return bmcConnection, err
@@ -271,6 +288,9 @@ func (p *Probe) supermicrox(ctx context.Context, log logr.Logger) (bmcConnection
 }
 
 func (p *Probe) supermicrox11(ctx context.Context, log logr.Logger) (bmcConnection interface{}, err error) {
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(time.Second*60))
+	defer cancel()
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("https://%s/cgi/login.cgi", p.host), nil)
 	if err != nil {
 		return bmcConnection, err
@@ -290,6 +310,7 @@ func (p *Probe) supermicrox11(ctx context.Context, log logr.Logger) (bmcConnecti
 	// looking for ATEN in the response payload isn't the most ideal way, although it is unique to Supermicros
 	if resp.StatusCode == 200 && bytes.Contains(payload, []byte("ATEN International")) {
 		log.V(1).Info("it's a supermicrox11", "step", "connection", "host", p.host, "vendor", devices.Supermicro, "hardwareType", supermicrox11.X11)
+
 		conn, err := supermicrox11.New(ctx, p.host, p.username, p.password, log)
 		if err != nil {
 			return bmcConnection, err
@@ -306,6 +327,9 @@ func (p *Probe) supermicrox11(ctx context.Context, log logr.Logger) (bmcConnecti
 }
 
 func (p *Probe) quanta(ctx context.Context, log logr.Logger) (bmcConnection interface{}, err error) {
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(time.Second*60))
+	defer cancel()
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("https://%s/page/login.html", p.host), nil)
 	if err != nil {
 		return bmcConnection, err
@@ -323,7 +347,7 @@ func (p *Probe) quanta(ctx context.Context, log logr.Logger) (bmcConnection inte
 		return bmcConnection, err
 	}
 
-	// ensure the response we got included a png
+	// Ensure the response we got includes a PNG.
 	if resp.StatusCode == 200 && bytes.Contains(payload, []byte("Quanta")) {
 		log.V(1).Info("step", "ScanAndConnect", "host", p.host, "vendor", string(devices.Quanta), "msg", "it's a quanta")
 		return bmcConnection, errors.NewErrUnsupportedHardware("quanta hardware not supported")

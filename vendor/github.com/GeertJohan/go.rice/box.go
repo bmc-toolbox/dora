@@ -140,7 +140,6 @@ func (b *Box) resolveAbsolutePathFromCaller() error {
 	}
 	b.absolutePath = path
 	return nil
-
 }
 
 func (b *Box) resolveAbsolutePathFromWorkingDirectory() error {

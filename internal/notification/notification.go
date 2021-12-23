@@ -9,9 +9,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-var (
-	notifyChange chan string
-)
+var notifyChange chan string
 
 func init() {
 	// Creates a channel with a buffer for 600 messages

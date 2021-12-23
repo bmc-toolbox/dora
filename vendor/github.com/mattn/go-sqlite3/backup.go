@@ -14,6 +14,7 @@ package sqlite3
 #include <stdlib.h>
 */
 import "C"
+
 import (
 	"runtime"
 	"unsafe"

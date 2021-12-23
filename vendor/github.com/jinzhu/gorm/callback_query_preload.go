@@ -299,7 +299,7 @@ func (scope *Scope) handleManyToManyPreload(field *Field, conditions []interface
 		fieldType = fieldType.Elem()
 	}
 
-	var sourceKeys = []string{}
+	sourceKeys := []string{}
 	for _, key := range joinTableHandler.SourceForeignKeys() {
 		sourceKeys = append(sourceKeys, key.DBName)
 	}
@@ -348,7 +348,7 @@ func (scope *Scope) handleManyToManyPreload(field *Field, conditions []interface
 			InstanceSet("gorm:skip_query_callback", true).
 			callCallbacks(scope.db.parent.callbacks.queries)
 
-		var foreignKeys = make([]interface{}, len(sourceKeys))
+		foreignKeys := make([]interface{}, len(sourceKeys))
 		// generate hashed forkey keys in join table
 		for idx, joinTableField := range joinTableFields {
 			if !joinTableField.Field.IsNil() {
@@ -394,7 +394,7 @@ func (scope *Scope) handleManyToManyPreload(field *Field, conditions []interface
 
 	for source, fields := range fieldsSourceMap {
 		for _, f := range fields {
-			//If not 0 this means Value is a pointer and we already added preloaded models to it
+			// If not 0 this means Value is a pointer and we already added preloaded models to it
 			if f.Len() != 0 {
 				continue
 			}

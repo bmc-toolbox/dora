@@ -57,7 +57,7 @@ type Stats struct {
 
 // UpdateUptime updates uptime based on StartTime
 func (s *Stats) UpdateUptime() {
-	s.Uptime = float32(time.Since(s.StartTime).Seconds() * 1e3) //1e3 == 1000
+	s.Uptime = float32(time.Since(s.StartTime).Seconds() * 1e3) // 1e3 == 1000
 }
 
 // GatherDBStats triggers GatherDBStats function from all resources types
@@ -80,7 +80,8 @@ func (s *Stats) GatherDBStats(
 		"scanned_ports",
 		"psus",
 		"disks",
-		"fans"}
+		"fans",
+	}
 
 	for i, r := range []countable{
 		chassisStorage,
@@ -91,7 +92,8 @@ func (s *Stats) GatherDBStats(
 		scannedPortStorage,
 		psuStorage,
 		diskStorage,
-		fanStorage} {
+		fanStorage,
+	} {
 		u := &UnitStats{}
 		switch i {
 		case 0:

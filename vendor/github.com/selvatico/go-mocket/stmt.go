@@ -16,7 +16,7 @@ type FakeStmt struct {
 	command      string    // String name of the command SELECT etc, taken as first word in the query
 	next         *FakeStmt // used for returning multiple results.
 	closed       bool      // If connection closed already
-	colName      []string  //Names of columns in response
+	colName      []string  // Names of columns in response
 	colType      []string  // Not used for now
 	placeholders int       // Amount of passed args
 }
@@ -104,7 +104,6 @@ func (s *FakeStmt) Query(args []driver.Value) (driver.Rows, error) {
 // QueryContext executes a query that may return rows, such as a
 // SELECT.
 func (s *FakeStmt) QueryContext(ctx context.Context, args []driver.NamedValue) (driver.Rows, error) {
-
 	if s.closed {
 		return nil, errClosed
 	}

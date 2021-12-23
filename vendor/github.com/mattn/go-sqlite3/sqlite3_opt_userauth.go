@@ -59,6 +59,7 @@ _sqlite3_auth_enabled(sqlite3* db)
 }
 */
 import "C"
+
 import (
 	"errors"
 	"unsafe"

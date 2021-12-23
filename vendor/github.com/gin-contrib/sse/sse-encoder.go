@@ -20,8 +20,10 @@ import (
 
 const ContentType = "text/event-stream"
 
-var contentType = []string{ContentType}
-var noCache = []string{"no-cache"}
+var (
+	contentType = []string{ContentType}
+	noCache     = []string{"no-cache"}
+)
 
 var fieldReplacer = strings.NewReplacer(
 	"\n", "\\n",

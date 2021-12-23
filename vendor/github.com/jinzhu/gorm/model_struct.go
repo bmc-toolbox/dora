@@ -367,8 +367,8 @@ func (scope *Scope) getModelStruct(rootScope *Scope, allFields []*StructField) *
 									field.Relationship = relationship
 								} else {
 									// User has many comments, associationType is User, comment use UserID as foreign key
-									var associationType = reflectType.Name()
-									var toFields = toScope.GetStructFields()
+									associationType := reflectType.Name()
+									toFields := toScope.GetStructFields()
 									relationship.Kind = "has_many"
 
 									if polymorphic, _ := field.TagSettingsGet("POLYMORPHIC"); polymorphic != "" {
@@ -494,8 +494,8 @@ func (scope *Scope) getModelStruct(rootScope *Scope, allFields []*StructField) *
 
 							// Has One
 							{
-								var foreignKeys = tagForeignKeys
-								var associationForeignKeys = tagAssociationForeignKeys
+								foreignKeys := tagForeignKeys
+								associationForeignKeys := tagAssociationForeignKeys
 								// if no foreign keys defined with tag
 								if len(foreignKeys) == 0 {
 									// if no association foreign keys defined with tag
@@ -557,8 +557,8 @@ func (scope *Scope) getModelStruct(rootScope *Scope, allFields []*StructField) *
 								relationship.Kind = "has_one"
 								field.Relationship = relationship
 							} else {
-								var foreignKeys = tagForeignKeys
-								var associationForeignKeys = tagAssociationForeignKeys
+								foreignKeys := tagForeignKeys
+								associationForeignKeys := tagAssociationForeignKeys
 
 								if len(foreignKeys) == 0 {
 									// generate foreign keys & association foreign keys

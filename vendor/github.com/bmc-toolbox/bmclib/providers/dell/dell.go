@@ -239,8 +239,7 @@ type IDracRoot struct {
 }
 
 // IDracPsSensorList contains a list of psu sensors
-type IDracPsSensorList struct {
-}
+type IDracPsSensorList struct{}
 
 // IDracPsSensor contains the information regarding the psu devices
 type IDracPsSensor struct {
@@ -395,7 +394,7 @@ type CMCWWNBlade struct {
 		IsInstalled string `json:"isInstalled"`
 		PortPMAC    string `json:"portPMAC"`
 		PortFMAC    string `json:"portFMAC"`
-		IsSelected  int    `json:"isSelected"` //flexaddress enabled/disabled
+		IsSelected  int    `json:"isSelected"` // FlexAddress enabled/disabled.
 	} `json:"is_not_double_height"`
 }
 
@@ -441,7 +440,6 @@ func (d *CMCSlotMacWwn) UnmarshalJSON(data []byte) error {
 				d.SlotMacWwnList[pos] = b
 			}
 		}
-
 	}
 
 	return nil

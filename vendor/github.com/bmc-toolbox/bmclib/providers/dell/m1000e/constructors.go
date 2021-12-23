@@ -24,7 +24,6 @@ import (
 // Given the Ntp resource,
 // populate the required Datetime params
 func (m *M1000e) newDatetimeCfg(ntp *cfgresources.Ntp) DatetimeParams {
-
 	if ntp.Timezone == "" {
 		// TODO update method with error return and return err in this if, was doing logrus.Fatal here
 		msg := "ntp resource parameter timezone required but not declared"
@@ -58,7 +57,6 @@ func (m *M1000e) newDatetimeCfg(ntp *cfgresources.Ntp) DatetimeParams {
 // A multipart form would be required to upload the cacert
 // Given the Ldap resource, populate required DirectoryServicesParams
 func (m *M1000e) newDirectoryServicesCfg(ldap *cfgresources.Ldap) DirectoryServicesParams {
-
 	var userAttribute, groupAttribute string
 	if ldap.Server == "" {
 		m.log.V(1).Info("Ldap resource parameter Server required but not declared.", "step", "newDirectoryServicesCfg")
@@ -97,7 +95,7 @@ func (m *M1000e) newDirectoryServicesCfg(ldap *cfgresources.Ldap) DirectoryServi
 		GenLdapCertValidateEnableCk:  true,
 		GenLdapCertValidateEnable:    false,
 		GenLdapBindDn:                ldap.BindDn,
-		GenLdapBindPasswd:            "PASSWORD", //we
+		GenLdapBindPasswd:            "PASSWORD",
 		GenLdapBindPasswdChanged:     false,
 		GenLdapBaseDn:                ldap.BaseDn,
 		GenLdapUserAttribute:         userAttribute,
@@ -131,7 +129,6 @@ func (m *M1000e) newDirectoryServicesCfg(ldap *cfgresources.Ldap) DirectoryServi
 
 // Return bool value if the role is valid.
 func (m *M1000e) isRoleValid(role string) bool {
-
 	validRoles := []string{"admin", "user"}
 	for _, v := range validRoles {
 		if role == v {
@@ -143,34 +140,33 @@ func (m *M1000e) isRoleValid(role string) bool {
 }
 
 // Given the Ldap resource, populate required LdapArgParams
-func (m *M1000e) newLdapRoleCfg(cfg *cfgresources.LdapGroup, roleID int) (ldapArgCfg LdapArgParams, err error) {
-
+func (m *M1000e) newLdapRoleCfg(cfgGroups *cfgresources.LdapGroup, roleID int) (ldapArgCfg LdapArgParams, err error) {
 	var privBitmap, genLdapRolePrivilege int
 
-	if cfg.Group == "" {
+	if cfgGroups.Group == "" {
 		msg := "Ldap resource parameter Group required but not declared."
 		err = errors.New(msg)
-		m.log.V(1).Error(err, msg, "Role", cfg.Role, "step", "newLdapRoleCfg")
+		m.log.V(1).Error(err, msg, "Role", cfgGroups.Role, "step", "newLdapRoleCfg")
 		return ldapArgCfg, err
 	}
 
-	if cfg.GroupBaseDn == "" && cfg.Enable {
+	if cfgGroups.GroupBaseDn == "" && cfgGroups.Enable {
 		msg := "Ldap resource parameter GroupBaseDn required but not declared."
 		err = errors.New(msg)
-		m.log.V(1).Error(err, msg, "Role", cfg.Role, "step", "newLdapRoleCfg")
+		m.log.V(1).Error(err, msg, "Role", cfgGroups.Role, "step", "newLdapRoleCfg")
 		return ldapArgCfg, err
 	}
 
-	if !m.isRoleValid(cfg.Role) {
+	if !m.isRoleValid(cfgGroups.Role) {
 		msg := "Ldap resource Role must be a valid role: admin OR user."
 		err = errors.New(msg)
-		m.log.V(1).Error(err, msg, "Role", cfg.Role, "step", "newLdapRoleCfg")
+		m.log.V(1).Error(err, msg, "Role", cfgGroups.Role, "step", "newLdapRoleCfg")
 		return ldapArgCfg, err
 	}
 
-	groupDn := fmt.Sprintf("cn=%s,%s", cfg.Group, cfg.GroupBaseDn)
+	groupDn := fmt.Sprintf("cn=%s,%s", cfgGroups.Group, cfgGroups.GroupBaseDn)
 
-	switch cfg.Role {
+	switch cfgGroups.Role {
 	case "admin":
 		privBitmap = 4095
 		genLdapRolePrivilege = privBitmap
@@ -204,7 +200,6 @@ func (m *M1000e) newLdapRoleCfg(cfg *cfgresources.LdapGroup, roleID int) (ldapAr
 // Given the syslog resource, populate the required InterfaceParams
 // check for missing params
 func (m *M1000e) newInterfaceCfg(syslog *cfgresources.Syslog) InterfaceParams {
-
 	var syslogPort int
 
 	if syslog.Server == "" {
@@ -262,7 +257,6 @@ func (m *M1000e) newInterfaceCfg(syslog *cfgresources.Syslog) InterfaceParams {
 // Given the user resource, populate the required UserParams
 // check for missing params
 func (m *M1000e) newUserCfg(user *cfgresources.User, userID int) UserParams {
-
 	var cmcGroup, privilege int
 
 	if user.Name == "" {

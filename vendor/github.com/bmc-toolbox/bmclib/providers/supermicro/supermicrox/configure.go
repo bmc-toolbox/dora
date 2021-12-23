@@ -13,7 +13,6 @@ import (
 
 	"github.com/bmc-toolbox/bmclib/cfgresources"
 	"github.com/bmc-toolbox/bmclib/devices"
-	"github.com/bmc-toolbox/bmclib/internal"
 	"github.com/bmc-toolbox/bmclib/internal/helper"
 
 	"github.com/google/go-querystring/query"
@@ -67,7 +66,6 @@ func timezoneToUtcOffset(location *time.Location) (offset int) {
 
 // Return bool value if the role is valid.
 func (s *SupermicroX) isRoleValid(role string) bool {
-
 	validRoles := []string{"admin", "user"}
 	for _, v := range validRoles {
 		if role == v {
@@ -80,11 +78,10 @@ func (s *SupermicroX) isRoleValid(role string) bool {
 
 // returns a map of user accounts and their ids
 func (s *SupermicroX) queryUserAccounts() (userAccounts map[int]string, err error) {
-
 	userAccounts = make(map[int]string)
 	ipmi, err := s.query("CONFIG_INFO.XML=(0,0)")
 	if err != nil {
-		s.log.V(1).Info("error querying user accounts", "error", internal.ErrStringOrEmpty(err))
+		s.log.V(1).Error(err, "queryUserAccounts(): Error querying user accounts.")
 		return userAccounts, err
 	}
 
@@ -92,7 +89,7 @@ func (s *SupermicroX) queryUserAccounts() (userAccounts map[int]string, err erro
 		userAccounts[idx] = account.Name
 	}
 
-	return userAccounts, err
+	return userAccounts, nil
 }
 
 // User applies the User configuration resource,
@@ -101,11 +98,14 @@ func (s *SupermicroX) queryUserAccounts() (userAccounts map[int]string, err erro
 // supermicro user accounts start with 1, account 0 which is a large empty string :\.
 // nolint: gocyclo
 func (s *SupermicroX) User(users []*cfgresources.User) (err error) {
-
 	currentUsers, err := s.queryUserAccounts()
 	if err != nil {
-		msg := "Unable to query current user accounts."
-		s.log.V(1).Info(msg, "ip", s.ip, "model", s.HardwareType(), "step", helper.WhosCalling(), "error", internal.ErrStringOrEmpty(err))
+		msg := "SupermicroX User(): Unable to query existing users."
+		s.log.V(1).Error(err, msg,
+			"ip", s.ip,
+			"HardwareType", s.HardwareType(),
+			"step", helper.WhosCalling(),
+		)
 		return errors.New(msg)
 	}
 
@@ -163,18 +163,23 @@ func (s *SupermicroX) User(users []*cfgresources.User) (err error) {
 		form, _ := query.Values(configUser)
 		statusCode, err := s.post(endpoint, &form, []byte{}, "")
 		if err != nil || statusCode != 200 {
-			msg := "POST request to set User config returned error."
-			s.log.V(1).Info(msg,
+			if err == nil {
+				err = fmt.Errorf("Received a %d status code from the POST request to %s.", statusCode, endpoint)
+			} else {
+				err = fmt.Errorf("POST request to %s failed with error: %s", endpoint, err.Error())
+			}
+
+			s.log.V(1).Error(err, "POST request to set User config failed.",
 				"ip", s.ip,
-				"model", s.HardwareType(),
+				"HardwareType", s.HardwareType(),
 				"endpoint", endpoint,
-				"statusCode", statusCode,
+				"StatusCode", statusCode,
 				"step", helper.WhosCalling(),
-				"error", internal.ErrStringOrEmpty(err))
-			return errors.New(msg)
+			)
+			return err
 		}
 
-		s.log.V(1).Info("User parameters applied.", "ip", s.ip, "model", s.HardwareType(), "user", user.Name)
+		s.log.V(1).Info("User parameters applied.", "ip", s.ip, "HardwareType", s.HardwareType(), "user", user.Name)
 	}
 
 	return err
@@ -183,7 +188,6 @@ func (s *SupermicroX) User(users []*cfgresources.User) (err error) {
 // Network method implements the Configure interface
 // applies various network parameters.
 func (s *SupermicroX) Network(cfg *cfgresources.Network) (reset bool, err error) {
-
 	sshPort := 22
 
 	if cfg.SSHPort != 0 && cfg.SSHPort != sshPort {
@@ -213,47 +217,51 @@ func (s *SupermicroX) Network(cfg *cfgresources.Network) (reset bool, err error)
 	form, _ := query.Values(configPort)
 	statusCode, err := s.post(endpoint, &form, []byte{}, "")
 	if err != nil || statusCode != 200 {
-		msg := "POST request to set Port config returned error."
-		s.log.V(1).Info(msg,
+		if err == nil {
+			err = fmt.Errorf("Received a %d status code from the POST request to %s.", statusCode, endpoint)
+		} else {
+			err = fmt.Errorf("POST request to %s failed with error: %s", endpoint, err.Error())
+		}
+
+		s.log.V(1).Error(err, "POST request to set Port config failed.",
 			"ip", s.ip,
-			"model", s.HardwareType(),
+			"HardwareType", s.HardwareType(),
 			"endpoint", endpoint,
-			"statusCode", statusCode,
+			"StatusCode", statusCode,
 			"step", helper.WhosCalling(),
-			"error", internal.ErrStringOrEmpty(err))
-		return reset, errors.New(msg)
+		)
+		return false, err
 	}
 
-	s.log.V(1).Info("Network config parameters applied.", "ip", s.ip, "model", s.HardwareType())
-	return reset, err
+	s.log.V(1).Info("Network config parameters applied.", "ip", s.ip, "HardwareType", s.HardwareType())
+	return false, err
 }
 
 // Ntp applies NTP configuration params
 // Ntp implements the Configure interface.
 func (s *SupermicroX) Ntp(cfg *cfgresources.Ntp) (err error) {
-
 	var enable string
 	if cfg.Server1 == "" {
 		s.log.V(1).Info("NTP resource expects parameter: server1.",
 			"step", "applyNtpParams",
-			"model", s.HardwareType())
+			"HardwareType", s.HardwareType())
 		return
 	}
 
 	if cfg.Timezone == "" {
 		s.log.V(1).Info("NTP resource expects parameter: timezone.",
 			"step", "applyNtpParams",
-			"model", s.HardwareType())
+			"HardwareType", s.HardwareType())
 		return
 	}
 
 	tzLocation, err := time.LoadLocation(cfg.Timezone)
 	if err != nil {
-		s.log.V(1).Info("NTP resource declared parameter timezone invalid.",
+		s.log.V(1).Error(err, "Ntp(): Invalid timezone parameter.",
 			"step", "applyNtpParams",
-			"model", s.HardwareType(),
-			"declaredTtimezone", cfg.Timezone,
-			"error", internal.ErrStringOrEmpty(err))
+			"HardwareType", s.HardwareType(),
+			"Timezone", cfg.Timezone,
+		)
 		return
 	}
 
@@ -262,14 +270,14 @@ func (s *SupermicroX) Ntp(cfg *cfgresources.Ntp) (err error) {
 	if !cfg.Enable {
 		s.log.V(1).Info("Ntp resource declared with enable: false.",
 			"step", "applyNtpParams",
-			"model", s.HardwareType())
+			"HardwareType", s.HardwareType())
 		return
 	}
 
 	enable = "on"
 
 	t := time.Now().In(tzLocation)
-	//Fri Jun 06 2018 14:28:25 GMT+0100 (CET)
+	// Fri Jun 06 2018 14:28:25 GMT+0100 (CET)
 	ts := fmt.Sprintf("%s %d %d:%d:%d %s (%s)",
 		t.Format("Fri Jun 01"),
 		t.Year(),
@@ -282,7 +290,7 @@ func (s *SupermicroX) Ntp(cfg *cfgresources.Ntp) (err error) {
 	configDateTime := ConfigDateTime{
 		Op:                 "config_date_time",
 		Timezone:           tzUtcOffset,
-		DstEn:              false, //daylight savings
+		DstEn:              false,
 		Enable:             enable,
 		NtpServerPrimary:   cfg.Server1,
 		NtpServerSecondary: cfg.Server2,
@@ -299,21 +307,26 @@ func (s *SupermicroX) Ntp(cfg *cfgresources.Ntp) (err error) {
 	form, _ := query.Values(configDateTime)
 	statusCode, err := s.post(endpoint, &form, []byte{}, "")
 	if err != nil || statusCode != 200 {
-		msg := "POST request to set Syslog config returned error."
-		s.log.V(1).Info(msg,
+		if err == nil {
+			err = fmt.Errorf("Received a %d status code from the POST request to %s.", statusCode, endpoint)
+		} else {
+			err = fmt.Errorf("POST request to %s failed with error: %s", endpoint, err.Error())
+		}
+
+		s.log.V(1).Error(err, "POST request to set NTP config failed.",
 			"ip", s.ip,
-			"model", s.HardwareType(),
+			"HardwareType", s.HardwareType(),
 			"endpoint", endpoint,
-			"statusCode", statusCode,
+			"StatusCode", statusCode,
 			"step", helper.WhosCalling(),
-			"error", internal.ErrStringOrEmpty(err))
-		return errors.New(msg)
+		)
+		return err
 	}
 
 	s.log.V(1).Info("NTP config parameters applied.",
 		"ip", s.ip,
-		"model", s.HardwareType())
-	return err
+		"HardwareType", s.HardwareType())
+	return nil
 }
 
 // Ldap applies LDAP configuration params.
@@ -324,55 +337,47 @@ func (s *SupermicroX) Ldap(cfgLdap *cfgresources.Ldap) error {
 	return nil
 }
 
-// LdapGroup applies LDAP and LDAP Group/Role related configuration,
-// LdapGroup implements the Configure interface.
+// LdapGroups applies LDAP and LDAP Group/Role related configuration,
+// LdapGroups implements the Configure interface.
 // Supermicro does not have any separate configuration for Ldap groups just for generic ldap
 // nolint: gocyclo
-func (s *SupermicroX) LdapGroup(cfgGroup []*cfgresources.LdapGroup, cfgLdap *cfgresources.Ldap) (err error) {
-
-	var enable string
-
+func (s *SupermicroX) LdapGroups(cfgGroups []*cfgresources.LdapGroup, cfgLdap *cfgresources.Ldap) (err error) {
 	if cfgLdap.Server == "" {
 		msg := "Ldap resource parameter Server required but not declared."
-		s.log.V(1).Info(msg, "step", helper.WhosCalling(), "model", s.HardwareType())
+		s.log.V(1).Info(msg, "step", helper.WhosCalling(), "HardwareType", s.HardwareType())
 		return errors.New(msg)
 	}
 
-	//first some preliminary checks
 	if cfgLdap.Port == 0 {
 		msg := "Ldap resource parameter Port required but not declared"
 		s.log.V(1).Info(msg,
 			"step", helper.WhosCalling(),
-			"model", s.HardwareType())
+			"HardwareType", s.HardwareType())
 		return errors.New(msg)
 	}
 
 	if !cfgLdap.Enable {
 		s.log.V(1).Info("Ldap resource declared with enable: false.",
 			"step", helper.WhosCalling(),
-			"model", s.HardwareType())
+			"HardwareType", s.HardwareType())
 		return
 	}
 
-	enable = "on"
-
 	if cfgLdap.BaseDn == "" {
 		msg := "Ldap resource parameter BaseDn required but not declared."
-		s.log.V(1).Info(msg, "step", helper.WhosCalling(), "model", s.HardwareType())
+		s.log.V(1).Info(msg, "step", helper.WhosCalling(), "HardwareType", s.HardwareType())
 		return errors.New(msg)
 	}
 
 	serverIP, err := net.LookupIP(cfgLdap.Server)
 	if err != nil || serverIP == nil {
 		msg := "Unable to lookup the IP for ldap server hostname."
-		s.log.V(1).Info(msg, "step", helper.WhosCalling(), "model", s.HardwareType())
+		s.log.V(1).Info(msg, "step", helper.WhosCalling(), "HardwareType", s.HardwareType())
 		return errors.New(msg)
 	}
 
-	//for each ldap group setup config
-	//since supermicro can work with just one Searchbase, we go with the 'user' role group
-	for _, group := range cfgGroup {
-
+	// Since SuperMicro can work with just one search base, we go with the "user" role group.
+	for _, group := range cfgGroups {
 		if !group.Enable {
 			continue
 		}
@@ -410,32 +415,38 @@ func (s *SupermicroX) LdapGroup(cfgGroup []*cfgresources.LdapGroup, cfgLdap *cfg
 
 		configLdap := ConfigLdap{
 			Op:           "config_ldap",
-			Enable:       enable,
+			Enable:       "on",
 			EnableSsl:    true,
 			LdapIP:       string(serverIP[0]),
 			BaseDn:       group.Group,
 			LdapPort:     cfgLdap.Port,
 			BindDn:       cfgLdap.BindDn,
-			BindPassword: "********", //default value
+			BindPassword: "********", // default value
 		}
 
 		endpoint := "op.cgi"
 		form, _ := query.Values(configLdap)
 		statusCode, err := s.post(endpoint, &form, []byte{}, "")
 		if err != nil || statusCode != 200 {
-			msg := "POST request to set Ldap config returned error."
-			s.log.V(1).Info(msg,
+			if err == nil {
+				err = fmt.Errorf("Received a %d status code from the POST request to %s.", statusCode, endpoint)
+			} else {
+				err = fmt.Errorf("POST request to %s failed with error: %s", endpoint, err.Error())
+			}
+
+			s.log.V(1).Error(err, "POST request to set LDAP group config failed.",
 				"step", helper.WhosCalling(),
 				"ip", s.ip,
-				"model", s.HardwareType(),
+				"HardwareType", s.HardwareType(),
 				"endpoint", endpoint,
-				"statusCode", statusCode,
-				"error", internal.ErrStringOrEmpty(err))
-			return errors.New(msg)
+				"StatusCode", statusCode,
+				"Group", group.Group,
+			)
+			return err
 		}
 	}
 
-	s.log.V(1).Info("Ldap config parameters applied.", "ip", s.ip, "model", s.HardwareType())
+	s.log.V(1).Info("LDAP config parameters applied.", "ip", s.ip, "HardwareType", s.HardwareType())
 	return err
 }
 
@@ -443,18 +454,17 @@ func (s *SupermicroX) LdapGroup(cfgGroup []*cfgresources.LdapGroup, cfgLdap *cfg
 // Syslog implements the Configure interface
 // this also enables alerts from the BMC
 func (s *SupermicroX) Syslog(cfg *cfgresources.Syslog) (err error) {
-
 	var port int
 
 	if cfg.Server == "" {
 		msg := "Syslog resource expects parameter: Server."
-		s.log.V(1).Info(msg, "step", helper.WhosCalling(), "model", s.HardwareType())
+		s.log.V(1).Info(msg, "step", helper.WhosCalling(), "HardwareType", s.HardwareType())
 		return errors.New(msg)
 	}
 
 	if cfg.Port == 0 {
 		msg := "Syslog resource port set to default: 514."
-		s.log.V(1).Info(msg, "step", helper.WhosCalling(), "model", s.HardwareType())
+		s.log.V(1).Info(msg, "step", helper.WhosCalling(), "HardwareType", s.HardwareType())
 		port = 514
 	} else {
 		port = cfg.Port
@@ -462,13 +472,13 @@ func (s *SupermicroX) Syslog(cfg *cfgresources.Syslog) (err error) {
 
 	if !cfg.Enable {
 		msg := "Syslog resource declared with disable."
-		s.log.V(1).Info(msg, "step", helper.WhosCalling(), "model", s.HardwareType())
+		s.log.V(1).Info(msg, "step", helper.WhosCalling(), "HardwareType", s.HardwareType())
 	}
 
 	serverIP, err := net.LookupIP(cfg.Server)
 	if err != nil || serverIP == nil {
 		msg := "Unable to lookup IP for syslog server hostname, yes supermicros requires the Syslog server IP :|."
-		s.log.V(1).Info(msg, "step", helper.WhosCalling(), "model", s.HardwareType())
+		s.log.V(1).Info(msg, "step", helper.WhosCalling(), "HardwareType", s.HardwareType())
 		return errors.New(msg)
 	}
 
@@ -482,18 +492,22 @@ func (s *SupermicroX) Syslog(cfg *cfgresources.Syslog) (err error) {
 	endpoint := "op.cgi"
 	form, _ := query.Values(configSyslog)
 
-	//returns okStarting Syslog daemon if successful
 	statusCode, err := s.post(endpoint, &form, []byte{}, "")
 	if err != nil || statusCode != 200 {
-		msg := "POST request to set Syslog config returned error."
-		s.log.V(1).Info(msg,
+		if err == nil {
+			err = fmt.Errorf("Received a %d status code from the POST request to %s.", statusCode, endpoint)
+		} else {
+			err = fmt.Errorf("POST request to %s failed with error: %s", endpoint, err.Error())
+		}
+
+		s.log.V(1).Error(err, "POST request to set Syslog config returned error.",
 			"step", helper.WhosCalling(),
 			"ip", s.ip,
-			"model", s.HardwareType(),
+			"HardwareType", s.HardwareType(),
 			"endpoint", endpoint,
-			"statusCode", statusCode,
-			"error", internal.ErrStringOrEmpty(err))
-		return errors.New(msg)
+			"StatusCode", statusCode,
+		)
+		return err
 	}
 
 	// enable maintenance events
@@ -504,18 +518,23 @@ func (s *SupermicroX) Syslog(cfg *cfgresources.Syslog) (err error) {
 
 	statusCode, err = s.post(endpoint, &form, []byte{}, "")
 	if err != nil || statusCode != 200 {
-		msg := "POST request to enable maintenance alerts returned error."
-		s.log.V(1).Info(msg,
+		if err == nil {
+			err = fmt.Errorf("Received a %d status code from the POST request to %s.", statusCode, endpoint)
+		} else {
+			err = fmt.Errorf("POST request to %s failed with error: %s", endpoint, err.Error())
+		}
+
+		s.log.V(1).Error(err, "POST request to enable maintenance alerts failed.",
 			"step", helper.WhosCalling(),
 			"ip", s.ip,
-			"model", s.HardwareType(),
+			"HardwareType", s.HardwareType(),
 			"endpoint", endpoint,
-			"statusCode", statusCode,
-			"error", internal.ErrStringOrEmpty(err))
-		return errors.New(msg)
+			"StatusCode", statusCode,
+		)
+		return err
 	}
 
-	s.log.V(1).Info("Syslog config parameters applied.", "ip", s.ip, "model", s.HardwareType())
+	s.log.V(1).Info("Syslog config parameters applied.", "ip", s.ip, "HardwareType", s.HardwareType())
 	return err
 }
 
@@ -533,7 +552,6 @@ func (s *SupermicroX) GenerateCSR(cert *cfgresources.HTTPSCertAttributes) ([]byt
 // 4. delay for a second
 // 5. Request for the current: SSL_STATUS.XML	(0,0)
 func (s *SupermicroX) UploadHTTPSCert(cert []byte, certFileName string, key []byte, keyFileName string) (bool, error) {
-
 	endpoint := "upload_ssl.cgi"
 
 	// setup a buffer for our multipart form
@@ -565,16 +583,19 @@ func (s *SupermicroX) UploadHTTPSCert(cert []byte, certFileName string, key []by
 	w.Close()
 
 	// 1. upload
-	status, err := s.post(endpoint, &url.Values{}, form.Bytes(), w.FormDataContentType())
-	if err != nil || status != 200 {
-		msg := "Cert form upload POST request failed, expected 200."
-		s.log.V(1).Info(msg,
+	statusCode, err := s.post(endpoint, &url.Values{}, form.Bytes(), w.FormDataContentType())
+	if err != nil || statusCode != 200 {
+		if err == nil {
+			err = fmt.Errorf("POST request to %s failed with status code %d.", endpoint, statusCode)
+		}
+
+		s.log.V(1).Error(err, "UploadHTTPSCert(): Cert form upload POST request failed.",
 			"step", helper.WhosCalling(),
 			"ip", s.ip,
-			"model", s.HardwareType(),
+			"HardwareType", s.HardwareType(),
 			"endpoint", endpoint,
-			"statusCode", status,
-			"error", internal.ErrStringOrEmpty(err))
+			"StatusCode", statusCode,
+		)
 		return false, err
 	}
 
@@ -602,21 +623,24 @@ func (s *SupermicroX) UploadHTTPSCert(cert []byte, certFileName string, key []by
 // The second part of the certificate upload process,
 // we get the BMC to validate the uploaded SSL certificate.
 func (s *SupermicroX) validateSSL() error {
-
-	var v = url.Values{}
+	v := url.Values{}
 	v.Set("SSL_VALIDATE.XML", "(0,0)")
 
-	var endpoint = "ipmi.cgi"
-	status, err := s.post(endpoint, &v, []byte{}, "")
-	if err != nil || status != 200 {
-		msg := "Cert validate POST request failed, expected 200."
-		s.log.V(1).Info(msg,
+	endpoint := "ipmi.cgi"
+	statusCode, err := s.post(endpoint, &v, []byte{}, "")
+	if err != nil || statusCode != 200 {
+		if err == nil {
+			err = fmt.Errorf("POST request to %s failed with status code %d.", endpoint, statusCode)
+		}
+
+		s.log.V(1).Error(err, "Cert validate POST request failed, expected 200.",
 			"step", helper.WhosCalling(),
 			"ip", s.ip,
-			"model", s.HardwareType(),
+			"HardwareType", s.HardwareType(),
 			"endpoint", endpoint,
-			"statusCode", status,
-			"error", internal.ErrStringOrEmpty(err))
+			"StatusCode", statusCode,
+		)
+
 		return err
 	}
 
@@ -627,21 +651,23 @@ func (s *SupermicroX) validateSSL() error {
 // Get the current status of the certificate.
 // POST https://10.193.251.43/cgi/ipmi.cgi SSL_STATUS.XML: (0,0)
 func (s *SupermicroX) statusSSL() error {
-
-	var v = url.Values{}
+	v := url.Values{}
 	v.Add("SSL_STATUS.XML", "(0,0)")
 
-	var endpoint = "ipmi.cgi"
-	status, err := s.post(endpoint, &v, []byte{}, "")
-	if err != nil || status != 200 {
-		msg := "Cert status POST request failed, expected 200."
-		s.log.V(1).Info(msg,
+	endpoint := "ipmi.cgi"
+	statusCode, err := s.post(endpoint, &v, []byte{}, "")
+	if err != nil || statusCode != 200 {
+		if err == nil {
+			err = fmt.Errorf("POST request to %s failed with status code %d.", endpoint, statusCode)
+		}
+
+		s.log.V(1).Error(err, "statusSSL(): Cert status POST request failed.",
 			"step", helper.WhosCalling(),
 			"ip", s.ip,
-			"model", s.HardwareType(),
+			"HardwareType", s.HardwareType(),
 			"endpoint", endpoint,
-			"statusCode", status,
-			"error", internal.ErrStringOrEmpty(err))
+			"StatusCode", statusCode,
+		)
 		return err
 	}
 

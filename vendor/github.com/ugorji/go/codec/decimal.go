@@ -98,11 +98,13 @@ var uint64pow10 = [...]uint64{
 	1 * quadrillion, 10 * quadrillion, 100 * quadrillion,
 	1 * quintillion, 10 * quintillion,
 }
+
 var float64pow10 = [...]float64{
 	1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9,
 	1e10, 1e11, 1e12, 1e13, 1e14, 1e15, 1e16, 1e17, 1e18, 1e19,
 	1e20, 1e21, 1e22,
 }
+
 var float32pow10 = [...]float32{
 	1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9, 1e10,
 }
@@ -125,11 +127,15 @@ type floatinfo struct {
 	mantCutoff uint64
 }
 
-var fi32 = floatinfo{23, true, 10, 7, false, 1<<23 - 1}
-var fi64 = floatinfo{52, false, 22, 15, false, 1<<52 - 1}
+var (
+	fi32 = floatinfo{23, true, 10, 7, false, 1<<23 - 1}
+	fi64 = floatinfo{52, false, 22, 15, false, 1<<52 - 1}
+)
 
-var fi64u = floatinfo{0, false, 19, 0, true, fUint64Cutoff}
-var fi64i = floatinfo{0, false, 19, 0, true, fUint64Cutoff}
+var (
+	fi64u = floatinfo{0, false, 19, 0, true, fUint64Cutoff}
+	fi64i = floatinfo{0, false, 19, 0, true, fUint64Cutoff}
+)
 
 func strconvParseErr(b []byte, fn string) error {
 	return &strconv.NumError{
@@ -329,7 +335,7 @@ type readFloatResult struct {
 
 func readFloat(s []byte, y floatinfo) (r readFloatResult) {
 	var i uint // uint, so that we eliminate bounds checking
-	var slen = uint(len(s))
+	slen := uint(len(s))
 	if slen == 0 {
 		// read an empty string as the zero value
 		// r.bad = true

@@ -175,12 +175,16 @@ const (
 	genDecStructArrayInlineLoopCheck = true
 )
 
-type genStructMapStyle uint8
-type genStringDecAsBytes string
-type genStringDecZC string
+type (
+	genStructMapStyle   uint8
+	genStringDecAsBytes string
+	genStringDecZC      string
+)
 
-var genStringDecAsBytesTyp = reflect.TypeOf(genStringDecAsBytes(""))
-var genStringDecZCTyp = reflect.TypeOf(genStringDecZC(""))
+var (
+	genStringDecAsBytesTyp = reflect.TypeOf(genStringDecAsBytes(""))
+	genStringDecZCTyp      = reflect.TypeOf(genStringDecZC(""))
+)
 
 const (
 	genStructMapStyleConsolidated genStructMapStyle = iota
@@ -757,7 +761,6 @@ func (x *genRunner) selfer(encode bool) {
 	x.decStructArray(genTopLevelVarName, "l", "return", rt2id(t0), t0)
 	x.line("}")
 	x.line("")
-
 }
 
 // used for chan, array, slice, map
@@ -1119,7 +1122,7 @@ func (x *genRunner) encOmitEmptyLine(t2 reflect.StructField, varname string, buf
 			buf.s(" || ")
 			x.encOmitEmptyLine(f, varname2, buf)
 		}
-		//buf.s(")")
+		// buf.s(")")
 	case reflect.Bool:
 		buf.s("bool(").s(varname2).s(")")
 	case reflect.Map, reflect.Slice, reflect.Array, reflect.Chan:
@@ -1379,7 +1382,7 @@ func (x *genRunner) encMapFallback(varname string, t reflect.Type) {
 
 func (x *genRunner) decVarInitPtr(varname, nilvar string, t reflect.Type, si *structFieldInfo,
 	newbuf, nilbuf *genBuf) (varname3 string, t2 reflect.StructField) {
-	//we must accommodate anonymous fields, where the embedded field is a nil pointer in the value.
+	// we must accommodate anonymous fields, where the embedded field is a nil pointer in the value.
 	// t2 = t.FieldByIndex(si.is)
 	varname3 = varname
 	t2typ := t
@@ -1477,7 +1480,6 @@ func (x *genRunner) decVarMain(varname, rand string, t reflect.Type, checkNotNil
 
 // decVar takes a variable called varname, of type t
 func (x *genRunner) decVar(varname, nilvar string, t reflect.Type, canBeNil, checkNotNil bool) {
-
 	// We only encode as nil if a nillable value.
 	// This removes some of the wasted checks for TryDecodeAsNil.
 	// We need to think about this more, to see what happens if omitempty, etc
@@ -2174,12 +2176,14 @@ func genInternalZeroValue(s string) string {
 	}
 }
 
-var genInternalNonZeroValueIdx [6]uint64
-var genInternalNonZeroValueStrs = [...][6]string{
-	{`"string-is-an-interface-1"`, "true", `"some-string-1"`, `[]byte("some-string-1")`, "11.1", "111"},
-	{`"string-is-an-interface-2"`, "false", `"some-string-2"`, `[]byte("some-string-2")`, "22.2", "77"},
-	{`"string-is-an-interface-3"`, "true", `"some-string-3"`, `[]byte("some-string-3")`, "33.3e3", "127"},
-}
+var (
+	genInternalNonZeroValueIdx  [6]uint64
+	genInternalNonZeroValueStrs = [...][6]string{
+		{`"string-is-an-interface-1"`, "true", `"some-string-1"`, `[]byte("some-string-1")`, "11.1", "111"},
+		{`"string-is-an-interface-2"`, "false", `"some-string-2"`, `[]byte("some-string-2")`, "22.2", "77"},
+		{`"string-is-an-interface-3"`, "true", `"some-string-3"`, `[]byte("some-string-3")`, "33.3e3", "127"},
+	}
+)
 
 // Note: last numbers must be in range: 0-127 (as they may be put into a int8, uint8, etc)
 
@@ -2330,9 +2334,11 @@ func genStripVendor(s string) string {
 }
 
 // var genInternalMu sync.Mutex
-var genInternalV = genInternal{Version: genVersion}
-var genInternalTmplFuncs template.FuncMap
-var genInternalOnce sync.Once
+var (
+	genInternalV         = genInternal{Version: genVersion}
+	genInternalTmplFuncs template.FuncMap
+	genInternalOnce      sync.Once
+)
 
 func genInternalInit() {
 	wordSizeBytes := int(intBitsize) / 8
@@ -2362,7 +2368,7 @@ func genInternalInit() {
 	// keep as slice, so it is in specific iteration order.
 	// Initial order was uint64, string, interface{}, int, int64, ...
 
-	var types = [...]string{
+	types := [...]string{
 		"interface{}",
 		"string",
 		"[]byte",
@@ -2409,7 +2415,7 @@ func genInternalInit() {
 	// }
 	// var mapkeytypestr = string(mb)
 
-	var gt = genInternal{Version: genVersion}
+	gt := genInternal{Version: genVersion}
 
 	// For each slice or map type, there must be a (symmetrical) Encode and Decode fast-path function
 

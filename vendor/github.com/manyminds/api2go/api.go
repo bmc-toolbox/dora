@@ -573,7 +573,6 @@ func (res *resource) handleRead(c APIContexter, w http.ResponseWriter, r *http.R
 	id := params["id"]
 
 	response, err := source.FindOne(id, buildRequest(c, r))
-
 	if err != nil {
 		return err
 	}
@@ -770,7 +769,6 @@ func (res *resource) handleUpdate(c APIContexter, w http.ResponseWriter, r *http
 	}
 
 	response, err := source.Update(updatingObj.Interface(), buildRequest(c, r))
-
 	if err != nil {
 		return err
 	}

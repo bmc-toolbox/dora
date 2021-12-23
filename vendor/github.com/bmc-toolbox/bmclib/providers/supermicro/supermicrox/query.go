@@ -16,13 +16,11 @@ import (
 // the bool value returned is set to true if the BMC support CSR generation.
 // CurrentHTTPSCert implements the Configure interface.
 func (s *SupermicroX) CurrentHTTPSCert() ([]*x509.Certificate, bool, error) {
-
 	dialer := &net.Dialer{
 		Timeout: time.Duration(10) * time.Second,
 	}
 
 	conn, err := tls.DialWithDialer(dialer, "tcp", s.ip+":"+"443", &tls.Config{InsecureSkipVerify: true})
-
 	if err != nil {
 		return []*x509.Certificate{{}}, false, err
 	}
@@ -30,7 +28,6 @@ func (s *SupermicroX) CurrentHTTPSCert() ([]*x509.Certificate, bool, error) {
 	defer conn.Close()
 
 	return conn.ConnectionState().PeerCertificates, false, nil
-
 }
 
 // Screenshot returns a thumbnail of video display from the bmc.
@@ -38,7 +35,6 @@ func (s *SupermicroX) CurrentHTTPSCert() ([]*x509.Certificate, bool, error) {
 // 2. sleep for 3 seconds to give ikvm time to ensure preview was captured
 // 3. request for preview.
 func (s *SupermicroX) Screenshot() (response []byte, extension string, err error) {
-
 	postEndpoint := "CapturePreview.cgi"
 	getEndpoint := "cgi/url_redirect.cgi?"
 
@@ -46,13 +42,13 @@ func (s *SupermicroX) Screenshot() (response []byte, extension string, err error
 
 	// allow thumbnails only for supermicro x10s.
 	if s.HardwareType() != "supermicrox" {
-		return response, extension, errors.ErrFeatureUnavailable
+		return nil, "", errors.ErrFeatureUnavailable
 	}
 
 	tzLocation, _ := time.LoadLocation("CET")
 	t := time.Now().In(tzLocation)
 
-	//Fri Jun 06 2018 14:28:25 GMT+0100 (CET)
+	// Fri Jun 06 2018 14:28:25 GMT+0100 (CET)
 	ts := fmt.Sprintf("%s %d %d:%d:%d %s (%s)",
 		t.Format("Fri Jun 01"),
 		t.Year(),
@@ -70,15 +66,15 @@ func (s *SupermicroX) Screenshot() (response []byte, extension string, err error
 	form, _ := query.Values(capturePreview)
 	statusCode, err := s.post(postEndpoint, &form, []byte{}, "")
 	if err != nil {
-		return response, extension, err
+		return nil, "", err
 	}
 
 	if statusCode != 200 {
-		return response, extension, fmt.Errorf("Non 200 response from endpoint")
+		return nil, "", fmt.Errorf("Non-200 response from endpoint %s: %d!", postEndpoint, statusCode)
 	}
 
 	time.Sleep(3 * time.Second)
-	//Fri Jun 06 2018 14:28:25 GMT+0100 (CET)
+	// Fri Jun 06 2018 14:28:25 GMT+0100 (CET)
 	ts = fmt.Sprintf("%s %d %d:%d:%d %s (%s)",
 		t.Format("Fri Jun 01"),
 		t.Year(),
@@ -99,8 +95,8 @@ func (s *SupermicroX) Screenshot() (response []byte, extension string, err error
 
 	response, err = s.get(getEndpoint, false)
 	if err != nil {
-		return []byte{}, extension, err
+		return nil, "", err
 	}
 
-	return response, extension, err
+	return response, extension, nil
 }

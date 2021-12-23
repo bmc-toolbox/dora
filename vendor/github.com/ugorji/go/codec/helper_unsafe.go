@@ -142,7 +142,7 @@ func byteSliceSameData(v1 []byte, v2 []byte) bool {
 // This applies to references like map/ptr/unsafepointer/chan/func,
 // and non-reference values like interface/slice.
 func isNil(v interface{}) (rv reflect.Value, isnil bool) {
-	var ui = (*unsafeIntf)(unsafe.Pointer(&v))
+	ui := (*unsafeIntf)(unsafe.Pointer(&v))
 	if ui.ptr == nil {
 		isnil = true
 		return
@@ -364,8 +364,8 @@ func i2rtid(i interface{}) uintptr {
 // --------------------------
 
 func unsafeCmpZero(ptr unsafe.Pointer, size int) bool {
-	var s1 = unsafeString{ptr, size}
-	var s2 = unsafeString{unsafeZeroAddr, size}
+	s1 := unsafeString{ptr, size}
+	s2 := unsafeString{unsafeZeroAddr, size}
 	if size > len(unsafeZeroArr) {
 		arr := make([]byte, size)
 		s2.Data = unsafe.Pointer(&arr[0])
@@ -394,7 +394,6 @@ func isEmptyValue(v reflect.Value, tinfos *TypeInfos, recursive bool) bool {
 
 	// return unsafeCmpZero(urv.ptr, int(rtsize(rvType(v))))
 	return unsafeCmpZero(urv.ptr, int(rtsize2(urv.typ)))
-
 }
 
 func isEmptyValueFallbackRecur(urv *unsafeReflectValue, v reflect.Value, tinfos *TypeInfos) bool {
@@ -569,31 +568,37 @@ func (n *fauxUnion) ru() (v reflect.Value) {
 	((*unsafeReflectValue)(unsafe.Pointer(&v))).ptr = unsafe.Pointer(&n.u)
 	return
 }
+
 func (n *fauxUnion) ri() (v reflect.Value) {
 	v = defUnsafeDecNakedWrapper.ri
 	((*unsafeReflectValue)(unsafe.Pointer(&v))).ptr = unsafe.Pointer(&n.i)
 	return
 }
+
 func (n *fauxUnion) rf() (v reflect.Value) {
 	v = defUnsafeDecNakedWrapper.rf
 	((*unsafeReflectValue)(unsafe.Pointer(&v))).ptr = unsafe.Pointer(&n.f)
 	return
 }
+
 func (n *fauxUnion) rl() (v reflect.Value) {
 	v = defUnsafeDecNakedWrapper.rl
 	((*unsafeReflectValue)(unsafe.Pointer(&v))).ptr = unsafe.Pointer(&n.l)
 	return
 }
+
 func (n *fauxUnion) rs() (v reflect.Value) {
 	v = defUnsafeDecNakedWrapper.rs
 	((*unsafeReflectValue)(unsafe.Pointer(&v))).ptr = unsafe.Pointer(&n.s)
 	return
 }
+
 func (n *fauxUnion) rt() (v reflect.Value) {
 	v = defUnsafeDecNakedWrapper.rt
 	((*unsafeReflectValue)(unsafe.Pointer(&v))).ptr = unsafe.Pointer(&n.t)
 	return
 }
+
 func (n *fauxUnion) rb() (v reflect.Value) {
 	v = defUnsafeDecNakedWrapper.rb
 	((*unsafeReflectValue)(unsafe.Pointer(&v))).ptr = unsafe.Pointer(&n.b)
@@ -1115,8 +1120,8 @@ func unsafeMapKVPtr(urv *unsafeReflectValue) unsafe.Pointer {
 }
 
 func mapGet(m, k, v reflect.Value, keyFastKind mapKeyFastKind, valIsIndirect, valIsRef bool) (_ reflect.Value) {
-	var urv = (*unsafeReflectValue)(unsafe.Pointer(&k))
-	var kptr = unsafeMapKVPtr(urv)
+	urv := (*unsafeReflectValue)(unsafe.Pointer(&k))
+	kptr := unsafeMapKVPtr(urv)
 	urv = (*unsafeReflectValue)(unsafe.Pointer(&m))
 	mptr := rvRefPtr(urv)
 
@@ -1155,11 +1160,11 @@ func mapGet(m, k, v reflect.Value, keyFastKind mapKeyFastKind, valIsIndirect, va
 }
 
 func mapSet(m, k, v reflect.Value, keyFastKind mapKeyFastKind, valIsIndirect, valIsRef bool) {
-	var urv = (*unsafeReflectValue)(unsafe.Pointer(&k))
-	var kptr = unsafeMapKVPtr(urv)
+	urv := (*unsafeReflectValue)(unsafe.Pointer(&k))
+	kptr := unsafeMapKVPtr(urv)
 	urv = (*unsafeReflectValue)(unsafe.Pointer(&v))
-	var vtyp = urv.typ
-	var vptr = unsafeMapKVPtr(urv)
+	vtyp := urv.typ
+	vptr := unsafeMapKVPtr(urv)
 
 	urv = (*unsafeReflectValue)(unsafe.Pointer(&m))
 	mptr := rvRefPtr(urv)
@@ -1282,6 +1287,7 @@ func len_map(m unsafe.Pointer) int {
 	// return maplen(m)
 	return len_map_chan(m)
 }
+
 func len_chan(m unsafe.Pointer) int {
 	// return chanlen(m)
 	return len_map_chan(m)

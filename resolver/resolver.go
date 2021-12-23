@@ -10,12 +10,12 @@ type RequestURL struct {
 	Port int
 }
 
-//SetRequest to implement `RequestAwareResolverInterface`
+// SetRequest to implement `RequestAwareResolverInterface`
 func (m *RequestURL) SetRequest(r http.Request) {
 	m.r = r
 }
 
-//GetBaseURL implements `URLResolver` interface
+// GetBaseURL implements `URLResolver` interface
 func (m RequestURL) GetBaseURL() string {
 	return fmt.Sprintf("https://localhost:%d", m.Port)
 }

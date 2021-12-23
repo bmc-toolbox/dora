@@ -22,7 +22,7 @@ func Decode(r io.Reader) ([]Event, error) {
 func (d *decoder) dispatchEvent(event Event, data string) {
 	dataLength := len(data)
 	if dataLength > 0 {
-		//If the data buffer's last character is a U+000A LINE FEED (LF) character, then remove the last character from the data buffer.
+		// If the data buffer's last character is a U+000A LINE FEED (LF) character, then remove the last character from the data buffer.
 		data = data[:dataLength-1]
 		dataLength--
 	}
@@ -105,7 +105,7 @@ func (d *decoder) decode(r io.Reader) ([]Event, error) {
 			// then append a single U+000A LINE FEED (LF) character to the data buffer.
 			dataBuffer.WriteString("\n")
 		default:
-			//Otherwise. The field is ignored.
+			// Otherwise. The field is ignored.
 			continue
 		}
 	}

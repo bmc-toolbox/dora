@@ -100,7 +100,6 @@ func (vf *virtualFile) read(bts []byte) (int, error) {
 	n := copy(bts, vf.Content[vf.offset:end])
 	vf.offset += int64(n)
 	return n, nil
-
 }
 
 func (vf *virtualFile) seek(offset int64, whence int) (int64, error) {
@@ -181,7 +180,6 @@ func (vd *virtualDir) stat() (os.FileInfo, error) {
 }
 
 func (vd *virtualDir) readdir(n int) ([]os.FileInfo, error) {
-
 	if vd.closed {
 		return nil, &os.PathError{
 			Op:   "readdir",
@@ -225,11 +223,9 @@ func (vd *virtualDir) readdir(n int) ([]os.FileInfo, error) {
 	offset := vd.offset
 	vd.offset += n
 	return files[offset : offset+n], nil
-
 }
 
 func (vd *virtualDir) readdirnames(n int) ([]string, error) {
-
 	if vd.closed {
 		return nil, &os.PathError{
 			Op:   "readdir",

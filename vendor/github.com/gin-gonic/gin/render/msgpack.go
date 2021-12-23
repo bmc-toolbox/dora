@@ -13,9 +13,7 @@ import (
 	"github.com/ugorji/go/codec"
 )
 
-var (
-	_ Render = MsgPack{}
-)
+var _ Render = MsgPack{}
 
 // MsgPack contains the given interface object.
 type MsgPack struct {

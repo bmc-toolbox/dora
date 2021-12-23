@@ -202,8 +202,10 @@ type traceMapEntry struct {
 	config TraceConfig
 }
 
-var traceMapLock sync.Mutex
-var traceMap = make(map[uintptr]traceMapEntry)
+var (
+	traceMapLock sync.Mutex
+	traceMap     = make(map[uintptr]traceMapEntry)
+)
 
 func addTraceMapping(connHandle uintptr, traceConf TraceConfig) {
 	traceMapLock.Lock()

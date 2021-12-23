@@ -1056,7 +1056,6 @@ func (nc *Conn) setup() {
 
 // Process a connected connection and initialize properly.
 func (nc *Conn) processConnectInit() error {
-
 	// Set out deadline for the whole connect process
 	nc.conn.SetDeadline(time.Now().Add(nc.Opts.Timeout))
 	defer nc.conn.SetDeadline(time.Time{})
@@ -1158,7 +1157,6 @@ func (nc *Conn) checkForSecure() error {
 // processExpectedInfo will look for the expected first INFO message
 // sent when a connection is established. The lock should be held entering.
 func (nc *Conn) processExpectedInfo() error {
-
 	c := &control{}
 
 	// Read the protocol
@@ -1209,9 +1207,11 @@ func (nc *Conn) connectProto() (string, error) {
 		pass = nc.Opts.Password
 		token = nc.Opts.Token
 	}
-	cinfo := connectInfo{o.Verbose, o.Pedantic,
+	cinfo := connectInfo{
+		o.Verbose, o.Pedantic,
 		user, pass, token,
-		o.Secure, o.Name, LangString, Version, clientProtoInfo}
+		o.Secure, o.Name, LangString, Version, clientProtoInfo,
+	}
 	b, err := json.Marshal(cinfo)
 	if err != nil {
 		return _EMPTY_, ErrJsonParse
@@ -1230,7 +1230,6 @@ func normalizeErr(line string) string {
 // applicable. Will wait for a flush to return from the server for error
 // processing.
 func (nc *Conn) sendConnect() error {
-
 	// Construct the CONNECT protocol string
 	cProto, err := nc.connectProto()
 	if err != nil {
@@ -2081,7 +2080,7 @@ func (nc *Conn) publish(subj, reply string, data []byte) error {
 	// msgh = strconv.AppendInt(msgh, int64(len(data)), 10)
 
 	var b [12]byte
-	var i = len(b)
+	i := len(b)
 	if len(data) > 0 {
 		for l := len(data); l > 0; l /= 10 {
 			i -= 1
@@ -2249,9 +2248,11 @@ func (nc *Conn) oldRequest(subj string, data []byte, timeout time.Duration) (*Ms
 }
 
 // InboxPrefix is the prefix for all inbox subjects.
-const InboxPrefix = "_INBOX."
-const inboxPrefixLen = len(InboxPrefix)
-const respInboxPrefixLen = inboxPrefixLen + nuidSize + 1
+const (
+	InboxPrefix        = "_INBOX."
+	inboxPrefixLen     = len(InboxPrefix)
+	respInboxPrefixLen = inboxPrefixLen + nuidSize + 1
+)
 
 // NewInbox will return an inbox string which can be used for directed replies from
 // subscribers. These are guaranteed to be unique, but can be shared and subscribed
@@ -3017,7 +3018,7 @@ func (nc *Conn) IsConnected() bool {
 // caller must lock
 func (nc *Conn) getServers(implicitOnly bool) []string {
 	poolSize := len(nc.srvPool)
-	var servers = make([]string, 0)
+	servers := make([]string, 0)
 	for i := 0; i < poolSize; i++ {
 		if implicitOnly && !nc.srvPool[i].isImplicit {
 			continue

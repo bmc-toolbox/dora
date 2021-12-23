@@ -26,13 +26,14 @@ import (
 // turn numbers into appropriate strings that can be decoded. It will also
 // propely encoded and decode bools. If will encode a struct, but if you want
 // to properly handle structures you should use JsonEncoder.
-type DefaultEncoder struct {
-	// Empty
+type DefaultEncoder struct { // Empty
 }
 
-var trueB = []byte("true")
-var falseB = []byte("false")
-var nilB = []byte("")
+var (
+	trueB  = []byte("true")
+	falseB = []byte("false")
+	nilB   = []byte("")
+)
 
 // Encode
 func (je *DefaultEncoder) Encode(subject string, v interface{}) ([]byte, error) {

@@ -5,9 +5,11 @@
 
 package codec
 
-import "time"
-import "reflect"
-import "bytes"
+import (
+	"time"
+	"reflect"
+	"bytes"
+)
 
 type stringSlice []string
 

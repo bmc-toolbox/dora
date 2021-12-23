@@ -197,7 +197,7 @@ func (m *M1000e) PxeOnceBlade(position int) (bool, error) {
 	return false, fmt.Errorf(output)
 }
 
-// SetIpmiOverLan Enable/Disable IPMI over lan parameter per blade in chassis
+// Enable/Disable the IpmiOverLan parameter per blade in the chassis.
 func (m *M1000e) SetIpmiOverLan(position int, enable bool) (bool, error) {
 	var state int
 	if enable {
@@ -215,7 +215,6 @@ func (m *M1000e) SetIpmiOverLan(position int, enable bool) (bool, error) {
 	}
 
 	return false, fmt.Errorf(output)
-
 }
 
 // SetDynamicPower Enable/Disable Dynamic Power - Dynamic Power Supply Engagement (DPSE) in Dell jargon.
@@ -273,10 +272,10 @@ func (m *M1000e) SetFlexAddressState(position int, enable bool) (bool, error) {
 }
 
 // UpdateFirmware updates the chassis firmware
-func (m *M1000e) UpdateFirmware(source, file string) (bool, error) {
+func (m *M1000e) UpdateFirmware(source, file string) (bool, string, error) {
 	u, err := url.Parse(source)
 	if err != nil {
-		return false, err
+		return false, "", err
 	}
 
 	password, ok := u.User.Password()
@@ -287,14 +286,14 @@ func (m *M1000e) UpdateFirmware(source, file string) (bool, error) {
 	cmd := fmt.Sprintf("fwupdate -f %s %s %s -d %s -m cmc-active -m cmc-standby", u.Host, u.User.Username(), password, u.Path)
 	output, err := m.sshClient.Run(cmd)
 	if err != nil {
-		return false, fmt.Errorf("output: %q: %w", output, err)
+		return false, output, fmt.Errorf("output: %q: %w", output, err)
 	}
 
 	if strings.Contains(output, "Firmware update has been initiated") {
-		return true, nil
+		return true, output, nil
 	}
 
-	return false, err
+	return false, output, err
 }
 
 // UpdateFirmwareBmcBlade updates the blade BMC firmware

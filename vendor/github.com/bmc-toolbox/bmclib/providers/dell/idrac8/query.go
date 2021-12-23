@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bmc-toolbox/bmclib/internal"
 	"github.com/bmc-toolbox/bmclib/internal/helper"
 )
 
@@ -18,13 +17,11 @@ import (
 // The bool value returned indicates if the BMC supports CSR generation.
 // CurrentHTTPSCert implements the Configure interface
 func (i *IDrac8) CurrentHTTPSCert() ([]*x509.Certificate, bool, error) {
-
 	dialer := &net.Dialer{
 		Timeout: time.Duration(10) * time.Second,
 	}
 
 	conn, err := tls.DialWithDialer(dialer, "tcp", i.ip+":"+"443", &tls.Config{InsecureSkipVerify: true})
-
 	if err != nil {
 		return []*x509.Certificate{{}}, true, err
 	}
@@ -32,77 +29,85 @@ func (i *IDrac8) CurrentHTTPSCert() ([]*x509.Certificate, bool, error) {
 	defer conn.Close()
 
 	return conn.ConnectionState().PeerCertificates, true, nil
-
 }
 
 // Screenshot Grab screen preview.
 func (i *IDrac8) Screenshot() (response []byte, extension string, err error) {
 	err = i.httpLogin()
 	if err != nil {
-		return response, extension, err
+		return nil, "", err
 	}
 
-	endpoint1 := fmt.Sprintf("data?get=consolepreview[auto%%20%d]",
+	endpoint := fmt.Sprintf("data?get=consolepreview[auto%%20%d]",
 		time.Now().UnixNano()/int64(time.Millisecond))
 
 	extension = "png"
 
 	// here we expect an empty response
-	response, err = i.get(endpoint1, &map[string]string{"idracAutoRefresh": "1"})
-	if err != nil {
-		return []byte{}, extension, err
+	statusCode, response, err := i.get(endpoint, &map[string]string{"idracAutoRefresh": "1"})
+	if err != nil || statusCode != 200 {
+		if err == nil {
+			err = fmt.Errorf("Received a %d status code from the GET request to %s.", statusCode, endpoint)
+		}
+
+		return nil, "", err
 	}
 
 	if !strings.Contains(string(response), "<status>ok</status>") {
-		return []byte{}, extension, fmt.Errorf(string(response))
+		return nil, "", fmt.Errorf(string(response))
 	}
 
-	endpoint2 := fmt.Sprintf("capconsole/scapture0.png?%d",
+	endpoint = fmt.Sprintf("capconsole/scapture0.png?%d",
 		time.Now().UnixNano()/int64(time.Millisecond))
 
-	response, err = i.get(endpoint2, &map[string]string{})
-	if err != nil {
-		return []byte{}, extension, err
+	statusCode, response, err = i.get(endpoint, &map[string]string{})
+	if err != nil || statusCode != 200 {
+		if err == nil {
+			err = fmt.Errorf("Received a %d status code from the GET request to %s.", statusCode, endpoint)
+		}
+
+		return nil, "", err
 	}
 
-	return response, extension, err
+	return response, extension, nil
 }
 
-//Queries Idrac8 for current user accounts
-func (i *IDrac8) queryUsers() (userInfo UserInfo, err error) {
-
-	userInfo = make(UserInfo)
+// Queries for current user accounts.
+func (i *IDrac8) queryUsers() (usersInfo UsersInfo, err error) {
+	usersInfo = make(UsersInfo)
 
 	endpoint := "data?get=user"
 
-	response, err := i.get(endpoint, &map[string]string{})
-	if err != nil {
-		i.log.V(1).Error(err, "GET request failed.",
+	statusCode, response, err := i.get(endpoint, &map[string]string{})
+	if err != nil || statusCode != 200 {
+		if err == nil {
+			err = fmt.Errorf("Received a %d status code from the GET request to %s.", statusCode, endpoint)
+		}
+
+		i.log.V(1).Error(err, "queryUsers(): GET request failed.",
 			"IP", i.ip,
-			"Model", i.HardwareType(),
+			"HardwareType", i.HardwareType(),
 			"endpoint", endpoint,
+			"StatusCode", statusCode,
 			"step", helper.WhosCalling(),
-			"Error", internal.ErrStringOrEmpty(err),
 		)
-		return userInfo, err
+		return usersInfo, err
 	}
 
 	xmlData := XMLRoot{}
 	err = xml.Unmarshal(response, &xmlData)
 	if err != nil {
-		i.log.V(1).Error(err, "Unable to unmarshal payload.",
+		i.log.V(1).Error(err, "queryUsers(): Unable to unmarshal payload.",
 			"step", "queryUserInfo",
 			"resource", "User",
 			"IP", i.ip,
-			"Model", i.HardwareType(),
-			"Error", internal.ErrStringOrEmpty(err),
+			"HardwareType", i.HardwareType(),
 		)
-		return userInfo, err
+		return usersInfo, err
 	}
 
 	for _, userAccount := range xmlData.XMLUserAccount {
-
-		user := User{
+		user := UserInfo{
 			UserName:  userAccount.Name,
 			Privilege: strconv.Itoa(userAccount.Privileges),
 		}
@@ -126,8 +131,8 @@ func (i *IDrac8) queryUsers() (userInfo UserInfo, err error) {
 			user.Enable = "disabled"
 		}
 
-		userInfo[userAccount.ID] = user
+		usersInfo[userAccount.ID] = user
 	}
 
-	return userInfo, err
+	return usersInfo, err
 }

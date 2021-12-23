@@ -10,7 +10,6 @@ import (
 // Walk is like filepath.Walk()
 // Visit http://golang.org/pkg/path/filepath/#Walk for more information
 func (b *Box) Walk(path string, walkFn filepath.WalkFunc) error {
-
 	pathFile, err := b.Open(path)
 	if err != nil {
 		return err
@@ -28,19 +27,15 @@ func (b *Box) Walk(path string, walkFn filepath.WalkFunc) error {
 
 	// We don't have any embedded or appended box so use live filesystem mode
 	return filepath.Walk(filepath.Join(b.absolutePath, path), func(path string, info os.FileInfo, err error) error {
-
 		// Strip out the box name from the returned paths
 		path = strings.TrimPrefix(path, b.absolutePath+string(os.PathSeparator))
 		return walkFn(path, info, err)
-
 	})
-
 }
 
 // walk recursively descends path.
 // See walk() in $GOROOT/src/pkg/path/filepath/path.go
 func (b *Box) walk(path string, info os.FileInfo, walkFn filepath.WalkFunc) error {
-
 	err := walkFn(path, info, nil)
 	if err != nil {
 		if info.IsDir() && err == filepath.SkipDir {
@@ -83,13 +78,11 @@ func (b *Box) walk(path string, info os.FileInfo, walkFn filepath.WalkFunc) erro
 	}
 
 	return nil
-
 }
 
 // readDirNames reads the directory named by path and returns a sorted list of directory entries.
 // See readDirNames() in $GOROOT/pkg/path/filepath/path.go
 func (b *Box) readDirNames(path string) ([]string, error) {
-
 	f, err := b.Open(path)
 	if err != nil {
 		return nil, err
@@ -118,5 +111,4 @@ func (b *Box) readDirNames(path string) ([]string, error) {
 
 	sort.Strings(names)
 	return names, nil
-
 }

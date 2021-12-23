@@ -26,7 +26,7 @@ func (postgres) BindVar(i int) string {
 }
 
 func (s *postgres) DataTypeOf(field *StructField) string {
-	var dataValue, sqlType, size, additionalType = ParseFieldStructForDialect(field, s)
+	dataValue, sqlType, size, additionalType := ParseFieldStructForDialect(field, s)
 
 	if sqlType == "" {
 		switch dataValue.Kind() {

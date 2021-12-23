@@ -103,8 +103,10 @@ type handleVal struct {
 	val interface{}
 }
 
-var handleLock sync.Mutex
-var handleVals = make(map[unsafe.Pointer]handleVal)
+var (
+	handleLock sync.Mutex
+	handleVals = make(map[unsafe.Pointer]handleVal)
+)
 
 func newHandle(db *SQLiteConn, v interface{}) unsafe.Pointer {
 	handleLock.Lock()

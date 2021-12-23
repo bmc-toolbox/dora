@@ -6,9 +6,11 @@ import (
 	"errors"
 )
 
-var objectSuffix = []byte("{")
-var arraySuffix = []byte("[")
-var stringSuffix = []byte(`"`)
+var (
+	objectSuffix = []byte("{")
+	arraySuffix  = []byte("[")
+	stringSuffix = []byte(`"`)
+)
 
 // A Document represents a JSON API document as specified here: http://jsonapi.org.
 type Document struct {
