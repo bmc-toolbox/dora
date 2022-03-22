@@ -95,7 +95,7 @@ func (c *Conn) Compatible(ctx context.Context) bool {
 		log.V(0).Error(err, "error reading response body")
 		return false
 	}
-	models := []string{"PowerEdge M640", "PowerEdge R640", "PowerEdge R6415", "PowerEdge R6515", "PowerEdge R740xd"}
+	models := []string{"PowerEdge M640", "PowerEdge R640", "PowerEdge R6415", "PowerEdge R6515", "PowerEdge R740xd", "PowerEdge R7415"}
 	for _, subStr := range models {
 		if bytes.Contains(body, []byte(subStr)) {
 			return true
