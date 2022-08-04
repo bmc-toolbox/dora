@@ -11,7 +11,7 @@ import (
 
 	metrics "github.com/bmc-toolbox/gin-go-metrics"
 	"github.com/jinzhu/gorm"
-	"github.com/nats-io/go-nats"
+	"github.com/nats-io/nats.go"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 

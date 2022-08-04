@@ -22,6 +22,7 @@ import (
 	"io"
 	"math"
 	"net/rpc"
+	"reflect"
 	"time"
 )
 
@@ -76,10 +77,8 @@ const (
 	mpNegFixNumMax byte = 0xff
 )
 
-var (
-	mpTimeExtTag  int8 = -1
-	mpTimeExtTagU      = uint8(mpTimeExtTag)
-)
+var mpTimeExtTag int8 = -1
+var mpTimeExtTagU = uint8(mpTimeExtTag)
 
 var mpdescNames = map[byte]string{
 	mpNil:    "nil",
@@ -171,6 +170,7 @@ var (
 type msgpackEncDriver struct {
 	noBuiltInTypes
 	encDriverNoopContainerWriter
+	encDriverNoState
 	h *MsgpackHandle
 	// x [8]byte
 	e Encoder
@@ -265,7 +265,7 @@ func (e *msgpackEncDriver) EncodeTime(t time.Time) {
 	t = t.UTC()
 	sec, nsec := t.Unix(), uint64(t.Nanosecond())
 	var data64 uint64
-	l := 4
+	var l = 4
 	if sec >= 0 && sec>>34 == 0 {
 		data64 = (nsec << 34) | uint64(sec)
 		if data64&0xffffffff00000000 != 0 {
@@ -290,12 +290,12 @@ func (e *msgpackEncDriver) EncodeTime(t time.Time) {
 	}
 }
 
-func (e *msgpackEncDriver) EncodeExt(v interface{}, xtag uint64, ext Ext) {
+func (e *msgpackEncDriver) EncodeExt(v interface{}, basetype reflect.Type, xtag uint64, ext Ext) {
 	var bs0, bs []byte
 	if ext == SelfExt {
 		bs0 = e.e.blist.get(1024)
 		bs = bs0
-		e.e.sideEncode(v, &bs)
+		e.e.sideEncode(v, basetype, &bs)
 	} else {
 		bs = ext.WriteExt(v)
 	}
@@ -406,13 +406,11 @@ func (e *msgpackEncDriver) writeContainerLen(ct msgpackContainerType, l int) {
 
 type msgpackDecDriver struct {
 	decDriverNoopContainerReader
+	decDriverNoopNumberHelper
 	h *MsgpackHandle
-	// b      [scratchByteArrayLen]byte
-	bd     byte
-	bdRead bool
-	_      bool
+	bdAndBdread
+	_ bool
 	noBuiltInTypes
-	// _ [6]uint64 // padding
 	d Decoder
 }
 
@@ -534,8 +532,8 @@ func (d *msgpackDecDriver) nextValueBytes(v0 []byte) (v []byte) {
 		d.readNextBd()
 	}
 	v = v0
-	h := decNextValueBytesHelper{d: &d.d}
-	cursor := d.d.rb.c - 1
+	var h = decNextValueBytesHelper{d: &d.d}
+	var cursor = d.d.rb.c - 1
 	h.append1(&v, d.bd)
 	v = d.nextValueBytesBdReadR(v)
 	d.bdRead = false
@@ -546,14 +544,14 @@ func (d *msgpackDecDriver) nextValueBytes(v0 []byte) (v []byte) {
 func (d *msgpackDecDriver) nextValueBytesR(v0 []byte) (v []byte) {
 	d.readNextBd()
 	v = v0
-	h := decNextValueBytesHelper{d: &d.d}
+	var h = decNextValueBytesHelper{d: &d.d}
 	h.append1(&v, d.bd)
 	return d.nextValueBytesBdReadR(v)
 }
 
 func (d *msgpackDecDriver) nextValueBytesBdReadR(v0 []byte) (v []byte) {
 	v = v0
-	h := decNextValueBytesHelper{d: &d.d}
+	var h = decNextValueBytesHelper{d: &d.d}
 
 	bd := d.bd
 
@@ -670,6 +668,24 @@ func (d *msgpackDecDriver) nextValueBytesBdReadR(v0 []byte) (v []byte) {
 	return
 }
 
+func (d *msgpackDecDriver) decFloat4Int32() (f float32) {
+	fbits := bigen.Uint32(d.d.decRd.readn4())
+	f = math.Float32frombits(fbits)
+	if !noFrac32(fbits) {
+		d.d.errorf("assigning integer value from float32 with a fraction: %v", f)
+	}
+	return
+}
+
+func (d *msgpackDecDriver) decFloat4Int64() (f float64) {
+	fbits := bigen.Uint64(d.d.decRd.readn8())
+	f = math.Float64frombits(fbits)
+	if !noFrac64(fbits) {
+		d.d.errorf("assigning integer value from float64 with a fraction: %v", f)
+	}
+	return
+}
+
 // int can be decoded from msgpack type: intXXX or uintXXX
 func (d *msgpackDecDriver) DecodeInt64() (i int64) {
 	if d.advanceNil() {
@@ -692,6 +708,10 @@ func (d *msgpackDecDriver) DecodeInt64() (i int64) {
 		i = int64(int32(bigen.Uint32(d.d.decRd.readn4())))
 	case mpInt64:
 		i = int64(bigen.Uint64(d.d.decRd.readn8()))
+	case mpFloat:
+		i = int64(d.decFloat4Int32())
+	case mpDouble:
+		i = int64(d.decFloat4Int64())
 	default:
 		switch {
 		case d.bd >= mpPosFixNumMin && d.bd <= mpPosFixNumMax:
@@ -743,6 +763,18 @@ func (d *msgpackDecDriver) DecodeUint64() (ui uint64) {
 			ui = uint64(i)
 		} else {
 			d.d.errorf("assigning negative signed value: %v, to unsigned type", i)
+		}
+	case mpFloat:
+		if f := d.decFloat4Int32(); f >= 0 {
+			ui = uint64(f)
+		} else {
+			d.d.errorf("assigning negative float value: %v, to unsigned type", f)
+		}
+	case mpDouble:
+		if f := d.decFloat4Int64(); f >= 0 {
+			ui = uint64(f)
+		} else {
+			d.d.errorf("assigning negative float value: %v, to unsigned type", f)
 		}
 	default:
 		switch {
@@ -819,6 +851,9 @@ func (d *msgpackDecDriver) DecodeBytes(bs []byte) (bsOut []byte) {
 		for i := 0; i < len(bs); i++ {
 			bs[i] = uint8(chkOvf.UintV(d.DecodeUint64(), 8))
 		}
+		for i := len(bs); i < slen; i++ {
+			bs = append(bs, uint8(chkOvf.UintV(d.DecodeUint64(), 8)))
+		}
 		return bs
 	} else {
 		d.d.errorf("invalid byte descriptor for decoding bytes, got: 0x%x", d.bd)
@@ -838,6 +873,10 @@ func (d *msgpackDecDriver) DecodeBytes(bs []byte) (bsOut []byte) {
 
 func (d *msgpackDecDriver) DecodeStringAsBytes() (s []byte) {
 	return d.DecodeBytes(nil)
+}
+
+func (d *msgpackDecDriver) descBd() string {
+	return sprintf("%v (%s)", d.bd, mpdesc(d.bd))
 }
 
 func (d *msgpackDecDriver) readNextBd() {
@@ -986,7 +1025,7 @@ func (d *msgpackDecDriver) decodeTime(clen int) (t time.Time) {
 	return
 }
 
-func (d *msgpackDecDriver) DecodeExt(rv interface{}, xtag uint64, ext Ext) {
+func (d *msgpackDecDriver) DecodeExt(rv interface{}, basetype reflect.Type, xtag uint64, ext Ext) {
 	if xtag > 0xff {
 		d.d.errorf("ext: tag must be <= 0xff; got: %v", xtag)
 	}
@@ -1000,7 +1039,7 @@ func (d *msgpackDecDriver) DecodeExt(rv interface{}, xtag uint64, ext Ext) {
 		re.Tag = realxtag
 		re.setData(xbs, zerocopy)
 	} else if ext == SelfExt {
-		d.d.sideDecode(rv, xbs)
+		d.d.sideDecode(rv, basetype, xbs)
 	} else {
 		ext.ReadExt(rv, xbs)
 	}
@@ -1032,7 +1071,7 @@ func (d *msgpackDecDriver) decodeExtV(verifyTag bool, tag byte) (xbs []byte, xta
 
 //--------------------------------------------------
 
-// MsgpackHandle is a Handle for the Msgpack Schema-Free Encoding Format.
+//MsgpackHandle is a Handle for the Msgpack Schema-Free Encoding Format.
 type MsgpackHandle struct {
 	binaryEncodingType
 	BasicHandle
@@ -1064,7 +1103,7 @@ func (h *MsgpackHandle) Name() string { return "msgpack" }
 func (h *MsgpackHandle) desc(bd byte) string { return mpdesc(bd) }
 
 func (h *MsgpackHandle) newEncDriver() encDriver {
-	e := &msgpackEncDriver{h: h}
+	var e = &msgpackEncDriver{h: h}
 	e.e.e = e
 	e.e.init(h)
 	e.reset()
@@ -1077,13 +1116,6 @@ func (h *MsgpackHandle) newDecDriver() decDriver {
 	d.d.init(h)
 	d.reset()
 	return d
-}
-
-func (e *msgpackEncDriver) reset() {
-}
-
-func (d *msgpackDecDriver) reset() {
-	d.bd, d.bdRead = 0, false
 }
 
 //--------------------------------------------------
@@ -1104,7 +1136,7 @@ func (c *msgpackSpecRpcCodec) WriteRequest(r *rpc.Request, body interface{}) err
 		bodyArr = []interface{}{body}
 	}
 	r2 := []interface{}{0, uint32(r.Seq), r.ServiceMethod, bodyArr}
-	return c.write(r2, nil, false)
+	return c.write(r2)
 }
 
 func (c *msgpackSpecRpcCodec) WriteResponse(r *rpc.Response, body interface{}) error {
@@ -1116,7 +1148,7 @@ func (c *msgpackSpecRpcCodec) WriteResponse(r *rpc.Response, body interface{}) e
 		body = nil
 	}
 	r2 := []interface{}{1, uint32(r.Seq), moe, body}
-	return c.write(r2, nil, false)
+	return c.write(r2)
 }
 
 func (c *msgpackSpecRpcCodec) ReadResponseHeader(r *rpc.Response) error {
@@ -1143,7 +1175,7 @@ func (c *msgpackSpecRpcCodec) parseCustomHeader(expectTypeByte byte, msgid *uint
 	// We read the response header by hand
 	// so that the body can be decoded on its own from the stream at a later time.
 
-	const fia byte = 0x94 // four item array descriptor value
+	const fia byte = 0x94 //four item array descriptor value
 
 	var ba [1]byte
 	var n int
@@ -1157,7 +1189,7 @@ func (c *msgpackSpecRpcCodec) parseCustomHeader(expectTypeByte byte, msgid *uint
 		}
 	}
 
-	b := ba[0]
+	var b = ba[0]
 	if b != fia {
 		err = fmt.Errorf("not array - %s %x/%s", msgBadDesc, b, mpdesc(b))
 	} else {
@@ -1196,7 +1228,5 @@ func (x msgpackSpecRpc) ClientCodec(conn io.ReadWriteCloser, h Handle) rpc.Clien
 	return &msgpackSpecRpcCodec{newRPCCodec(conn, h)}
 }
 
-var (
-	_ decDriver = (*msgpackDecDriver)(nil)
-	_ encDriver = (*msgpackEncDriver)(nil)
-)
+var _ decDriver = (*msgpackDecDriver)(nil)
+var _ encDriver = (*msgpackEncDriver)(nil)

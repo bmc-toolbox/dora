@@ -5,7 +5,9 @@ import (
 	"sync"
 )
 
-var bufferPool BufferPool
+var (
+	bufferPool BufferPool
+)
 
 type BufferPool interface {
 	Put(*bytes.Buffer)
@@ -22,15 +24,6 @@ func (p *defaultPool) Put(buf *bytes.Buffer) {
 
 func (p *defaultPool) Get() *bytes.Buffer {
 	return p.pool.Get().(*bytes.Buffer)
-}
-
-func getBuffer() *bytes.Buffer {
-	return bufferPool.Get()
-}
-
-func putBuffer(buf *bytes.Buffer) {
-	buf.Reset()
-	bufferPool.Put(buf)
 }
 
 // SetBufferPool allows to replace the default logrus buffer pool

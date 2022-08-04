@@ -206,7 +206,7 @@ func (scope *Scope) HasColumn(column string) bool {
 
 // SetColumn to set the column's value, column could be field or field's name/dbname
 func (scope *Scope) SetColumn(column interface{}, value interface{}) error {
-	updateAttrs := map[string]interface{}{}
+	var updateAttrs = map[string]interface{}{}
 	if attrs, ok := scope.InstanceGet("gorm:update_attrs"); ok {
 		updateAttrs = attrs.(map[string]interface{})
 		defer scope.InstanceSet("gorm:update_attrs", updateAttrs)
@@ -875,7 +875,7 @@ func (scope *Scope) callCallbacks(funcs []*func(s *Scope)) *Scope {
 }
 
 func convertInterfaceToMap(values interface{}, withIgnoredField bool, db *DB) map[string]interface{} {
-	attrs := map[string]interface{}{}
+	var attrs = map[string]interface{}{}
 
 	switch value := values.(type) {
 	case map[string]interface{}:
@@ -1167,7 +1167,7 @@ func (scope *Scope) createJoinTable(field *StructField) {
 func (scope *Scope) createTable() *Scope {
 	var tags []string
 	var primaryKeys []string
-	primaryKeyInColumnType := false
+	var primaryKeyInColumnType = false
 	for _, field := range scope.GetModelStruct().StructFields {
 		if field.IsNormal {
 			sqlTag := scope.Dialect().DataTypeOf(field)
@@ -1237,7 +1237,7 @@ func (scope *Scope) addForeignKey(field string, dest string, onDelete string, on
 	if scope.Dialect().HasForeignKey(scope.TableName(), keyName) {
 		return
 	}
-	query := `ALTER TABLE %s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s ON DELETE %s ON UPDATE %s;`
+	var query = `ALTER TABLE %s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s ON DELETE %s ON UPDATE %s;`
 	scope.Raw(fmt.Sprintf(query, scope.QuotedTableName(), scope.quoteIfPossible(keyName), scope.quoteIfPossible(field), dest, onDelete, onUpdate)).Exec()
 }
 
@@ -1283,8 +1283,8 @@ func (scope *Scope) autoMigrate() *Scope {
 }
 
 func (scope *Scope) autoIndex() *Scope {
-	indexes := map[string][]string{}
-	uniqueIndexes := map[string][]string{}
+	var indexes = map[string][]string{}
+	var uniqueIndexes = map[string][]string{}
 
 	for _, field := range scope.GetStructFields() {
 		if name, ok := field.TagSettingsGet("INDEX"); ok {
@@ -1336,8 +1336,8 @@ func (scope *Scope) getColumnAsArray(columns []string, values ...interface{}) (r
 		case reflect.Slice:
 			for i := 0; i < indirectValue.Len(); i++ {
 				var result []interface{}
-				object := indirect(indirectValue.Index(i))
-				hasValue := false
+				var object = indirect(indirectValue.Index(i))
+				var hasValue = false
 				for _, column := range columns {
 					field := object.FieldByName(column)
 					if hasValue || !isBlank(field) {
@@ -1355,7 +1355,7 @@ func (scope *Scope) getColumnAsArray(columns []string, values ...interface{}) (r
 			}
 		case reflect.Struct:
 			var result []interface{}
-			hasValue := false
+			var hasValue = false
 			for _, column := range columns {
 				field := indirectValue.FieldByName(column)
 				if hasValue || !isBlank(field) {

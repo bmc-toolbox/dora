@@ -11,11 +11,9 @@ import (
 	"strings"
 )
 
-var (
-	typeByteSlice    = reflect.TypeOf([]byte{})
-	typeDriverValuer = reflect.TypeOf((*driver.Valuer)(nil)).Elem()
-	typeSQLScanner   = reflect.TypeOf((*sql.Scanner)(nil)).Elem()
-)
+var typeByteSlice = reflect.TypeOf([]byte{})
+var typeDriverValuer = reflect.TypeOf((*driver.Valuer)(nil)).Elem()
+var typeSQLScanner = reflect.TypeOf((*sql.Scanner)(nil)).Elem()
 
 // Array returns the optimal driver.Valuer and sql.Scanner for an array or
 // slice of any dimension.
@@ -24,7 +22,7 @@ var (
 //  db.Query(`SELECT * FROM t WHERE id = ANY($1)`, pq.Array([]int{235, 401}))
 //
 //  var x []sql.NullInt64
-//  db.QueryRow('SELECT ARRAY[235, 401]').Scan(pq.Array(&x))
+//  db.QueryRow(`SELECT ARRAY[235, 401]`).Scan(pq.Array(&x))
 //
 // Scanning multi-dimensional arrays is not supported.  Arrays where the lower
 // bound is not one (such as `[0:0]={1}') are not supported.
@@ -351,7 +349,7 @@ type GenericArray struct{ A interface{} }
 
 func (GenericArray) evaluateDestination(rt reflect.Type) (reflect.Type, func([]byte, reflect.Value) error, string) {
 	var assign func([]byte, reflect.Value) error
-	del := ","
+	var del = ","
 
 	// TODO calculate the assign function for other types
 	// TODO repeat this section on the element type of arrays or slices (multidimensional)
@@ -589,8 +587,8 @@ func (a *Int32Array) scanBytes(src []byte) error {
 	} else {
 		b := make(Int32Array, len(elems))
 		for i, v := range elems {
-			var x int
-			if x, err = strconv.Atoi(string(v)); err != nil {
+			x, err := strconv.ParseInt(string(v), 10, 32)
+			if err != nil {
 				return fmt.Errorf("pq: parsing array element index %d: %v", i, err)
 			}
 			b[i] = int32(x)
@@ -728,7 +726,7 @@ func appendArrayElement(b []byte, rv reflect.Value) ([]byte, string, error) {
 		}
 	}
 
-	del := ","
+	var del = ","
 	var err error
 	var iv interface{} = rv.Interface()
 
@@ -813,7 +811,7 @@ Element:
 			dims[depth-1] = 0
 			i++
 		case '"':
-			elem := []byte{}
+			var elem = []byte{}
 			var escape bool
 			for i++; i < len(src); i++ {
 				if escape {

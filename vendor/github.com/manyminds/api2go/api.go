@@ -77,7 +77,7 @@ func (p paginationQueryParams) getLinks(r *http.Request, count uint, info inform
 
 	params := r.URL.Query()
 	prefix := ""
-	baseURL := info.GetBaseURL()
+	baseURL := strings.Trim(info.GetBaseURL(), "/")
 	if baseURL != "" {
 		prefix = baseURL
 	}
@@ -573,6 +573,7 @@ func (res *resource) handleRead(c APIContexter, w http.ResponseWriter, r *http.R
 	id := params["id"]
 
 	response, err := source.FindOne(id, buildRequest(c, r))
+
 	if err != nil {
 		return err
 	}
@@ -769,6 +770,7 @@ func (res *resource) handleUpdate(c APIContexter, w http.ResponseWriter, r *http
 	}
 
 	response, err := source.Update(updatingObj.Interface(), buildRequest(c, r))
+
 	if err != nil {
 		return err
 	}

@@ -1,5 +1,5 @@
-// +build windows
-// +build !appengine
+//go:build windows && !appengine
+// +build windows,!appengine
 
 package colorable
 
@@ -42,12 +42,10 @@ const (
 	consoleTextmodeBuffer = 0x1
 )
 
-type (
-	wchar uint16
-	short int16
-	dword uint32
-	word  uint16
-)
+type wchar uint16
+type short int16
+type dword uint32
+type word uint16
 
 type coord struct {
 	x short
@@ -454,17 +452,21 @@ func (w *Writer) Write(data []byte) (n int, err error) {
 	} else {
 		er = bytes.NewReader(data)
 	}
-	var bw [1]byte
+	var plaintext bytes.Buffer
 loop:
 	for {
 		c1, err := er.ReadByte()
 		if err != nil {
+			plaintext.WriteTo(w.out)
 			break loop
 		}
 		if c1 != 0x1b {
-			bw[0] = c1
-			w.out.Write(bw[:])
+			plaintext.WriteByte(c1)
 			continue
+		}
+		_, err = plaintext.WriteTo(w.out)
+		if err != nil {
+			break loop
 		}
 		c2, err := er.ReadByte()
 		if err != nil {
@@ -1010,10 +1012,8 @@ func minmax3f(a, b, c float32) (min, max float32) {
 	}
 }
 
-var (
-	n256foreAttr []word
-	n256backAttr []word
-)
+var n256foreAttr []word
+var n256backAttr []word
 
 func n256setup() {
 	n256foreAttr = make([]word, 256)

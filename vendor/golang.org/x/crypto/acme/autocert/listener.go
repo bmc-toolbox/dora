@@ -20,7 +20,7 @@ import (
 //
 // It enables one-line HTTPS servers:
 //
-//     log.Fatal(http.Serve(autocert.NewListener("example.com"), handler))
+//	log.Fatal(http.Serve(autocert.NewListener("example.com"), handler))
 //
 // NewListener is a convenience function for a common configuration.
 // More complex or custom configurations can use the autocert.Manager
@@ -50,7 +50,7 @@ func NewListener(domains ...string) net.Listener {
 		m.HostPolicy = HostWhitelist(domains...)
 	}
 	dir := cacheDir()
-	if err := os.MkdirAll(dir, 0o700); err != nil {
+	if err := os.MkdirAll(dir, 0700); err != nil {
 		log.Printf("warning: autocert.NewListener not using a cache: %v", err)
 	} else {
 		m.Cache = DirCache(dir)

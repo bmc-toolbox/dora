@@ -9,7 +9,7 @@ package sqlite3
 
 /*
 #ifndef USE_LIBSQLITE3
-#include <sqlite3-binding.h>
+#include "sqlite3-binding.h"
 #else
 #include <sqlite3.h>
 #endif
@@ -202,10 +202,8 @@ type traceMapEntry struct {
 	config TraceConfig
 }
 
-var (
-	traceMapLock sync.Mutex
-	traceMap     = make(map[uintptr]traceMapEntry)
-)
+var traceMapLock sync.Mutex
+var traceMap = make(map[uintptr]traceMapEntry)
 
 func addTraceMapping(connHandle uintptr, traceConf TraceConfig) {
 	traceMapLock.Lock()

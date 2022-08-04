@@ -16,7 +16,7 @@ import (
 	"github.com/gin-gonic/gin/binding"
 	"github.com/manyminds/api2go"
 	"github.com/manyminds/api2go/routing"
-	"github.com/nats-io/go-nats"
+	"github.com/nats-io/nats.go"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 

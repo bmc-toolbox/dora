@@ -31,6 +31,7 @@ type validate struct {
 
 // parent and current will be the same the first run of validateStruct
 func (v *validate) validateStruct(ctx context.Context, parent reflect.Value, current reflect.Value, typ reflect.Type, ns []byte, structNs []byte, ct *cTag) {
+
 	cs, ok := v.v.structCache.Get(typ)
 	if !ok {
 		cs = v.v.extractStructCache(current, typ.Name())
@@ -56,11 +57,13 @@ func (v *validate) validateStruct(ctx context.Context, parent reflect.Value, cur
 			f = cs.fields[i]
 
 			if v.isPartial {
+
 				if v.ffn != nil {
 					// used with StructFiltered
 					if v.ffn(append(structNs, f.name...)) {
 						continue
 					}
+
 				} else {
 					// used with StructPartial & StructExcept
 					_, ok = v.includeExclude[string(append(structNs, f.name...))]
@@ -71,7 +74,7 @@ func (v *validate) validateStruct(ctx context.Context, parent reflect.Value, cur
 				}
 			}
 
-			v.traverseField(ctx, parent, current.Field(f.idx), ns, structNs, f, f.cTags)
+			v.traverseField(ctx, current, current.Field(f.idx), ns, structNs, f, f.cTags)
 		}
 	}
 
@@ -161,7 +164,7 @@ func (v *validate) traverseField(ctx context.Context, parent reflect.Value, curr
 
 		typ = current.Type()
 
-		if typ != timeType {
+		if !typ.ConvertibleTo(timeType) {
 
 			if ct != nil {
 
@@ -219,12 +222,12 @@ func (v *validate) traverseField(ctx context.Context, parent reflect.Value, curr
 				structNs = append(append(structNs, cf.name...), '.')
 			}
 
-			v.validateStruct(ctx, current, current, typ, ns, structNs, ct)
+			v.validateStruct(ctx, parent, current, typ, ns, structNs, ct)
 			return
 		}
 	}
 
-	if !ct.hasTag {
+	if ct == nil || !ct.hasTag {
 		return
 	}
 
@@ -352,6 +355,11 @@ OUTER:
 				v.ct = ct
 
 				if ct.fn(ctx, v) {
+					if ct.isBlockEnd {
+						ct = ct.next
+						continue OUTER
+					}
+
 					// drain rest of the 'or' values, then continue or leave
 					for {
 
@@ -362,6 +370,11 @@ OUTER:
 						}
 
 						if ct.typeof != typeOr {
+							continue OUTER
+						}
+
+						if ct.isBlockEnd {
+							ct = ct.next
 							continue OUTER
 						}
 					}
@@ -386,6 +399,7 @@ OUTER:
 					}
 
 					if ct.hasAlias {
+
 						v.errs = append(v.errs,
 							&fieldError{
 								v:              v.v,
@@ -401,6 +415,7 @@ OUTER:
 								typ:            typ,
 							},
 						)
+
 					} else {
 
 						tVal := string(v.misc)[1:]
@@ -467,4 +482,5 @@ OUTER:
 			ct = ct.next
 		}
 	}
+
 }

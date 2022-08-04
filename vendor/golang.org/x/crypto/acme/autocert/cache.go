@@ -41,7 +41,7 @@ type DirCache string
 
 // Get reads a certificate data from the specified file name.
 func (d DirCache) Get(ctx context.Context, name string) ([]byte, error) {
-	name = filepath.Join(string(d), name)
+	name = filepath.Join(string(d), filepath.Clean("/"+name))
 	var (
 		data []byte
 		err  error
@@ -65,7 +65,7 @@ func (d DirCache) Get(ctx context.Context, name string) ([]byte, error) {
 // Put writes the certificate data to the specified file name.
 // The file will be created with 0600 permissions.
 func (d DirCache) Put(ctx context.Context, name string, data []byte) error {
-	if err := os.MkdirAll(string(d), 0o700); err != nil {
+	if err := os.MkdirAll(string(d), 0700); err != nil {
 		return err
 	}
 
@@ -82,7 +82,7 @@ func (d DirCache) Put(ctx context.Context, name string, data []byte) error {
 		case <-ctx.Done():
 			// Don't overwrite the file if the context was canceled.
 		default:
-			newName := filepath.Join(string(d), name)
+			newName := filepath.Join(string(d), filepath.Clean("/"+name))
 			err = os.Rename(tmp, newName)
 		}
 	}()
@@ -96,7 +96,7 @@ func (d DirCache) Put(ctx context.Context, name string, data []byte) error {
 
 // Delete removes the specified file name.
 func (d DirCache) Delete(ctx context.Context, name string) error {
-	name = filepath.Join(string(d), name)
+	name = filepath.Join(string(d), filepath.Clean("/"+name))
 	var (
 		err  error
 		done = make(chan struct{})

@@ -64,7 +64,7 @@ func (errs Errors) Add(newErrors ...error) Errors {
 
 // Error takes a slice of all errors that have occurred and returns it as a formatted string
 func (errs Errors) Error() string {
-	errors := []string{}
+	var errors = []string{}
 	for _, e := range errs {
 		errors = append(errors, e.Error())
 	}

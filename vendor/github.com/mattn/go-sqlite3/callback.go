@@ -12,7 +12,7 @@ package sqlite3
 
 /*
 #ifndef USE_LIBSQLITE3
-#include <sqlite3-binding.h>
+#include "sqlite3-binding.h"
 #else
 #include <sqlite3.h>
 #endif
@@ -103,10 +103,8 @@ type handleVal struct {
 	val interface{}
 }
 
-var (
-	handleLock sync.Mutex
-	handleVals = make(map[unsafe.Pointer]handleVal)
-)
+var handleLock sync.Mutex
+var handleVals = make(map[unsafe.Pointer]handleVal)
 
 func newHandle(db *SQLiteConn, v interface{}) unsafe.Pointer {
 	handleLock.Lock()
@@ -355,6 +353,20 @@ func callbackRetNil(ctx *C.sqlite3_context, v reflect.Value) error {
 	return nil
 }
 
+func callbackRetGeneric(ctx *C.sqlite3_context, v reflect.Value) error {
+	if v.IsNil() {
+		C.sqlite3_result_null(ctx)
+		return nil
+	}
+
+	cb, err := callbackRet(v.Elem().Type())
+        if err != nil {
+                return err
+        }
+
+        return cb(ctx, v.Elem())
+}
+
 func callbackRet(typ reflect.Type) (callbackRetConverter, error) {
 	switch typ.Kind() {
 	case reflect.Interface:
@@ -362,6 +374,11 @@ func callbackRet(typ reflect.Type) (callbackRetConverter, error) {
 		if typ.Implements(errorInterface) {
 			return callbackRetNil, nil
 		}
+
+		if typ.NumMethod() == 0 {
+			return callbackRetGeneric, nil
+		}
+
 		fallthrough
 	case reflect.Slice:
 		if typ.Elem().Kind() != reflect.Uint8 {

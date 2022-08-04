@@ -7,10 +7,9 @@ import (
 
 var intDigits []int8
 
-const (
-	uint32SafeToMultiply10 = uint32(0xffffffff)/10 - 1
-	uint64SafeToMultiple10 = uint64(0xffffffffffffffff)/10 - 1
-)
+const uint32SafeToMultiply10 = uint32(0xffffffff)/10 - 1
+const uint64SafeToMultiple10 = uint64(0xffffffffffffffff)/10 - 1
+const maxFloat64 = 1<<53 - 1
 
 func init() {
 	intDigits = make([]int8, 256)
@@ -146,8 +145,8 @@ func (iter *Iterator) readUint32(c byte) (ret uint32) {
 			iter.assertInteger()
 			return value*10 + uint32(ind2)
 		}
-		// iter.head = i + 1
-		// value = value * 100 + uint32(ind2) * 10 + uint32(ind3)
+		//iter.head = i + 1
+		//value = value * 100 + uint32(ind2) * 10 + uint32(ind3)
 		i++
 		ind4 := intDigits[iter.buf[i]]
 		if ind4 == invalidCharForNumber {
@@ -268,8 +267,8 @@ func (iter *Iterator) readUint64(c byte) (ret uint64) {
 			iter.assertInteger()
 			return value*10 + uint64(ind2)
 		}
-		// iter.head = i + 1
-		// value = value * 100 + uint32(ind2) * 10 + uint32(ind3)
+		//iter.head = i + 1
+		//value = value * 100 + uint32(ind2) * 10 + uint32(ind3)
 		i++
 		ind4 := intDigits[iter.buf[i]]
 		if ind4 == invalidCharForNumber {
@@ -341,7 +340,7 @@ func (iter *Iterator) readUint64(c byte) (ret uint64) {
 }
 
 func (iter *Iterator) assertInteger() {
-	if iter.head < len(iter.buf) && iter.buf[iter.head] == '.' {
+	if iter.head < iter.tail && iter.buf[iter.head] == '.' {
 		iter.ReportError("assertInteger", "can not decode float as int")
 	}
 }

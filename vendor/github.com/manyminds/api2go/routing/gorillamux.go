@@ -1,3 +1,4 @@
+//go:build gorillamux && !gingonic && !echo
 // +build gorillamux,!gingonic,!echo
 
 package routing
@@ -38,7 +39,7 @@ func (gm gorillamuxRouter) Handle(protocol, route string, handler HandlerFunc) {
 	gm.router.HandleFunc(modroute, wrappedHandler).Methods(protocol)
 }
 
-// Gorilla creates a new api2go router to use with the Gorilla mux framework
+//Gorilla creates a new api2go router to use with the Gorilla mux framework
 func Gorilla(gm *mux.Router) Routeable {
 	return &gorillamuxRouter{router: gm}
 }

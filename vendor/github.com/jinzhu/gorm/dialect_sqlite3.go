@@ -21,7 +21,7 @@ func (sqlite3) GetName() string {
 
 // Get Data Type for Sqlite Dialect
 func (s *sqlite3) DataTypeOf(field *StructField) string {
-	dataValue, sqlType, size, additionalType := ParseFieldStructForDialect(field, s)
+	var dataValue, sqlType, size, additionalType = ParseFieldStructForDialect(field, s)
 
 	if sqlType == "" {
 		switch dataValue.Kind() {

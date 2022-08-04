@@ -125,23 +125,18 @@ type appendedDirInfo struct {
 func (adi *appendedDirInfo) Name() string {
 	return adi.name
 }
-
 func (adi *appendedDirInfo) Size() int64 {
 	return 0
 }
-
 func (adi *appendedDirInfo) Mode() os.FileMode {
 	return os.ModeDir
 }
-
 func (adi *appendedDirInfo) ModTime() time.Time {
 	return adi.time
 }
-
 func (adi *appendedDirInfo) IsDir() bool {
 	return true
 }
-
 func (adi *appendedDirInfo) Sys() interface{} {
 	return nil
 }

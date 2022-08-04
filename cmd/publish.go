@@ -24,7 +24,7 @@ import (
 	"github.com/bmc-toolbox/dora/scanner"
 	"github.com/bmc-toolbox/dora/storage"
 	metrics "github.com/bmc-toolbox/gin-go-metrics"
-	"github.com/nats-io/go-nats"
+	"github.com/nats-io/nats.go"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

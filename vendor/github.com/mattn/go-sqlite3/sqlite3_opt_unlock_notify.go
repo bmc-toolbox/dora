@@ -12,12 +12,11 @@ package sqlite3
 #cgo CFLAGS: -DSQLITE_ENABLE_UNLOCK_NOTIFY
 
 #include <stdlib.h>
-#include <sqlite3-binding.h>
+#include "sqlite3-binding.h"
 
 extern void unlock_notify_callback(void *arg, int argc);
 */
 import "C"
-
 import (
 	"fmt"
 	"math"

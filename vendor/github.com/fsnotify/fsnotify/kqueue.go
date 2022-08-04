@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build freebsd || openbsd || netbsd || dragonfly || darwin
 // +build freebsd openbsd netbsd dragonfly darwin
 
 package fsnotify
@@ -73,7 +74,7 @@ func (w *Watcher) Close() error {
 	w.isClosed = true
 
 	// copy paths to remove while locked
-	pathsToRemove := make([]string, 0, len(w.watches))
+	var pathsToRemove = make([]string, 0, len(w.watches))
 	for name := range w.watches {
 		pathsToRemove = append(pathsToRemove, name)
 	}
@@ -147,6 +148,19 @@ func (w *Watcher) Remove(name string) error {
 	return nil
 }
 
+// WatchList returns the directories and files that are being monitered.
+func (w *Watcher) WatchList() []string {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	entries := make([]string, 0, len(w.watches))
+	for pathname := range w.watches {
+		entries = append(entries, pathname)
+	}
+
+	return entries
+}
+
 // Watch all events (except NOTE_EXTEND, NOTE_LINK, NOTE_REVOKE)
 const noteAllEvents = unix.NOTE_DELETE | unix.NOTE_WRITE | unix.NOTE_ATTRIB | unix.NOTE_RENAME
 
@@ -215,7 +229,7 @@ func (w *Watcher) addWatch(name string, flags uint32) (string, error) {
 			}
 		}
 
-		watchfd, err = unix.Open(name, openMode, 0o700)
+		watchfd, err = unix.Open(name, openMode, 0700)
 		if watchfd == -1 {
 			return "", err
 		}
@@ -428,6 +442,7 @@ func (w *Watcher) sendDirectoryChangeEvents(dirPath string) {
 	for _, fileInfo := range files {
 		filePath := filepath.Join(dirPath, fileInfo.Name())
 		err := w.sendFileCreatedEventIfNew(filePath, fileInfo)
+
 		if err != nil {
 			return
 		}

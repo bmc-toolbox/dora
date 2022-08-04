@@ -13,7 +13,7 @@ package sqlite3
 #cgo LDFLAGS: -lm
 
 #ifndef USE_LIBSQLITE3
-#include <sqlite3-binding.h>
+#include "sqlite3-binding.h"
 #else
 #include <sqlite3.h>
 #endif
@@ -23,7 +23,6 @@ package sqlite3
 void preUpdateHookTrampoline(void*, sqlite3 *, int, char *, char *, sqlite3_int64, sqlite3_int64);
 */
 import "C"
-
 import (
 	"errors"
 	"unsafe"
@@ -34,7 +33,7 @@ import (
 // The callback is passed a SQLitePreUpdateData struct with the data for
 // the update, as well as methods for fetching copies of impacted data.
 //
-// If there is an existing update hook for this connection, it will be
+// If there is an existing preupdate hook for this connection, it will be
 // removed. If callback is nil the existing hook (if any) will be removed
 // without creating a new one.
 func (c *SQLiteConn) RegisterPreUpdateHook(callback func(SQLitePreUpdateData)) {

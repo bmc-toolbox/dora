@@ -9,8 +9,9 @@
 package sqlite3
 
 import (
-	"context"
 	"database/sql/driver"
+
+	"context"
 )
 
 // Ping implement Pinger.

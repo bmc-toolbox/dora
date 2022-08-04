@@ -11,7 +11,7 @@ package sqlite3
 #cgo CFLAGS: -DSQLITE_USER_AUTHENTICATION
 #cgo LDFLAGS: -lm
 #ifndef USE_LIBSQLITE3
-#include <sqlite3-binding.h>
+#include "sqlite3-binding.h"
 #else
 #include <sqlite3.h>
 #endif
@@ -59,7 +59,6 @@ _sqlite3_auth_enabled(sqlite3* db)
 }
 */
 import "C"
-
 import (
 	"errors"
 	"unsafe"

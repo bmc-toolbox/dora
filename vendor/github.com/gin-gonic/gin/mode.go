@@ -1,10 +1,11 @@
-// Copyright 2014 Manu Martinez-Almeida.  All rights reserved.
+// Copyright 2014 Manu Martinez-Almeida. All rights reserved.
 // Use of this source code is governed by a MIT style
 // license that can be found in the LICENSE file.
 
 package gin
 
 import (
+	"flag"
 	"io"
 	"os"
 
@@ -54,7 +55,11 @@ func init() {
 // SetMode sets gin mode according to input string.
 func SetMode(value string) {
 	if value == "" {
-		value = DebugMode
+		if flag.Lookup("test.v") != nil {
+			value = TestMode
+		} else {
+			value = DebugMode
+		}
 	}
 
 	switch value {
@@ -88,7 +93,7 @@ func EnableJsonDecoderDisallowUnknownFields() {
 	binding.EnableDecoderDisallowUnknownFields = true
 }
 
-// Mode returns currently gin mode.
+// Mode returns current gin mode.
 func Mode() string {
 	return modeName
 }
