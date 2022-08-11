@@ -66,7 +66,7 @@ func Open(dialect string, args ...interface{}) (db *DB, err error) {
 
 	switch value := args[0].(type) {
 	case string:
-		driver := dialect
+		var driver = dialect
 		if len(args) == 1 {
 			source = value
 		} else if len(args) >= 2 {
@@ -354,7 +354,7 @@ func (s *DB) Find(out interface{}, where ...interface{}) *DB {
 	return s.NewScope(out).inlineCondition(where...).callCallbacks(s.parent.callbacks.queries).db
 }
 
-// Preloads preloads relations, don`t touch out
+//Preloads preloads relations, don`t touch out
 func (s *DB) Preloads(out interface{}) *DB {
 	return s.NewScope(out).InstanceSet("gorm:only_preload", 1).callCallbacks(s.parent.callbacks.queries).db
 }
@@ -531,6 +531,7 @@ func (s *DB) Debug() *DB {
 // Transaction start a transaction as a block,
 // return error will rollback, otherwise to commit.
 func (s *DB) Transaction(fc func(tx *DB) error) (err error) {
+
 	if _, ok := s.db.(*sql.Tx); ok {
 		return fc(s)
 	}
@@ -744,7 +745,7 @@ func (s *DB) RemoveForeignKey(field string, dest string) *DB {
 // Association start `Association Mode` to handler relations things easir in that mode, refer: https://jinzhu.github.io/gorm/associations.html#association-mode
 func (s *DB) Association(column string) *Association {
 	var err error
-	scope := s.Set("gorm:association:source", s.Value).NewScope(s.Value)
+	var scope = s.Set("gorm:association:source", s.Value).NewScope(s.Value)
 
 	if primaryField := scope.PrimaryField(); primaryField.IsBlank {
 		err = errors.New("primary key can't be nil")

@@ -40,9 +40,9 @@ var LogFormatter = func(values ...interface{}) (messages []interface{}) {
 		messages = []interface{}{source, currentTime}
 
 		if len(values) == 2 {
-			// remove the line break
+			//remove the line break
 			currentTime = currentTime[1:]
-			// remove the brackets
+			//remove the brackets
 			source = fmt.Sprintf("\033[35m%v\033[0m", values[1])
 
 			messages = []interface{}{currentTime, source}

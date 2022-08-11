@@ -104,7 +104,7 @@ func (c *rpcCodec) write(obj1, obj2 interface{}, writeObj2 bool) (err error) {
 func (c *rpcCodec) read(obj interface{}) (err error) {
 	err = c.ready()
 	if err == nil {
-		// If nil is passed in, we should read and discard
+		//If nil is passed in, we should read and discard
 		if obj == nil {
 			// return c.dec.Decode(&obj)
 			err = c.dec.swallowErr()

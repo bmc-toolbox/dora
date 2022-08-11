@@ -25,23 +25,19 @@ func fastpathEncodeTypeSwitch(iv interface{}, e *Encoder) bool { return false }
 
 func fastpathDecodeSetZeroTypeSwitch(iv interface{}) bool { return false }
 
-type (
-	fastpathT struct{}
-	fastpathE struct {
-		rtid  uintptr
-		rt    reflect.Type
-		encfn func(*Encoder, *codecFnInfo, reflect.Value)
-		decfn func(*Decoder, *codecFnInfo, reflect.Value)
-	}
-)
+type fastpathT struct{}
+type fastpathE struct {
+	rtid  uintptr
+	rt    reflect.Type
+	encfn func(*Encoder, *codecFnInfo, reflect.Value)
+	decfn func(*Decoder, *codecFnInfo, reflect.Value)
+}
 type fastpathA [0]fastpathE
 
 func fastpathAvIndex(rtid uintptr) int { return -1 }
 
-var (
-	fastpathAv fastpathA
-	fastpathTV fastpathT
-)
+var fastpathAv fastpathA
+var fastpathTV fastpathT
 
 // ----
 type TestMammoth2Wrapper struct{} // to allow testMammoth work in notfastpath mode

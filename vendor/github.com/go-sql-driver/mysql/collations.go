@@ -8,10 +8,8 @@
 
 package mysql
 
-const (
-	defaultCollation = "utf8mb4_general_ci"
-	binaryCollation  = "binary"
-)
+const defaultCollation = "utf8mb4_general_ci"
+const binaryCollation = "binary"
 
 // A list of available collations mapped to the internal ID.
 // To update this map use the following MySQL query:

@@ -785,8 +785,8 @@ func (d *cborDecDriver) nextValueBytes(v0 []byte) (v []byte) {
 		d.readNextBd()
 	}
 	v = v0
-	h := decNextValueBytesHelper{d: &d.d}
-	cursor := d.d.rb.c - 1
+	var h = decNextValueBytesHelper{d: &d.d}
+	var cursor = d.d.rb.c - 1
 	h.append1(&v, d.bd)
 	v = d.nextValueBytesBdReadR(v)
 	d.bdRead = false
@@ -797,14 +797,14 @@ func (d *cborDecDriver) nextValueBytes(v0 []byte) (v []byte) {
 func (d *cborDecDriver) nextValueBytesR(v0 []byte) (v []byte) {
 	d.readNextBd()
 	v = v0
-	h := decNextValueBytesHelper{d: &d.d}
+	var h = decNextValueBytesHelper{d: &d.d}
 	h.append1(&v, d.bd)
 	return d.nextValueBytesBdReadR(v)
 }
 
 func (d *cborDecDriver) nextValueBytesBdReadR(v0 []byte) (v []byte) {
 	v = v0
-	h := decNextValueBytesHelper{d: &d.d}
+	var h = decNextValueBytesHelper{d: &d.d}
 
 	var bs []byte
 	var ui uint64
@@ -930,7 +930,7 @@ func (h *CborHandle) Name() string { return "cbor" }
 func (h *CborHandle) desc(bd byte) string { return cbordesc(bd) }
 
 func (h *CborHandle) newEncDriver() encDriver {
-	e := &cborEncDriver{h: h}
+	var e = &cborEncDriver{h: h}
 	e.e.e = e
 	e.e.init(h)
 	e.reset()
@@ -955,7 +955,5 @@ func (d *cborDecDriver) reset() {
 	d.st = d.h.SkipUnexpectedTags
 }
 
-var (
-	_ decDriver = (*cborDecDriver)(nil)
-	_ encDriver = (*cborEncDriver)(nil)
-)
+var _ decDriver = (*cborDecDriver)(nil)
+var _ encDriver = (*cborEncDriver)(nil)

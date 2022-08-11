@@ -84,7 +84,7 @@ func contains(slice []string, s string) bool {
 	return false
 }
 
-// HandlerFunc is a function which should be used as middleware to count requests stats
+//HandlerFunc is a function which should be used as middleware to count requests stats
 // such as request processing time, request and responce size and store it in rcrowley/go-metrics.DefaultRegistry.
 func (m *Metrics) HandlerFunc(metricsPrefix []string, ignoreURLs []string, replaceSlashWithUnderscore bool) gin.HandlerFunc {
 	theRegistry := newRegistry()
@@ -123,7 +123,7 @@ func (m *Metrics) HandlerFunc(metricsPrefix []string, ignoreURLs []string, repla
 		)
 		theRegistry.timer(processTimeKey).Update(elapsed)
 		theRegistry.histogram(reqSzKey).Update(reqSz)
-		theRegistry.histogram(resSzKey).Update(resSz)
+		theRegistry.histogram(resSzKey, ).Update(resSz)
 	}
 }
 

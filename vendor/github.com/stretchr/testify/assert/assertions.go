@@ -103,6 +103,7 @@ the problem actually occurred in calling code.*/
 // of each stack frame leading from the current test to the assert call that
 // failed.
 func CallerInfo() []string {
+
 	var pc uintptr
 	var ok bool
 	var file string
@@ -348,6 +349,7 @@ func Equal(t TestingT, expected, actual interface{}, msgAndArgs ...interface{}) 
 	}
 
 	return true
+
 }
 
 // validateEqualArgs checks whether provided arguments can be safely used in the
@@ -468,6 +470,7 @@ func EqualValues(t TestingT, expected, actual interface{}, msgAndArgs ...interfa
 	}
 
 	return true
+
 }
 
 // Exactly asserts that two objects are equal in value and type.
@@ -486,6 +489,7 @@ func Exactly(t TestingT, expected, actual interface{}, msgAndArgs ...interface{}
 	}
 
 	return Equal(t, expected, actual, msgAndArgs...)
+
 }
 
 // NotNil asserts that the specified object is not nil.
@@ -524,8 +528,7 @@ func isNil(object interface{}) bool {
 		[]reflect.Kind{
 			reflect.Chan, reflect.Func,
 			reflect.Interface, reflect.Map,
-			reflect.Ptr, reflect.Slice,
-		},
+			reflect.Ptr, reflect.Slice},
 		kind)
 
 	if isNilableKind && value.IsNil() {
@@ -550,6 +553,7 @@ func Nil(t TestingT, object interface{}, msgAndArgs ...interface{}) bool {
 
 // isEmpty gets whether the specified object is considered empty or not.
 func isEmpty(object interface{}) bool {
+
 	// get nil case out of the way
 	if object == nil {
 		return true
@@ -589,6 +593,7 @@ func Empty(t TestingT, object interface{}, msgAndArgs ...interface{}) bool {
 	}
 
 	return pass
+
 }
 
 // NotEmpty asserts that the specified object is NOT empty.  I.e. not nil, "", false, 0 or either
@@ -607,6 +612,7 @@ func NotEmpty(t TestingT, object interface{}, msgAndArgs ...interface{}) bool {
 	}
 
 	return pass
+
 }
 
 // getLen try to get length of object.
@@ -652,6 +658,7 @@ func True(t TestingT, value bool, msgAndArgs ...interface{}) bool {
 	}
 
 	return true
+
 }
 
 // False asserts that the specified value is false.
@@ -666,6 +673,7 @@ func False(t TestingT, value bool, msgAndArgs ...interface{}) bool {
 	}
 
 	return true
+
 }
 
 // NotEqual asserts that the specified values are NOT equal.
@@ -688,6 +696,7 @@ func NotEqual(t TestingT, expected, actual interface{}, msgAndArgs ...interface{
 	}
 
 	return true
+
 }
 
 // NotEqualValues asserts that two objects are not equal even when converted to the same type
@@ -709,9 +718,14 @@ func NotEqualValues(t TestingT, expected, actual interface{}, msgAndArgs ...inte
 // return (false, false) if impossible.
 // return (true, false) if element was not found.
 // return (true, true) if element was found.
-func includeElement(list interface{}, element interface{}) (ok, found bool) {
+func containsElement(list interface{}, element interface{}) (ok, found bool) {
+
 	listValue := reflect.ValueOf(list)
-	listKind := reflect.TypeOf(list).Kind()
+	listType := reflect.TypeOf(list)
+	if listType == nil {
+		return false, false
+	}
+	listKind := listType.Kind()
 	defer func() {
 		if e := recover(); e != nil {
 			ok = false
@@ -740,6 +754,7 @@ func includeElement(list interface{}, element interface{}) (ok, found bool) {
 		}
 	}
 	return true, false
+
 }
 
 // Contains asserts that the specified string, list(array, slice...) or map contains the
@@ -753,7 +768,7 @@ func Contains(t TestingT, s, contains interface{}, msgAndArgs ...interface{}) bo
 		h.Helper()
 	}
 
-	ok, found := includeElement(s, contains)
+	ok, found := containsElement(s, contains)
 	if !ok {
 		return Fail(t, fmt.Sprintf("%#v could not be applied builtin len()", s), msgAndArgs...)
 	}
@@ -762,6 +777,7 @@ func Contains(t TestingT, s, contains interface{}, msgAndArgs ...interface{}) bo
 	}
 
 	return true
+
 }
 
 // NotContains asserts that the specified string, list(array, slice...) or map does NOT contain the
@@ -775,7 +791,7 @@ func NotContains(t TestingT, s, contains interface{}, msgAndArgs ...interface{})
 		h.Helper()
 	}
 
-	ok, found := includeElement(s, contains)
+	ok, found := containsElement(s, contains)
 	if !ok {
 		return Fail(t, fmt.Sprintf("\"%s\" could not be applied builtin len()", s), msgAndArgs...)
 	}
@@ -784,6 +800,7 @@ func NotContains(t TestingT, s, contains interface{}, msgAndArgs ...interface{})
 	}
 
 	return true
+
 }
 
 // Subset asserts that the specified list(array, slice...) contains all
@@ -818,7 +835,7 @@ func Subset(t TestingT, list, subset interface{}, msgAndArgs ...interface{}) (ok
 
 	for i := 0; i < subsetValue.Len(); i++ {
 		element := subsetValue.Index(i).Interface()
-		ok, found := includeElement(list, element)
+		ok, found := containsElement(list, element)
 		if !ok {
 			return Fail(t, fmt.Sprintf("\"%s\" could not be applied builtin len()", list), msgAndArgs...)
 		}
@@ -839,7 +856,7 @@ func NotSubset(t TestingT, list, subset interface{}, msgAndArgs ...interface{}) 
 		h.Helper()
 	}
 	if subset == nil {
-		return Fail(t, fmt.Sprintf("nil is the empty set which is a subset of every set"), msgAndArgs...)
+		return Fail(t, "nil is the empty set which is a subset of every set", msgAndArgs...)
 	}
 
 	subsetValue := reflect.ValueOf(subset)
@@ -862,7 +879,7 @@ func NotSubset(t TestingT, list, subset interface{}, msgAndArgs ...interface{}) 
 
 	for i := 0; i < subsetValue.Len(); i++ {
 		element := subsetValue.Index(i).Interface()
-		ok, found := includeElement(list, element)
+		ok, found := containsElement(list, element)
 		if !ok {
 			return Fail(t, fmt.Sprintf("\"%s\" could not be applied builtin len()", list), msgAndArgs...)
 		}
@@ -987,23 +1004,21 @@ func Condition(t TestingT, comp Comparison, msgAndArgs ...interface{}) bool {
 type PanicTestFunc func()
 
 // didPanic returns true if the function passed to it panics. Otherwise, it returns false.
-func didPanic(f PanicTestFunc) (bool, interface{}, string) {
-	didPanic := false
-	var message interface{}
-	var stack string
-	func() {
-		defer func() {
-			if message = recover(); message != nil {
-				didPanic = true
-				stack = string(debug.Stack())
-			}
-		}()
+func didPanic(f PanicTestFunc) (didPanic bool, message interface{}, stack string) {
+	didPanic = true
 
-		// call the target function
-		f()
+	defer func() {
+		message = recover()
+		if didPanic {
+			stack = string(debug.Stack())
+		}
 	}()
 
-	return didPanic, message, stack
+	// call the target function
+	f()
+	didPanic = false
+
+	return
 }
 
 // Panics asserts that the code inside the specified PanicTestFunc panics.
@@ -1144,11 +1159,15 @@ func InDelta(t TestingT, expected, actual interface{}, delta float64, msgAndArgs
 	bf, bok := toFloat(actual)
 
 	if !aok || !bok {
-		return Fail(t, fmt.Sprintf("Parameters must be numerical"), msgAndArgs...)
+		return Fail(t, "Parameters must be numerical", msgAndArgs...)
+	}
+
+	if math.IsNaN(af) && math.IsNaN(bf) {
+		return true
 	}
 
 	if math.IsNaN(af) {
-		return Fail(t, fmt.Sprintf("Expected must not be NaN"), msgAndArgs...)
+		return Fail(t, "Expected must not be NaN", msgAndArgs...)
 	}
 
 	if math.IsNaN(bf) {
@@ -1171,7 +1190,7 @@ func InDeltaSlice(t TestingT, expected, actual interface{}, delta float64, msgAn
 	if expected == nil || actual == nil ||
 		reflect.TypeOf(actual).Kind() != reflect.Slice ||
 		reflect.TypeOf(expected).Kind() != reflect.Slice {
-		return Fail(t, fmt.Sprintf("Parameters must be slice"), msgAndArgs...)
+		return Fail(t, "Parameters must be slice", msgAndArgs...)
 	}
 
 	actualSlice := reflect.ValueOf(actual)
@@ -1233,18 +1252,18 @@ func InDeltaMapValues(t TestingT, expected, actual interface{}, delta float64, m
 
 func calcRelativeError(expected, actual interface{}) (float64, error) {
 	af, aok := toFloat(expected)
-	if !aok {
-		return 0, fmt.Errorf("expected value %q cannot be converted to float", expected)
+	bf, bok := toFloat(actual)
+	if !aok || !bok {
+		return 0, fmt.Errorf("Parameters must be numerical")
+	}
+	if math.IsNaN(af) && math.IsNaN(bf) {
+		return 0, nil
 	}
 	if math.IsNaN(af) {
 		return 0, errors.New("expected value must not be NaN")
 	}
 	if af == 0 {
 		return 0, fmt.Errorf("expected value must have a value other than zero to calculate the relative error")
-	}
-	bf, bok := toFloat(actual)
-	if !bok {
-		return 0, fmt.Errorf("actual value %q cannot be converted to float", actual)
 	}
 	if math.IsNaN(bf) {
 		return 0, errors.New("actual value must not be NaN")
@@ -1281,7 +1300,7 @@ func InEpsilonSlice(t TestingT, expected, actual interface{}, epsilon float64, m
 	if expected == nil || actual == nil ||
 		reflect.TypeOf(actual).Kind() != reflect.Slice ||
 		reflect.TypeOf(expected).Kind() != reflect.Slice {
-		return Fail(t, fmt.Sprintf("Parameters must be slice"), msgAndArgs...)
+		return Fail(t, "Parameters must be slice", msgAndArgs...)
 	}
 
 	actualSlice := reflect.ValueOf(actual)
@@ -1358,8 +1377,30 @@ func EqualError(t TestingT, theError error, errString string, msgAndArgs ...inte
 	return true
 }
 
+// ErrorContains asserts that a function returned an error (i.e. not `nil`)
+// and that the error contains the specified substring.
+//
+//   actualObj, err := SomeFunction()
+//   assert.ErrorContains(t, err,  expectedErrorSubString)
+func ErrorContains(t TestingT, theError error, contains string, msgAndArgs ...interface{}) bool {
+	if h, ok := t.(tHelper); ok {
+		h.Helper()
+	}
+	if !Error(t, theError, msgAndArgs...) {
+		return false
+	}
+
+	actual := theError.Error()
+	if !strings.Contains(actual, contains) {
+		return Fail(t, fmt.Sprintf("Error %#v does not contain %#v", actual, contains), msgAndArgs...)
+	}
+
+	return true
+}
+
 // matchRegexp return true if a specified regexp matches a string.
 func matchRegexp(rx interface{}, str interface{}) bool {
+
 	var r *regexp.Regexp
 	if rr, ok := rx.(*regexp.Regexp); ok {
 		r = rr
@@ -1368,6 +1409,7 @@ func matchRegexp(rx interface{}, str interface{}) bool {
 	}
 
 	return (r.FindStringIndex(fmt.Sprint(str)) != nil)
+
 }
 
 // Regexp asserts that a specified regexp matches a string.
@@ -1403,6 +1445,7 @@ func NotRegexp(t TestingT, rx interface{}, str interface{}, msgAndArgs ...interf
 	}
 
 	return !match
+
 }
 
 // Zero asserts that i is the zero value for its type.
@@ -1568,12 +1611,17 @@ func diff(expected interface{}, actual interface{}) string {
 	}
 
 	var e, a string
-	if et != reflect.TypeOf("") {
-		e = spewConfig.Sdump(expected)
-		a = spewConfig.Sdump(actual)
-	} else {
+
+	switch et {
+	case reflect.TypeOf(""):
 		e = reflect.ValueOf(expected).String()
 		a = reflect.ValueOf(actual).String()
+	case reflect.TypeOf(time.Time{}):
+		e = spewConfigStringerEnabled.Sdump(expected)
+		a = spewConfigStringerEnabled.Sdump(actual)
+	default:
+		e = spewConfig.Sdump(expected)
+		a = spewConfig.Sdump(actual)
 	}
 
 	diff, _ := difflib.GetUnifiedDiffString(difflib.UnifiedDiff{
@@ -1602,6 +1650,14 @@ var spewConfig = spew.ConfigState{
 	DisableCapacities:       true,
 	SortKeys:                true,
 	DisableMethods:          true,
+	MaxDepth:                10,
+}
+
+var spewConfigStringerEnabled = spew.ConfigState{
+	Indent:                  " ",
+	DisablePointerAddresses: true,
+	DisableCapacities:       true,
+	SortKeys:                true,
 	MaxDepth:                10,
 }
 
