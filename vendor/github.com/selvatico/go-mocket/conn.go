@@ -69,7 +69,7 @@ func (c *FakeConn) Prepare(query string) (driver.Stmt, error) {
 // context is for the preparation of the statement,
 // it must not store the context within the statement itself.
 func (c *FakeConn) PrepareContext(ctx context.Context, query string) (driver.Stmt, error) {
-	firstStmt := &FakeStmt{q: query, connection: c}
+	var firstStmt = &FakeStmt{q: query, connection: c}
 	// Checking how many placeholders do we have
 	if strings.Contains(query, "$1") {
 		r, err := regexp.Compile(`[$]\d+`)

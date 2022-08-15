@@ -591,7 +591,7 @@ func (mc *mysqlConn) handleErrorPacket(data []byte) error {
 
 	// SQL State [optional: # + 5bytes string]
 	if data[3] == 0x23 {
-		// sqlstate := string(data[4 : 4+5])
+		//sqlstate := string(data[4 : 4+5])
 		pos = 9
 	}
 
@@ -721,7 +721,7 @@ func (mc *mysqlConn) readColumns(count int) ([]mysqlField, error) {
 
 		// Decimals [uint8]
 		columns[i].decimals = data[pos]
-		// pos++
+		//pos++
 
 		// Default value [len coded binary]
 		//if pos < len(data) {
@@ -787,6 +787,7 @@ func (rows *textRows) readRow(dest []driver.Value) error {
 						continue
 					}
 				}
+
 			} else {
 				dest[i] = nil
 				continue
@@ -1106,7 +1107,7 @@ func (stmt *mysqlStmt) writeExecutePacket(args []driver.Value) error {
 				paramTypes[i+i+1] = 0x00
 
 				var a [64]byte
-				b := a[:0]
+				var b = a[:0]
 
 				if v.IsZero() {
 					b = append(b, "0000-00-00"...)

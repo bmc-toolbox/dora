@@ -236,18 +236,20 @@ ____________________________________O/_______
 `
 )
 
-var methods = [...]string{
-	http.MethodConnect,
-	http.MethodDelete,
-	http.MethodGet,
-	http.MethodHead,
-	http.MethodOptions,
-	http.MethodPatch,
-	http.MethodPost,
-	PROPFIND,
-	http.MethodPut,
-	http.MethodTrace,
-}
+var (
+	methods = [...]string{
+		http.MethodConnect,
+		http.MethodDelete,
+		http.MethodGet,
+		http.MethodHead,
+		http.MethodOptions,
+		http.MethodPatch,
+		http.MethodPost,
+		PROPFIND,
+		http.MethodPut,
+		http.MethodTrace,
+	}
+)
 
 // Errors
 var (

@@ -21,7 +21,8 @@ import (
 // JsonEncoder is a JSON Encoder implementation for EncodedConn.
 // This encoder will use the builtin encoding/json to Marshal
 // and Unmarshal most types, including structs.
-type JsonEncoder struct { // Empty
+type JsonEncoder struct {
+	// Empty
 }
 
 // Encode

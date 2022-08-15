@@ -110,13 +110,11 @@ type defaultDialer struct {
 func (d defaultDialer) Dial(network, address string) (net.Conn, error) {
 	return d.d.Dial(network, address)
 }
-
 func (d defaultDialer) DialTimeout(network, address string, timeout time.Duration) (net.Conn, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	return d.DialContext(ctx, network, address)
 }
-
 func (d defaultDialer) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
 	return d.d.DialContext(ctx, network, address)
 }
@@ -1304,10 +1302,8 @@ func (cn *conn) auth(r *readBuf, o values) {
 
 type format int
 
-const (
-	formatText   format = 0
-	formatBinary format = 1
-)
+const formatText format = 0
+const formatBinary format = 1
 
 // One result-column format code with the value 1 (i.e. all binary).
 var colFmtDataAllBinary = []byte{0, 1, 0, 1}
@@ -1420,6 +1416,7 @@ func (st *stmt) exec(v []driver.Value) {
 
 	cn.readBindResponse()
 	cn.postExecuteWorkaround()
+
 }
 
 func (st *stmt) NumInput() int {

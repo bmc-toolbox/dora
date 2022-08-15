@@ -14,10 +14,10 @@ const (
 	DriverName = "MOCK_FAKE_DRIVER"
 )
 
-// Catcher is global instance of Catcher used for attaching all mocks to connection
+//Catcher is global instance of Catcher used for attaching all mocks to connection
 var Catcher *MockCatcher
 
-// MockCatcher is global entity to save all mocks aka FakeResponses
+//MockCatcher is global entity to save all mocks aka FakeResponses
 type MockCatcher struct {
 	Mocks                []*FakeResponse // Slice of all mocks
 	Logging              bool            // Do we need to log what we catching?
@@ -40,7 +40,7 @@ func (mc *MockCatcher) Attach(fr []*FakeResponse) {
 	mc.Mocks = append(mc.Mocks, fr...)
 }
 
-// FindResponse finds suitable response by provided
+//FindResponse finds suitable response by provided
 func (mc *MockCatcher) FindResponse(query string, args []driver.NamedValue) *FakeResponse {
 	if mc.Logging {
 		log.Printf("mock_catcher: check query: %s", query)
@@ -64,26 +64,26 @@ func (mc *MockCatcher) FindResponse(query string, args []driver.NamedValue) *Fak
 	}
 }
 
-// NewMock creates new FakeResponse and return for chains of attachments
+//NewMock creates new FakeResponse and return for chains of attachments
 func (mc *MockCatcher) NewMock() *FakeResponse {
 	fr := &FakeResponse{Exceptions: &Exceptions{}, Response: make([]map[string]interface{}, 0)}
 	mc.Mocks = append(mc.Mocks, fr)
 	return fr
 }
 
-// Reset removes all Mocks to start process again
+//Reset removes all Mocks to start process again
 func (mc *MockCatcher) Reset() *MockCatcher {
 	mc.Mocks = make([]*FakeResponse, 0)
 	return mc
 }
 
-// Exceptions represents	 possible exceptions during query executions
+//Exceptions represents	 possible exceptions during query executions
 type Exceptions struct {
 	HookQueryBadConnection func() bool
 	HookExecBadConnection  func() bool
 }
 
-// FakeResponse represents mock of response with holding all required values to return mocked response
+//FakeResponse represents mock of response with holding all required values to return mocked response
 type FakeResponse struct {
 	Pattern      string                            // SQL query pattern to match with
 	Args         []interface{}                     // List args to be matched with
@@ -120,12 +120,12 @@ func (fr *FakeResponse) IsMatch(query string, args []driver.NamedValue) bool {
 	return fr.isQueryMatch(query) && fr.isArgsMatch(args)
 }
 
-// MarkAsTriggered marks response as executed. For one time catches it will not make this possible to execute anymore
+//MarkAsTriggered marks response as executed. For one time catches it will not make this possible to execute anymore
 func (fr *FakeResponse) MarkAsTriggered() {
 	fr.Triggered = true
 }
 
-// WithQuery adds SQL query pattern to match for
+//WithQuery adds SQL query pattern to match for
 func (fr *FakeResponse) WithQuery(query string) *FakeResponse {
 	fr.Pattern = query
 	return fr

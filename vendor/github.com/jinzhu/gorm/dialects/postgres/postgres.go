@@ -3,6 +3,7 @@ package postgres
 import (
 	"database/sql"
 	"database/sql/driver"
+
 	"encoding/json"
 	"errors"
 	"fmt"

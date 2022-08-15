@@ -209,7 +209,6 @@ fieldLoop:
 func (mi *MessageInfo) New() protoreflect.Message {
 	return mi.MessageOf(reflect.New(mi.GoReflectType.Elem()).Interface())
 }
-
 func (mi *MessageInfo) Zero() protoreflect.Message {
 	return mi.MessageOf(reflect.Zero(mi.GoReflectType).Interface())
 }

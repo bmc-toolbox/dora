@@ -5,7 +5,7 @@ go 1.13
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/GeertJohan/go.rice v1.0.2
-	github.com/bmc-toolbox/bmclib v0.4.15
+	github.com/bmc-toolbox/bmclib v0.5.4-0.20220811075850-36ccc3ed7407
 	github.com/bmc-toolbox/gin-go-metrics v0.0.2
 	github.com/daaku/go.zipexe v1.0.1 // indirect
 	github.com/gin-gonic/gin v1.7.2
@@ -14,6 +14,7 @@ require (
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/jinzhu/gorm v1.9.16
+	github.com/json-iterator/go v1.1.10 // indirect
 	github.com/kr/pretty v0.2.1
 	github.com/labstack/gommon v0.3.0 // indirect
 	github.com/lib/pq v1.9.0

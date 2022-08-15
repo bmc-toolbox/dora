@@ -22,15 +22,11 @@ var NowFunc = func() time.Time {
 }
 
 // Copied from golint
-var (
-	commonInitialisms         = []string{"API", "ASCII", "CPU", "CSS", "DNS", "EOF", "GUID", "HTML", "HTTP", "HTTPS", "ID", "IP", "JSON", "LHS", "QPS", "RAM", "RHS", "RPC", "SLA", "SMTP", "SSH", "TLS", "TTL", "UID", "UI", "UUID", "URI", "URL", "UTF8", "VM", "XML", "XSRF", "XSS"}
-	commonInitialismsReplacer *strings.Replacer
-)
+var commonInitialisms = []string{"API", "ASCII", "CPU", "CSS", "DNS", "EOF", "GUID", "HTML", "HTTP", "HTTPS", "ID", "IP", "JSON", "LHS", "QPS", "RAM", "RHS", "RPC", "SLA", "SMTP", "SSH", "TLS", "TTL", "UID", "UI", "UUID", "URI", "URL", "UTF8", "VM", "XML", "XSRF", "XSS"}
+var commonInitialismsReplacer *strings.Replacer
 
-var (
-	goSrcRegexp  = regexp.MustCompile(`jinzhu/gorm(@.*)?/.*.go`)
-	goTestRegexp = regexp.MustCompile(`jinzhu/gorm(@.*)?/.*test.go`)
-)
+var goSrcRegexp = regexp.MustCompile(`jinzhu/gorm(@.*)?/.*.go`)
+var goTestRegexp = regexp.MustCompile(`jinzhu/gorm(@.*)?/.*test.go`)
 
 func init() {
 	var commonInitialismsForReplacer []string

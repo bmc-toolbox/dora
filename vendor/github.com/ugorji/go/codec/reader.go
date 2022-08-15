@@ -316,7 +316,7 @@ func (z *bufioDecReader) reset(r io.Reader, bufsize int, blist *bytesFreelist) {
 }
 
 func (z *bufioDecReader) readb(p []byte) {
-	n := uint(copy(p, z.buf[z.c:]))
+	var n = uint(copy(p, z.buf[z.c:]))
 	z.n += n
 	z.c += n
 	if len(p) != int(n) {
@@ -782,7 +782,6 @@ func (z *decRd) readn1() (v uint8) {
 	}
 	return
 }
-
 func (z *decRd) readn1IO() uint8 {
 	if z.bufio {
 		return z.bi.readn1()

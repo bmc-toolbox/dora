@@ -715,7 +715,7 @@ func (d *bincDecDriver) DecodeStringAsBytes() (bs2 []byte) {
 	if d.advanceNil() {
 		return
 	}
-	slen := -1
+	var slen = -1
 	switch d.vd {
 	case bincVdString, bincVdByteArray:
 		slen = d.decLen()
@@ -943,8 +943,8 @@ func (d *bincDecDriver) nextValueBytes(v0 []byte) (v []byte) {
 		d.readNextBd()
 	}
 	v = v0
-	h := decNextValueBytesHelper{d: &d.d}
-	cursor := d.d.rb.c - 1
+	var h = decNextValueBytesHelper{d: &d.d}
+	var cursor = d.d.rb.c - 1
 	h.append1(&v, d.bd)
 	v = d.nextValueBytesBdReadR(v)
 	d.bdRead = false
@@ -955,14 +955,14 @@ func (d *bincDecDriver) nextValueBytes(v0 []byte) (v []byte) {
 func (d *bincDecDriver) nextValueBytesR(v0 []byte) (v []byte) {
 	d.readNextBd()
 	v = v0
-	h := decNextValueBytesHelper{d: &d.d}
+	var h = decNextValueBytesHelper{d: &d.d}
 	h.append1(&v, d.bd)
 	return d.nextValueBytesBdReadR(v)
 }
 
 func (d *bincDecDriver) nextValueBytesBdReadR(v0 []byte) (v []byte) {
 	v = v0
-	h := decNextValueBytesHelper{d: &d.d}
+	var h = decNextValueBytesHelper{d: &d.d}
 
 	fnLen := func(vs byte) uint {
 		switch vs {
@@ -1105,7 +1105,7 @@ func (h *BincHandle) Name() string { return "binc" }
 func (h *BincHandle) desc(bd byte) string { return bincdesc(bd>>4, bd&0x0f) }
 
 func (h *BincHandle) newEncDriver() encDriver {
-	e := &bincEncDriver{h: h}
+	var e = &bincEncDriver{h: h}
 	e.e.e = e
 	e.e.init(h)
 	e.reset()
@@ -1284,9 +1284,9 @@ func bincDecodeTime(bs []byte) (tt time.Time, err error) {
 	tz = bigen.Uint16([2]byte{bs[i], bs[i+1]})
 	// sign extend sign bit into top 2 MSB (which were dst bits):
 	if tz&(1<<13) == 0 { // positive
-		tz = tz & 0x3fff // clear 2 MSBs: dst bits
+		tz = tz & 0x3fff //clear 2 MSBs: dst bits
 	} else { // negative
-		tz = tz | 0xc000 // set 2 MSBs: dst bits
+		tz = tz | 0xc000 //set 2 MSBs: dst bits
 	}
 	tzint := int16(tz)
 	if tzint == 0 {
@@ -1301,7 +1301,5 @@ func bincDecodeTime(bs []byte) (tt time.Time, err error) {
 	return
 }
 
-var (
-	_ decDriver = (*bincDecDriver)(nil)
-	_ encDriver = (*bincEncDriver)(nil)
-)
+var _ decDriver = (*bincDecDriver)(nil)
+var _ encDriver = (*bincEncDriver)(nil)
