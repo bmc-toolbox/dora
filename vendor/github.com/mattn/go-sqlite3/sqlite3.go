@@ -189,7 +189,6 @@ static int sqlite3_system_errno(sqlite3 *db) {
 #endif
 */
 import "C"
-
 import (
 	"context"
 	"database/sql"

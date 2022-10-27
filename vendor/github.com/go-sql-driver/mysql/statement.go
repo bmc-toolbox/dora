@@ -26,7 +26,7 @@ func (stmt *mysqlStmt) Close() error {
 		// driver.Stmt.Close can be called more than once, thus this function
 		// has to be idempotent.
 		// See also Issue #450 and golang/go#16019.
-		// errLog.Print(ErrInvalidConn)
+		//errLog.Print(ErrInvalidConn)
 		return driver.ErrBadConn
 	}
 

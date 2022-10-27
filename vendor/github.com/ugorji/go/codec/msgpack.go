@@ -76,10 +76,8 @@ const (
 	mpNegFixNumMax byte = 0xff
 )
 
-var (
-	mpTimeExtTag  int8 = -1
-	mpTimeExtTagU      = uint8(mpTimeExtTag)
-)
+var mpTimeExtTag int8 = -1
+var mpTimeExtTagU = uint8(mpTimeExtTag)
 
 var mpdescNames = map[byte]string{
 	mpNil:    "nil",
@@ -265,7 +263,7 @@ func (e *msgpackEncDriver) EncodeTime(t time.Time) {
 	t = t.UTC()
 	sec, nsec := t.Unix(), uint64(t.Nanosecond())
 	var data64 uint64
-	l := 4
+	var l = 4
 	if sec >= 0 && sec>>34 == 0 {
 		data64 = (nsec << 34) | uint64(sec)
 		if data64&0xffffffff00000000 != 0 {
@@ -534,8 +532,8 @@ func (d *msgpackDecDriver) nextValueBytes(v0 []byte) (v []byte) {
 		d.readNextBd()
 	}
 	v = v0
-	h := decNextValueBytesHelper{d: &d.d}
-	cursor := d.d.rb.c - 1
+	var h = decNextValueBytesHelper{d: &d.d}
+	var cursor = d.d.rb.c - 1
 	h.append1(&v, d.bd)
 	v = d.nextValueBytesBdReadR(v)
 	d.bdRead = false
@@ -546,14 +544,14 @@ func (d *msgpackDecDriver) nextValueBytes(v0 []byte) (v []byte) {
 func (d *msgpackDecDriver) nextValueBytesR(v0 []byte) (v []byte) {
 	d.readNextBd()
 	v = v0
-	h := decNextValueBytesHelper{d: &d.d}
+	var h = decNextValueBytesHelper{d: &d.d}
 	h.append1(&v, d.bd)
 	return d.nextValueBytesBdReadR(v)
 }
 
 func (d *msgpackDecDriver) nextValueBytesBdReadR(v0 []byte) (v []byte) {
 	v = v0
-	h := decNextValueBytesHelper{d: &d.d}
+	var h = decNextValueBytesHelper{d: &d.d}
 
 	bd := d.bd
 
@@ -1032,7 +1030,7 @@ func (d *msgpackDecDriver) decodeExtV(verifyTag bool, tag byte) (xbs []byte, xta
 
 //--------------------------------------------------
 
-// MsgpackHandle is a Handle for the Msgpack Schema-Free Encoding Format.
+//MsgpackHandle is a Handle for the Msgpack Schema-Free Encoding Format.
 type MsgpackHandle struct {
 	binaryEncodingType
 	BasicHandle
@@ -1064,7 +1062,7 @@ func (h *MsgpackHandle) Name() string { return "msgpack" }
 func (h *MsgpackHandle) desc(bd byte) string { return mpdesc(bd) }
 
 func (h *MsgpackHandle) newEncDriver() encDriver {
-	e := &msgpackEncDriver{h: h}
+	var e = &msgpackEncDriver{h: h}
 	e.e.e = e
 	e.e.init(h)
 	e.reset()
@@ -1143,7 +1141,7 @@ func (c *msgpackSpecRpcCodec) parseCustomHeader(expectTypeByte byte, msgid *uint
 	// We read the response header by hand
 	// so that the body can be decoded on its own from the stream at a later time.
 
-	const fia byte = 0x94 // four item array descriptor value
+	const fia byte = 0x94 //four item array descriptor value
 
 	var ba [1]byte
 	var n int
@@ -1157,7 +1155,7 @@ func (c *msgpackSpecRpcCodec) parseCustomHeader(expectTypeByte byte, msgid *uint
 		}
 	}
 
-	b := ba[0]
+	var b = ba[0]
 	if b != fia {
 		err = fmt.Errorf("not array - %s %x/%s", msgBadDesc, b, mpdesc(b))
 	} else {
@@ -1196,7 +1194,5 @@ func (x msgpackSpecRpc) ClientCodec(conn io.ReadWriteCloser, h Handle) rpc.Clien
 	return &msgpackSpecRpcCodec{newRPCCodec(conn, h)}
 }
 
-var (
-	_ decDriver = (*msgpackDecDriver)(nil)
-	_ encDriver = (*msgpackEncDriver)(nil)
-)
+var _ decDriver = (*msgpackDecDriver)(nil)
+var _ encDriver = (*msgpackEncDriver)(nil)

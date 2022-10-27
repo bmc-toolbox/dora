@@ -57,6 +57,7 @@ func marshalHTTPError(input HTTPError) string {
 	}
 
 	data, err := json.Marshal(input)
+
 	if err != nil {
 		log.Println(err)
 		return "{}"

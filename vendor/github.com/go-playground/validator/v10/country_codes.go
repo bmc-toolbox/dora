@@ -107,7 +107,6 @@ var iso3166_1_alpha3 = map[string]bool{
 	"VNM": true, "VGB": true, "VIR": true, "WLF": true, "ESH": true,
 	"YEM": true, "ZMB": true, "ZWE": true, "ALA": true,
 }
-
 var iso3166_1_alpha_numeric = map[int]bool{
 	// see: https://www.iso.org/iso-3166-country-codes.html
 	4: true, 8: true, 12: true, 16: true, 20: true,

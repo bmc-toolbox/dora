@@ -17,7 +17,6 @@ package sqlite3
 extern void unlock_notify_callback(void *arg, int argc);
 */
 import "C"
-
 import (
 	"fmt"
 	"math"

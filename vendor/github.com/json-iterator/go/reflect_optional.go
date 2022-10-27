@@ -1,15 +1,18 @@
 package jsoniter
 
 import (
-	"unsafe"
-
 	"github.com/modern-go/reflect2"
+	"reflect"
+	"unsafe"
 )
 
 func decoderOfOptional(ctx *ctx, typ reflect2.Type) ValDecoder {
 	ptrType := typ.(*reflect2.UnsafePtrType)
 	elemType := ptrType.Elem()
 	decoder := decoderOfType(ctx, elemType)
+	if ctx.prefix == "" && elemType.Kind() == reflect.Ptr {
+		return &dereferenceDecoder{elemType, decoder}
+	}
 	return &OptionalDecoder{elemType, decoder}
 }
 
@@ -31,12 +34,12 @@ func (decoder *OptionalDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
 		*((*unsafe.Pointer)(ptr)) = nil
 	} else {
 		if *((*unsafe.Pointer)(ptr)) == nil {
-			// pointer to null, we have to allocate memory to hold the value
+			//pointer to null, we have to allocate memory to hold the value
 			newPtr := decoder.ValueType.UnsafeNew()
 			decoder.ValueDecoder.Decode(newPtr, iter)
 			*((*unsafe.Pointer)(ptr)) = newPtr
 		} else {
-			// reuse existing instance
+			//reuse existing instance
 			decoder.ValueDecoder.Decode(*((*unsafe.Pointer)(ptr)), iter)
 		}
 	}
@@ -50,12 +53,12 @@ type dereferenceDecoder struct {
 
 func (decoder *dereferenceDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
 	if *((*unsafe.Pointer)(ptr)) == nil {
-		// pointer to null, we have to allocate memory to hold the value
+		//pointer to null, we have to allocate memory to hold the value
 		newPtr := decoder.valueType.UnsafeNew()
 		decoder.valueDecoder.Decode(newPtr, iter)
 		*((*unsafe.Pointer)(ptr)) = newPtr
 	} else {
-		// reuse existing instance
+		//reuse existing instance
 		decoder.valueDecoder.Decode(*((*unsafe.Pointer)(ptr)), iter)
 	}
 }

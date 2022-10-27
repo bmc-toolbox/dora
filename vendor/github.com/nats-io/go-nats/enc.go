@@ -30,10 +30,8 @@ type Encoder interface {
 	Decode(subject string, data []byte, vPtr interface{}) error
 }
 
-var (
-	encMap  map[string]Encoder
-	encLock sync.Mutex
-)
+var encMap map[string]Encoder
+var encLock sync.Mutex
 
 // Indexe names into the Registered Encoders.
 const (
