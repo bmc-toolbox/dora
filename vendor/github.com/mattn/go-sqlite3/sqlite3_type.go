@@ -13,7 +13,6 @@ package sqlite3
 #endif
 */
 import "C"
-
 import (
 	"reflect"
 	"time"

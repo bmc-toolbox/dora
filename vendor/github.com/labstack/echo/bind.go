@@ -145,6 +145,7 @@ func (b *DefaultBinder) bindData(ptr interface{}, data map[string][]string, tag 
 			val.Field(i).Set(slice)
 		} else if err := setWithProperType(typeField.Type.Kind(), inputValue[0], structField); err != nil {
 			return err
+
 		}
 	}
 	return nil

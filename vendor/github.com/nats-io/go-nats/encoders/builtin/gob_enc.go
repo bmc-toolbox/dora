@@ -21,7 +21,8 @@ import (
 // GobEncoder is a Go specific GOB Encoder implementation for EncodedConn.
 // This encoder will use the builtin encoding/gob to Marshal
 // and Unmarshal most types, including structs.
-type GobEncoder struct { // Empty
+type GobEncoder struct {
+	// Empty
 }
 
 // FIXME(dlc) - This could probably be more efficient.

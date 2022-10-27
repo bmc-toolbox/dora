@@ -63,7 +63,6 @@ func (r HTMLDebug) Instance(name string, data interface{}) Render {
 		Data:     data,
 	}
 }
-
 func (r HTMLDebug) loadTemplate() *template.Template {
 	if r.FuncMap == nil {
 		r.FuncMap = template.FuncMap{}

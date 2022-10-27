@@ -61,10 +61,8 @@ type compiledRule struct {
 }
 
 // threadsafe access to rules and caches
-var (
-	mutex sync.Mutex
-	rules = make(map[Rule]*InflectorRule)
-)
+var mutex sync.Mutex
+var rules = make(map[Rule]*InflectorRule)
 
 // Words that should not be inflected
 var uninflected = []string{
@@ -104,6 +102,7 @@ var caches = make(map[Rule]cache)
 var irregularMaps = make(map[Rule]cache)
 
 func init() {
+
 	rules[Plural] = &InflectorRule{
 		Rules: []*ruleItem{
 			{`(?i)(s)tatus$`, `${1}${2}tatuses`},

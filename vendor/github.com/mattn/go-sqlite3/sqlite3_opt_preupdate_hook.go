@@ -23,7 +23,6 @@ package sqlite3
 void preUpdateHookTrampoline(void*, sqlite3 *, int, char *, char *, sqlite3_int64, sqlite3_int64);
 */
 import "C"
-
 import (
 	"errors"
 	"unsafe"

@@ -128,7 +128,6 @@ func (z *bufioEncWriter) writen1(b1 byte) {
 	z.buf[z.n] = b1
 	z.n++
 }
-
 func (z *bufioEncWriter) writen2(b1, b2 byte) {
 	if 2 > len(z.buf)-z.n {
 		z.flush()
@@ -137,7 +136,6 @@ func (z *bufioEncWriter) writen2(b1, b2 byte) {
 	z.buf[z.n] = b1
 	z.n += 2
 }
-
 func (z *bufioEncWriter) writen4(b [4]byte) {
 	if 4 > len(z.buf)-z.n {
 		z.flush()
@@ -172,39 +170,31 @@ type bytesEncAppender struct {
 func (z *bytesEncAppender) writeb(s []byte) {
 	z.b = append(z.b, s...)
 }
-
 func (z *bytesEncAppender) writestr(s string) {
 	z.b = append(z.b, s...)
 }
-
 func (z *bytesEncAppender) writeqstr(s string) {
 	z.b = append(append(append(z.b, '"'), s...), '"')
 	// z.b = append(z.b, '"')
 	// z.b = append(z.b, s...)
 	// z.b = append(z.b, '"')
 }
-
 func (z *bytesEncAppender) writen1(b1 byte) {
 	z.b = append(z.b, b1)
 }
-
 func (z *bytesEncAppender) writen2(b1, b2 byte) {
 	z.b = append(z.b, b1, b2)
 }
-
 func (z *bytesEncAppender) writen4(b [4]byte) {
 	z.b = append(z.b, b[:]...)
 }
-
 func (z *bytesEncAppender) writen8(b [8]byte) {
 	z.b = append(z.b, b[:]...)
 }
-
 func (z *bytesEncAppender) endErr() error {
 	*(z.out) = z.b
 	return nil
 }
-
 func (z *bytesEncAppender) reset(in []byte, out *[]byte) {
 	z.b = in[:0]
 	z.out = out
@@ -237,7 +227,6 @@ func (z *encWr) writeb(s []byte) {
 		z.wf.writeb(s)
 	}
 }
-
 func (z *encWr) writeqstr(s string) {
 	if z.bytes {
 		// MARKER: z.wb.writeqstr(s)
@@ -246,7 +235,6 @@ func (z *encWr) writeqstr(s string) {
 		z.wf.writeqstr(s)
 	}
 }
-
 func (z *encWr) writestr(s string) {
 	if z.bytes {
 		z.wb.writestr(s)
@@ -254,7 +242,6 @@ func (z *encWr) writestr(s string) {
 		z.wf.writestr(s)
 	}
 }
-
 func (z *encWr) writen1(b1 byte) {
 	if z.bytes {
 		z.wb.writen1(b1)
@@ -271,7 +258,6 @@ func (z *encWr) writen2(b1, b2 byte) {
 		z.wf.writen2(b1, b2)
 	}
 }
-
 func (z *encWr) writen4(b [4]byte) {
 	if z.bytes {
 		z.wb.writen4(b)
@@ -279,7 +265,6 @@ func (z *encWr) writen4(b [4]byte) {
 		z.wf.writen4(b)
 	}
 }
-
 func (z *encWr) writen8(b [8]byte) {
 	if z.bytes {
 		z.wb.writen8(b)

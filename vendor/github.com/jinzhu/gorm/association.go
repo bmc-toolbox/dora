@@ -54,7 +54,7 @@ func (association *Association) Replace(values ...interface{}) *Association {
 		// Set foreign key to be null when clearing value (length equals 0)
 		if len(values) == 0 {
 			// Set foreign key to be nil
-			foreignKeyMap := map[string]interface{}{}
+			var foreignKeyMap = map[string]interface{}{}
 			for _, foreignKey := range relationship.ForeignDBNames {
 				foreignKeyMap[foreignKey] = nil
 			}
@@ -111,7 +111,7 @@ func (association *Association) Replace(values ...interface{}) *Association {
 			}
 		} else if relationship.Kind == "has_one" || relationship.Kind == "has_many" {
 			// has_one or has_many relations, set foreign key to be nil (TODO or delete them?)
-			foreignKeyMap := map[string]interface{}{}
+			var foreignKeyMap = map[string]interface{}{}
 			for idx, foreignKey := range relationship.ForeignDBNames {
 				foreignKeyMap[foreignKey] = nil
 				if field, ok := scope.FieldByName(relationship.AssociationForeignFieldNames[idx]); ok {
@@ -160,7 +160,7 @@ func (association *Association) Delete(values ...interface{}) *Association {
 		}
 
 		// get association's foreign fields name
-		associationScope := scope.New(reflect.New(field.Type()).Interface())
+		var associationScope = scope.New(reflect.New(field.Type()).Interface())
 		var associationForeignFieldNames []string
 		for _, associationDBName := range relationship.AssociationForeignFieldNames {
 			if field, ok := associationScope.FieldByName(associationDBName); ok {
@@ -175,7 +175,7 @@ func (association *Association) Delete(values ...interface{}) *Association {
 
 		association.setErr(relationship.JoinTableHandler.Delete(relationship.JoinTableHandler, newDB))
 	} else {
-		foreignKeyMap := map[string]interface{}{}
+		var foreignKeyMap = map[string]interface{}{}
 		for _, foreignKey := range relationship.ForeignDBNames {
 			foreignKeyMap[foreignKey] = nil
 		}
@@ -225,7 +225,7 @@ func (association *Association) Delete(values ...interface{}) *Association {
 			for i := 0; i < field.Len(); i++ {
 				reflectValue := field.Index(i)
 				primaryKey := scope.getColumnAsArray(deletingResourcePrimaryFieldNames, reflectValue.Interface())[0]
-				isDeleted := false
+				var isDeleted = false
 				for _, pk := range deletingPrimaryKeys {
 					if equalAsString(primaryKey, pk) {
 						isDeleted = true
@@ -321,7 +321,7 @@ func (association *Association) saveAssociations(values ...interface{}) *Associa
 		}
 
 		// Assign Fields
-		fieldType := field.Field.Type()
+		var fieldType = field.Field.Type()
 		var setFieldBackToValue, setSliceFieldBackToValue bool
 		if reflectValue.Type().AssignableTo(fieldType) {
 			field.Set(reflectValue)

@@ -593,8 +593,8 @@ func (d *simpleDecDriver) nextValueBytes(v0 []byte) (v []byte) {
 		d.readNextBd()
 	}
 	v = v0
-	h := decNextValueBytesHelper{d: &d.d}
-	cursor := d.d.rb.c - 1
+	var h = decNextValueBytesHelper{d: &d.d}
+	var cursor = d.d.rb.c - 1
 	h.append1(&v, d.bd)
 	v = d.nextValueBytesBdReadR(v)
 	d.bdRead = false
@@ -605,14 +605,14 @@ func (d *simpleDecDriver) nextValueBytes(v0 []byte) (v []byte) {
 func (d *simpleDecDriver) nextValueBytesR(v0 []byte) (v []byte) {
 	d.readNextBd()
 	v = v0
-	h := decNextValueBytesHelper{d: &d.d}
+	var h = decNextValueBytesHelper{d: &d.d}
 	h.append1(&v, d.bd)
 	return d.nextValueBytesBdReadR(v)
 }
 
 func (d *simpleDecDriver) nextValueBytesBdReadR(v0 []byte) (v []byte) {
 	v = v0
-	h := decNextValueBytesHelper{d: &d.d}
+	var h = decNextValueBytesHelper{d: &d.d}
 
 	c := d.bd
 
@@ -724,7 +724,7 @@ func (h *SimpleHandle) Name() string { return "simple" }
 func (h *SimpleHandle) desc(bd byte) string { return simpledesc(bd) }
 
 func (h *SimpleHandle) newEncDriver() encDriver {
-	e := &simpleEncDriver{h: h}
+	var e = &simpleEncDriver{h: h}
 	e.e.e = e
 	e.e.init(h)
 	e.reset()
@@ -746,7 +746,5 @@ func (d *simpleDecDriver) reset() {
 	d.bd, d.bdRead = 0, false
 }
 
-var (
-	_ decDriver = (*simpleDecDriver)(nil)
-	_ encDriver = (*simpleEncDriver)(nil)
-)
+var _ decDriver = (*simpleDecDriver)(nil)
+var _ encDriver = (*simpleEncDriver)(nil)
