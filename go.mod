@@ -8,7 +8,7 @@ require (
 	github.com/bmc-toolbox/bmclib v0.5.7
 	github.com/bmc-toolbox/gin-go-metrics v0.0.2
 	github.com/daaku/go.zipexe v1.0.1 // indirect
-	github.com/gin-gonic/gin v1.7.2
+	github.com/gin-gonic/gin v1.7.7
 	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/google/gops v0.3.14
 	github.com/gorilla/mux v1.8.0 // indirect
