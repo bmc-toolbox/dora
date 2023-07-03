@@ -124,6 +124,26 @@
           <h6>/v1/scanned_ports?filter[:field1]=:value1,:values2</h6>
           <p class="small">List all scanned ports filtering by fields exposed via api</p>
         </div>
+
+        <div class="col-lg-12">
+           <h2>Discover Hints</h2>
+           </br>
+        </div>
+        <div class="col-lg-12">
+          <h4>Endpoints and queries</h4>
+          </br>
+
+          <h6>/v1/discover_hints</h6>
+          <p class="small">List all discover hints</p>
+          </br>
+          <h6>/v1/discover_hints?page[offset]=0&page[limit]=2</h6>
+          <p class="small">List all discover hints and paginate the response</p>
+          </br>
+          <h6>/v1/discover_hints/:ip</h6>
+          <p class="small">Retrieve the discover hint for an IP<</p>
+          <p class="small">eg: /v1/discover_hints/10.44.13.26</p>
+        </div>
+
       </div>
 
       <footer class="footer">
