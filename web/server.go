@@ -84,6 +84,7 @@ func RunGin(port int, rodb bool, debug bool) {
 	psuStorage := storage.NewPsuStorage(db)
 	diskStorage := storage.NewDiskStorage(db)
 	fanStorage := storage.NewFanStorage(db)
+	discoverHintStorage := storage.NewDiscoverHintStorage(db)
 
 	stats := stats.Stats{StartTime: time.Now()}
 
@@ -126,6 +127,7 @@ func RunGin(port int, rodb bool, debug bool) {
 	api.AddResource(model.Psu{}, resource.PsuResource{PsuStorage: psuStorage})
 	api.AddResource(model.Disk{}, resource.DiskResource{DiskStorage: diskStorage})
 	api.AddResource(model.Fan{}, resource.FanResource{FanStorage: fanStorage})
+	api.AddResource(model.DiscoverHint{}, resource.DiscoverHintResource{DiscoverHintStorage: discoverHintStorage})
 
 	r.POST("/api/v1/collect", func(c *gin.Context) {
 		subject := "dora::collect"

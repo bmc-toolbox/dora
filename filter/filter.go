@@ -134,6 +134,8 @@ func (f *Filters) Clean() {
 
 // OffSetAndLimitParse parsers the limit and offset of the requests
 func OffSetAndLimitParse(r *api2go.Request) (offset string, limit string) {
+	limit = "0"
+	offset = "0"
 	offsetQuery, hasOffset := r.QueryParams["page[offset]"]
 	limitQuery, hasLimit := r.QueryParams["page[limit]"]
 
