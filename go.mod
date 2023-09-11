@@ -8,13 +8,12 @@ require (
 	github.com/bmc-toolbox/bmclib v0.5.7
 	github.com/bmc-toolbox/gin-go-metrics v0.0.2
 	github.com/daaku/go.zipexe v1.0.1 // indirect
-	github.com/gin-gonic/gin v1.7.2
-	github.com/golang/protobuf v1.4.3 // indirect
+	github.com/gin-gonic/gin v1.9.0
 	github.com/google/gops v0.3.14
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/jinzhu/gorm v1.9.16
-	github.com/kr/pretty v0.2.1
+	github.com/kr/pretty v0.3.0
 	github.com/labstack/gommon v0.3.0 // indirect
 	github.com/lib/pq v1.9.0
 	github.com/manyminds/api2go v0.0.0-20201208181306-e7d462686f8a
@@ -31,7 +30,7 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/viper v1.7.1
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.8.1
 	github.com/ugorji/go v1.2.4 // indirect
 	github.com/valyala/fasttemplate v1.2.1 // indirect
 )
