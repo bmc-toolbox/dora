@@ -7,7 +7,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/jinzhu/gorm"
 	"github.com/stretchr/testify/assert"
-	"gitlab.booking.com/provisioning/dora/storage"
+	"github.com/bmc-toolbox/dora/storage"
 )
 
 func TestGatherDBStats(t *testing.T) {
