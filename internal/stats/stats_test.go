@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/bmc-toolbox/dora/storage"
 	"github.com/jinzhu/gorm"
 	"github.com/stretchr/testify/assert"
+	"github.com/bmc-toolbox/dora/storage"
 )
 
 func TestGatherDBStats(t *testing.T) {
@@ -20,6 +20,7 @@ func TestGatherDBStats(t *testing.T) {
 
 	dbInit, mock, _ := sqlmock.New()
 	db, _ := gorm.Open("postgres", dbInit)
+	db.SingularTable(true)
 	defer db.Close()
 
 	resultRows := sqlmock.NewRows([]string{"count(*)"}).
@@ -28,10 +29,10 @@ func TestGatherDBStats(t *testing.T) {
 		AddRow(4).
 		AddRow(3)
 
-	mock.ExpectQuery("^SELECT count\\(\\*\\) FROM \"chasses\"$").WillReturnRows(resultRows)
-	mock.ExpectQuery("^SELECT count\\(\\*\\) FROM \"chasses\" WHERE \"updated_at\".*").WillReturnRows(resultRows)
-	mock.ExpectQuery("^SELECT count\\(\\*\\) FROM \"chasses\" WHERE \\(vendor in \\('hp'\\)\\)$").WillReturnRows(resultRows)
-	mock.ExpectQuery("^SELECT count\\(\\*\\) FROM \"chasses\" WHERE \\(vendor in \\('hp'\\)\\) AND \"updated_at\".*$").WillReturnRows(resultRows)
+	mock.ExpectQuery("^SELECT count\\(\\*\\) FROM \"chassis\"$").WillReturnRows(resultRows)
+	mock.ExpectQuery("^SELECT count\\(\\*\\) FROM \"chassis\" WHERE \\(\"updated_at\".*").WillReturnRows(resultRows)
+	mock.ExpectQuery("^SELECT count\\(\\*\\) FROM \"chassis\" WHERE \\(\"vendor\" in .*\\)$").WillReturnRows(resultRows)
+	mock.ExpectQuery("^SELECT count\\(\\*\\) FROM \"chassis\" WHERE \\(\"vendor\" in \\(\\$1\\)\\) AND \\(\"updated_at\" < .*\\)$").WillReturnRows(resultRows)
 	// to prevent errors like "all expectations were already fulfilled" in logs
 	zeroRow := sqlmock.NewRows([]string{"count(*)"})
 	for i := 0; i <= 100; i++ {
@@ -49,14 +50,15 @@ func TestGatherDBStats(t *testing.T) {
 		storage.NewPsuStorage(db),
 		storage.NewDiskStorage(db),
 		storage.NewFanStorage(db),
+		storage.NewDiscoverHintStorage(db),
 	)
 
 	assert.EqualValues(t, 10, s.Chassis.Total,
 		"total count of chassis is right")
 	assert.EqualValues(t, 5, s.Chassis.Updated24hAgo,
 		"total count of updated 24h ago chassis is right")
-	assert.EqualValues(t, 4, s.Chassis.Vendors["hp"].Total,
+	assert.EqualValues(t, 4, s.Chassis.Vendors["HP"].Total,
 		"total value of hp chassis is right")
-	assert.EqualValues(t, 3, s.Chassis.Vendors["hp"].Updated24hAgo,
+	assert.EqualValues(t, 3, s.Chassis.Vendors["HP"].Updated24hAgo,
 		"total count of updated 24h ago hp chassis is right")
 }
